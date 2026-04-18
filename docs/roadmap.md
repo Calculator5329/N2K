@@ -6,7 +6,7 @@
 - [x] `docs/architecture.md`
 - [x] `src/core/types.ts` — `NEquation`, `Mode`, `DifficultyWeights`, `Operator`, `Arity`, `Loadable<T>`, `Board`
 - [x] `src/core/constants.ts` — `STANDARD_MODE`, `AETHER_MODE`, `OP`, `STANDARD_DIFFICULTY`, `AETHER_DIFFICULTY`, exponent caps, `depowerDice`
-- [ ] `src/core/n2kBinary.ts` — bit-packed binary format (deferred to Phase 1, lands with the export pipeline)
+- [x] `src/core/n2kBinary.ts` — bit-packed binary format (landed with Phase 1)
 - [x] `src/services/arithmetic.ts`
 - [x] `src/services/solver.ts` — unified `sweepOneTuple` / `easiestSolution` / `allSolutions` / `solveForExport`
 - [x] `src/services/difficulty.ts` — unified `difficultyOfEquation` / `difficultyBreakdown`
@@ -15,13 +15,13 @@
 - [x] `src/services/gameKernel.ts` — `Game<>` + `Player` + `GameRegistry` + `replay()`
 - [x] vitest suite — 49 tests passing
 
-## Phase 1 — Bulk export pipeline
+## Phase 1 — Bulk export pipeline ✅
 
-- [ ] `src/services/exporter.ts` — single mode-aware exporter
-- [ ] `scripts/export.ts` — CLI that takes `--mode standard|aether`
-- [ ] Worker-pool (`worker_threads`) for parallel sweep
-- [ ] `.n2k` binary chunks + index + coverage
-- [ ] JSON-chunk projection for the web app
+- [x] `src/services/exporter.ts` — single mode-aware exporter
+- [x] `scripts/export.ts` — CLI that takes `--mode standard|aether`
+- [x] Worker-pool (`worker_threads`) for parallel sweep
+- [x] `.n2k` binary chunks + index + coverage
+- [x] JSON-chunk projection for the web app
 
 ## Phase 2 — CLI REPL
 
@@ -29,21 +29,21 @@
 - [ ] Command set: list / generate / solve / find difficulty / find board difficulty / export
 - [ ] No Konami unlock — Æther mode is just `--mode aether`
 
-## Phase 3 — Web foundation
+## Phase 3 — Web foundation ✅
 
-- [ ] `web/` workspace with Vite + React + MobX + Tailwind
-- [ ] `services/contentBackend.ts` + `LocalContentBackend` (IndexedDB)
-- [ ] `services/identityService.ts` + `AnonIdentityService` (localStorage)
-- [ ] `services/aiService.ts` + `StubAIService`
-- [ ] `services/datasetClient.ts` — fetches JSON chunks
-- [ ] `services/solverWorker.ts` + `solverWorkerService.ts` — pool with `solve` + `sweep`
-- [ ] `stores/AppStore`, `DataStore` (with `Resource<T>`), `ContentStore`, `IdentityStore`, `ThemeStore`
-- [ ] Theme registry + Tabletop edition as canonical
-- [ ] Layout primitives (3-4 of them), starting with the Tabletop layout
+- [x] `web/` workspace with Vite 6 + React 18 + MobX 6 + Tailwind 4 + Vitest 2
+- [x] `services/contentBackend.ts` + `MemoryContentBackend` (bootstrap; IDB swap is Phase 6)
+- [x] `services/identityService.ts` + `AnonIdentityService` (localStorage)
+- [x] `services/aiService.ts` + `StubAIService`
+- [x] `stores/Resource<T>` — explicit replacement for v1's `cacheTick`
+- [x] `stores/AppStore`, `IdentityStore`, `ThemeStore` (built-ins: tabletop + noir)
+- [x] React entry + minimal `App.tsx` proving the wiring
+- [ ] Theme registry as data — moved to PLAN-C
+- [ ] Layout primitives — deferred until Compose
 
 ## Phase 4 — Feature parity
 
-- [ ] Lookup feature (one store, one view, mode-as-data)
+- [x] **Lookup feature** — `LookupStore` + `LookupView` (mode/dice/target pickers + sortable target grid + per-target drill-down); `DatasetClient` (`LiveSolverDatasetClient` bootstrap; `HttpDatasetClient` after PLAN-A); `SolverWorkerService` (`InlineSolverService`; Web Worker impl when warranted)
 - [ ] Compose feature (board editor + competition generator + DOCX/PDF export)
 - [ ] Play feature (single-player + bot, on the game kernel)
 - [ ] Information / About
