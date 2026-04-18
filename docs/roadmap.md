@@ -6,7 +6,7 @@
 - [x] `docs/architecture.md`
 - [x] `src/core/types.ts` — `NEquation`, `Mode`, `DifficultyWeights`, `Operator`, `Arity`, `Loadable<T>`, `Board`
 - [x] `src/core/constants.ts` — `STANDARD_MODE`, `AETHER_MODE`, `OP`, `STANDARD_DIFFICULTY`, `AETHER_DIFFICULTY`, exponent caps, `depowerDice`
-- [ ] `src/core/n2kBinary.ts` — bit-packed binary format (deferred to Phase 1, lands with the export pipeline)
+- [x] `src/core/n2kBinary.ts` — bit-packed binary format (landed with Phase 1)
 - [x] `src/services/arithmetic.ts`
 - [x] `src/services/solver.ts` — unified `sweepOneTuple` / `easiestSolution` / `allSolutions` / `solveForExport`
 - [x] `src/services/difficulty.ts` — unified `difficultyOfEquation` / `difficultyBreakdown`
@@ -15,13 +15,13 @@
 - [x] `src/services/gameKernel.ts` — `Game<>` + `Player` + `GameRegistry` + `replay()`
 - [x] vitest suite — 49 tests passing
 
-## Phase 1 — Bulk export pipeline
+## Phase 1 — Bulk export pipeline ✅
 
-- [ ] `src/services/exporter.ts` — single mode-aware exporter
-- [ ] `scripts/export.ts` — CLI that takes `--mode standard|aether`
-- [ ] Worker-pool (`worker_threads`) for parallel sweep
-- [ ] `.n2k` binary chunks + index + coverage
-- [ ] JSON-chunk projection for the web app
+- [x] `src/services/exporter.ts` — single mode-aware exporter
+- [x] `scripts/export.ts` — CLI that takes `--mode standard|aether`
+- [x] Worker-pool (`worker_threads`) for parallel sweep
+- [x] `.n2k` binary chunks + index + coverage
+- [x] JSON-chunk projection for the web app
 
 ## Phase 2 — CLI REPL
 
@@ -45,7 +45,7 @@
 
 - [ ] Lookup feature (one store, one view, mode-as-data)
 - [ ] Compose feature (board editor + competition generator + DOCX/PDF export)
-- [ ] Play feature (single-player + bot, on the game kernel)
+- [~] Play feature (single-player + bot, on the game kernel) — game/bot foundation landed (`src/games/n2kClassic*`); web UI pending
 - [ ] Information / About
 
 ## Phase 5 — Hidden features (future admin gate)
