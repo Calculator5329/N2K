@@ -11,11 +11,15 @@
     "./core/*": "./dist/core/*.js",
     "./services/*": "./dist/services/*.js"
   },
+  "bin": {
+    "n2k": "src/cli/index.ts"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "cli": "tsx src/cli/index.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

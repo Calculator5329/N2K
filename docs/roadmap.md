@@ -23,11 +23,11 @@
 - [ ] `.n2k` binary chunks + index + coverage
 - [ ] JSON-chunk projection for the web app
 
-## Phase 2 — CLI REPL
+## Phase 2 — CLI REPL ✅
 
-- [ ] `src/cli/` — REPL, prompts, output formatting
-- [ ] Command set: list / generate / solve / find difficulty / find board difficulty / export
-- [ ] No Konami unlock — Æther mode is just `--mode aether`
+- [x] `src/cli/` — REPL, prompts, output formatting
+- [x] Command set: mode / dice / roll / board / solve / solve-all / sweep / explain / export / help / quit
+- [x] No Konami unlock — Æther mode is just `--mode aether`
 
 ## Phase 3 — Web foundation
 
