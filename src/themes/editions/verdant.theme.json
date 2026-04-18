@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "id": "verdant",
+    "displayName": "Verdant",
+    "version": "1.0.0",
+    "summary": "Mossy forest palette with heavy elevated shadows. Demonstrates the shadow group and a layered surface treatment.",
+    "tags": ["light", "natural", "shadows"]
+  },
+  "extends": "tabletop",
+  "tokens": {
+    "color": {
+      "bg": "#eaf0e3",
+      "surface": "#f7faf2",
+      "ink": "#1a2a1c",
+      "inkMuted": "#56705c",
+      "accent": "#3d8b46",
+      "rule": "#c4d3b9",
+      "success": "#3d8b46",
+      "warning": "#b58a18",
+      "danger": "#a8331f",
+      "extras": {
+        "moss": "#6a8a55",
+        "fern": "#92ad7a",
+        "bark": "#5a4636",
+        "sky": "#cfe1e8"
+      }
+    },
+    "typography": {
+      "fontFamilySans": "\"Inter\", \"Helvetica Neue\", Arial, sans-serif",
+      "fontFamilySerif": "\"Lora\", Georgia, serif"
+    },
+    "shadow": {
+      "card": "0 2px 4px rgba(26, 42, 28, 0.10), 0 8px 24px rgba(26, 42, 28, 0.14), 0 24px 48px rgba(26, 42, 28, 0.10)",
+      "popover": "0 8px 24px rgba(26, 42, 28, 0.20), 0 32px 64px rgba(26, 42, 28, 0.18)"
+    },
+    "radius": {
+      "card": "10px",
+      "chip": "999px"
+    }
+  }
+}
