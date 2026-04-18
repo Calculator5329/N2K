@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# Generated dataset artifacts
+data-raw/
+*.ndjson
+*.manifest.json
+
+# Editor
+.idea/
+.vscode/
+*.swp

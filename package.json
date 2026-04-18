@@ -1,0 +1,26 @@
+{
+  "name": "n2k-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "N2K platform — clean-slate rebuild with unified domain, themes-as-data, game kernel, and pluggable backends.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    "./core/*": "./dist/core/*.js",
+    "./services/*": "./dist/services/*.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
