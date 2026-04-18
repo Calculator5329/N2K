@@ -31,14 +31,18 @@
 
 ## Phase 3 — Web foundation
 
-- [ ] `web/` workspace with Vite + React + MobX + Tailwind
-- [ ] `services/contentBackend.ts` + `LocalContentBackend` (IndexedDB)
-- [ ] `services/identityService.ts` + `AnonIdentityService` (localStorage)
-- [ ] `services/aiService.ts` + `StubAIService`
-- [ ] `services/datasetClient.ts` — fetches JSON chunks
-- [ ] `services/solverWorker.ts` + `solverWorkerService.ts` — pool with `solve` + `sweep`
-- [ ] `stores/AppStore`, `DataStore` (with `Resource<T>`), `ContentStore`, `IdentityStore`, `ThemeStore`
-- [ ] Theme registry + Tabletop edition as canonical
+- [x] `web/` workspace with Vite 6 + React 18 + MobX 6 + Tailwind 4 + Vitest 2
+- [x] `services/contentBackend.ts` interface + `MemoryContentBackend` (bootstrap default)
+- [x] `services/identityService.ts` + `AnonIdentityService` (localStorage)
+- [x] `services/aiService.ts` + `StubAIService` (deterministic stub for dev)
+- [x] `stores/Resource<T>` — explicit replacement for v1's `cacheTick`
+- [x] `stores/AppStore`, `IdentityStore`, `ThemeStore` (built-ins: tabletop + noir)
+- [x] React entry + minimal `App.tsx` proving the wiring (theme switcher, identity card)
+- [ ] `services/local/idbContentBackend.ts` — IndexedDB persistence
+- [ ] `services/datasetClient.ts` — fetches JSON chunks (depends on Phase 1)
+- [ ] `services/solverWorker.ts` + `solverWorkerService.ts` — Web Worker pool
+- [ ] `stores/DataStore` (with `Resource<T>`), `ContentStore`
+- [ ] Theme registry hydrates from `ContentBackend` (built-ins seeded on first launch)
 - [ ] Layout primitives (3-4 of them), starting with the Tabletop layout
 
 ## Phase 4 — Feature parity

@@ -2,6 +2,35 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-18 — Phase 3 web foundation (in progress on `agent/phase-3-web`)
+
+**Workspace.** New `web/` workspace: Vite 6 + React 18 + MobX 6 + Tailwind 4 + Vitest 2. Self-contained (`web/package.json`), aliased `@platform/*` → `../src/*` so feature code can import the Phase 0 services directly. Strict TypeScript including `noUncheckedIndexedAccess`. Three project references in `tsconfig.json` (app / node / test) keep build and dev paths fast.
+
+**Pluggable backends (`web/src/services/`).** The three abstractions that the entire feature roadmap depends on:
+
+- `contentBackend.ts` + `local/memoryContentBackend.ts` — `ContentEntity<TBody>` + get / put / delete / list / subscribe / subscribeKind. Memory impl is the bootstrap default; `IdbContentBackend` (IndexedDB) and the eventual Cloud Run / Firestore impl share this contract.
+- `identityService.ts` + `local/anonIdentityService.ts` — sync `currentUser()` + async `onChange`. `localStorage`-backed anonymous identity for now; Firebase Auth slots in later behind the same interface.
+- `aiService.ts` + `local/stubAIService.ts` — `complete` / `completeStructured` / `stream`. Stub returns deterministic responses for development; the real Gemini call runs through the future Cloud Run proxy so the API key never ships in browser bundles.
+
+**MobX correctness (`web/src/stores/`).** Explicit replacement for v1's `cacheTick` workaround:
+
+- `Resource<T>` — observable `idle / loading / ready / error` state machine over an async fetcher. Reading `state`, `data`, `isReady`, `isLoading` from any observer establishes a real dependency. Built-in supersession (only the latest in-flight fetch commits) and optional debounce.
+- `IdentityStore` — mirrors `IdentityService` user changes into MobX.
+- `ThemeStore` — registry of `Theme { id, displayName, tokens }` documents. Built-ins: `tabletop` (default) and `noir`. `applyTo(target)` writes `data-theme` + every token as a CSS variable so plain Tailwind utility classes can pick them up. User-authored and Gemini-generated themes register through the same path.
+- `AppStore` + `AppStoreContext` + `useAppStore()` — root composition point. Tests inject custom `PlatformServices`; production uses `createDefaultAppStore()`.
+
+**Minimal `App.tsx`.** Boots the store, applies the active theme to `document.documentElement` via `useEffect`, renders an identity card + a theme switcher proving the swap actually works at runtime. Intentionally narrow — it's the proof-of-life for the architecture, not a real surface.
+
+**Tests (`web/tests/`).** 35 tests across 6 files, all passing:
+- `MemoryContentBackend` — get / put revision + createdAt preservation, delete idempotence, list filtering & sorting, per-entity and per-kind subscriptions, kind isolation (8 tests)
+- `AnonIdentityService` — id stability, persistence, subscription lifecycle (6 tests)
+- `StubAIService` — complete / fixedCompletion / stream / structured w/ enum (5 tests)
+- `Resource<T>` — every state transition, supersession, debounce, reactivity-without-cacheTick proof (8 tests)
+- `ThemeStore` — defaults, switching, registration, `applyTo` correctness (5 tests)
+- `AppStore` — composition, default wiring, identity ↔ store sync (3 tests)
+
+**Agent plans landed.** `docs/agent-plans/PLAN-A-bulk-export.md` (Phase 1) and `docs/agent-plans/PLAN-B-n2k-classic-game.md` (first concrete `Game<>` implementation + bots) — fully scoped with file boundaries, branch names, and acceptance criteria so they can be executed by parallel agents without merge collisions.
+
 ## 2026-04-18 — Phase 0 foundation
 
 **Workspace.** `package.json`, `tsconfig.json`, `vitest.config.ts`, `.gitignore`, `README.md`. Standalone npm package — no shared deps with v1. `tsc -p .` and `vitest run` are the only build commands.

@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* Theme tokens are intentionally empty here. Each theme registers its own
+   tokens via a `style` attribute (or, for built-in themes, by emitting
+   CSS variables on `:root[data-theme="<id>"]`). The Tabletop edition
+   declares its tokens in `themes/editions/tabletop.theme.json`; the
+   ThemeStore reads them and writes the corresponding CSS variables. */
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
