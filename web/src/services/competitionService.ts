@@ -16,7 +16,37 @@ import type { Mode } from "@platform/core/types.js";
 import { isLegalDiceForMode } from "@platform/services/generators.js";
 import type { DatasetClient } from "./datasetClient.js";
 
-export type CandidatePool = "standard" | "aether-sample";
+export type CandidatePool = "depowered" | "standard" | "extensive" | "aether-sample";
+
+/** UI-friendly metadata for the candidate pool dropdown. */
+export interface CandidatePoolMeta {
+  readonly id: CandidatePool;
+  readonly label: string;
+  readonly description: string;
+}
+
+export const CANDIDATE_POOL_META: readonly CandidatePoolMeta[] = [
+  {
+    id: "depowered",
+    label: "Depowered (38)",
+    description: "The original 38 prime-only triples — fastest to evaluate.",
+  },
+  {
+    id: "standard",
+    label: "Standard (2..20)",
+    description: "Every legal triple in the standard mode dice range.",
+  },
+  {
+    id: "extensive",
+    label: "Extensive (1..20)",
+    description: "Every legal triple including the rarely-used 1-die.",
+  },
+  {
+    id: "aether-sample",
+    label: "Æther sample (-5..20)",
+    description: "Wider sample for balanced rolls in Æther mode.",
+  },
+];
 
 export interface CompetitionConfig {
   readonly modeId: "standard" | "aether";
@@ -164,12 +194,35 @@ export class LiveCompetitionService implements CompetitionService {
 }
 
 function candidatePoolFor(mode: Mode, pool: CandidatePool): readonly (readonly number[])[] {
-  if (pool === "standard") return enumerateStandardTriples();
-  // Aether sample: a few hundred legal tuples in [-5..20].
-  return enumerateAetherSample(mode);
+  switch (pool) {
+    case "depowered":
+      return DEPOWERED_TRIPLES;
+    case "standard":
+      return enumerateStandardTriples();
+    case "extensive":
+      return enumerateExtensiveTriples();
+    case "aether-sample":
+      return enumerateAetherSample(mode);
+  }
 }
 
+/**
+ * The classic depowered dice list — 38 triples drawn from the original
+ * tabletop game. Constant array (no enumeration) so it loads in O(1).
+ */
+const DEPOWERED_TRIPLES: readonly (readonly number[])[] = [
+  [2, 2, 2], [2, 2, 3], [2, 2, 5], [2, 2, 6], [2, 2, 7], [2, 2, 10],
+  [2, 3, 3], [2, 3, 5], [2, 3, 6], [2, 3, 7], [2, 3, 10], [2, 3, 11],
+  [2, 3, 12], [2, 3, 13], [2, 3, 14], [2, 3, 15], [2, 3, 17], [2, 3, 18],
+  [2, 3, 19], [2, 3, 20], [2, 5, 5], [2, 5, 6], [2, 5, 10], [2, 6, 6],
+  [2, 6, 7], [2, 6, 12], [3, 3, 5], [3, 3, 6], [3, 3, 12], [3, 5, 5],
+  [3, 5, 6], [3, 5, 7], [3, 5, 15], [3, 6, 6], [3, 6, 7], [3, 6, 10],
+  [3, 6, 12], [3, 6, 18],
+];
+
+let standardCache: readonly (readonly number[])[] | null = null;
 function enumerateStandardTriples(): readonly (readonly number[])[] {
+  if (standardCache !== null) return standardCache;
   const out: number[][] = [];
   const mode = BUILT_IN_MODES.standard;
   for (let a = mode.diceRange.min; a <= mode.diceRange.max; a += 1) {
@@ -181,6 +234,25 @@ function enumerateStandardTriples(): readonly (readonly number[])[] {
       }
     }
   }
+  standardCache = out;
+  return out;
+}
+
+let extensiveCache: readonly (readonly number[])[] | null = null;
+function enumerateExtensiveTriples(): readonly (readonly number[])[] {
+  if (extensiveCache !== null) return extensiveCache;
+  const out: number[][] = [];
+  const mode = BUILT_IN_MODES.standard;
+  for (let a = 1; a <= 20; a += 1) {
+    for (let b = a; b <= 20; b += 1) {
+      for (let c = b; c <= 20; c += 1) {
+        const dice = [a, b, c];
+        if (!isLegalDiceForMode(dice, mode)) continue;
+        out.push(dice);
+      }
+    }
+  }
+  extensiveCache = out;
   return out;
 }
 

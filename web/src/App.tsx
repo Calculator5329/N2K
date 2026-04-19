@@ -32,12 +32,22 @@ const SURFACES: ReadonlyArray<{ id: SurfaceId; label: string }> = [
 
 export const App = observer(function App() {
   const store = useAppStore();
-  const { theme } = store;
-  const [surface, setSurface] = useState<SurfaceId>("lookup");
+  const { theme, compose } = store;
+  const initialSurface: SurfaceId =
+    typeof window !== "undefined" && /(?:^|[#&])plan=/.test(window.location.hash)
+      ? "compose"
+      : "lookup";
+  const [surface, setSurface] = useState<SurfaceId>(initialSurface);
 
   useEffect(() => {
     theme.applyTo(document.documentElement);
   }, [theme, theme.activeId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!/(?:^|[#&])plan=/.test(window.location.hash)) return;
+    void compose.loadFromUrl();
+  }, [compose]);
 
   return (
     <div
@@ -128,7 +138,7 @@ const AboutView = observer(function AboutView() {
           <li>• Explore — sortable, filterable index of every legal dice tuple per mode with starring</li>
           <li>• Compare — overlay up to four tuples on a difficulty-vs-target chart, persisted across reloads</li>
           <li>• Visualize — atlas heatmap, difficulty histogram, and scatter of solvable count vs. average difficulty</li>
-          <li>• Compose — multi-board editor + balanced two-player competition generator with JSON / CSV / print export</li>
+          <li>• Compose — multi-board editor + balanced two-player generator with JSON / CSV / PDF / DOCX export and shareable URLs</li>
           <li>• Gallery — every bundled theme rendered side-by-side with live activation</li>
           <li>• Theme switcher backed by the structured theme registry (5 bundled editions)</li>
         </ul>
@@ -139,7 +149,6 @@ const AboutView = observer(function AboutView() {
           <li>• Web Worker solver + HTTP dataset client backed by the bulk export pipeline (Phase 1 output)</li>
           <li>• User-authored themes (NLP-generated via Gemini) registered into the same `ThemeRegistry`</li>
           <li>• Async multiplayer + tournaments backed by Cloud Run + Firestore + Firebase Auth</li>
-          <li>• Branded DOCX / PDF export from Compose plans (today they round-trip JSON + CSV + print)</li>
         </ul>
       </Card>
     </div>

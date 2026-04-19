@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "id": "manuscript",
+    "displayName": "Manuscript",
+    "version": "1.0.0",
+    "summary": "Illuminated medieval codex — vellum field with ink-gall serif and gold-leaf accents.",
+    "tags": ["light", "ornate", "warm"]
+  },
+  "extends": "tabletop",
+  "tokens": {
+    "color": {
+      "bg": "#efe4c7",
+      "surface": "#f7eed3",
+      "ink": "#1a0e04",
+      "inkMuted": "#5a4530",
+      "accent": "#9b2a1f",
+      "rule": "#c8a24c",
+      "success": "#3f6b32",
+      "warning": "#c89030",
+      "danger": "#9b2a1f",
+      "extras": {
+        "vellum": "#efe4c7",
+        "goldLeaf": "#d4a24c",
+        "indigo": "#2c1c58"
+      }
+    },
+    "typography": {
+      "fontFamilySerif": "\"Source Serif Pro\", \"Georgia\", serif",
+      "fontFamilySans": "\"Source Serif Pro\", \"Georgia\", serif"
+    },
+    "radius": {
+      "card": "8px",
+      "chip": "4px"
+    }
+  }
+}

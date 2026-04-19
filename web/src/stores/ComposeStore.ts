@@ -9,7 +9,7 @@
  * Persists nothing yet — the eventual `ContentBackend.put("competition", …)`
  * lands as part of Phase 6.
  */
-import { action, computed, makeObservable, observable } from "mobx";
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import { BUILT_IN_MODES, BOARD } from "@platform/core/constants.js";
 import {
   generatePatternBoard,
@@ -21,6 +21,8 @@ import type {
   CompetitionPlan,
   CompetitionService,
 } from "../services/competitionService.js";
+import { decodeShareable, encodeShareable } from "../services/compressedHashCodec.js";
+import { readHash, writeHash, type HashSchema } from "../services/urlHashState.js";
 
 export type BoardKind = "random" | "pattern";
 export type ComposeModeId = "standard" | "aether";
@@ -83,6 +85,7 @@ export class ComposeStore {
       setSeed: action,
       generate: action,
       clearPlan: action,
+      applySnapshot: action,
     });
   }
 
@@ -156,6 +159,74 @@ export class ComposeStore {
     this.lastError = null;
   }
 
+  // -----------------------------------------------------------------
+  // Share-link snapshot (#17 parity)
+  //
+  // Plans round-trip through `window.location.hash` as
+  // `#plan=v1.{deflate-base64url(JSON)}`. The snapshot embeds **every**
+  // editable input plus, when present, the generated `CompetitionPlan`
+  // so a recipient can open the link and see results immediately
+  // without paying the generator's CPU cost.
+  // -----------------------------------------------------------------
+
+  snapshot(): SharedComposePlanV1 {
+    const snap: SharedComposePlanV1 = {
+      version: 1,
+      modeId: this.modeId,
+      pool: this.pool,
+      timeBudgetMs: this.timeBudgetMs,
+      seed: this.seed,
+      boards: this.boards.map((b) => ({
+        id: b.id,
+        kind: b.kind,
+        random: { min: b.random.min, max: b.random.max },
+        pattern: { multiples: [...b.pattern.multiples], start: b.pattern.start },
+        rounds: b.rounds,
+        cells: [...b.cells],
+        pinned: [...b.pinned],
+      })),
+    };
+    if (this.plan !== null) snap.plan = clonePlan(this.plan);
+    return snap;
+  }
+
+  applySnapshot(snap: SharedComposePlanV1): void {
+    if (snap.version !== 1) return;
+    this.modeId = snap.modeId;
+    this.pool = snap.pool;
+    this.timeBudgetMs = snap.timeBudgetMs;
+    this.seed = snap.seed;
+    this.boards = snap.boards.map((b) => ({
+      id: b.id,
+      kind: b.kind,
+      random: { min: b.random.min, max: b.random.max },
+      pattern: { multiples: [...b.pattern.multiples], start: b.pattern.start },
+      rounds: b.rounds,
+      cells: [...b.cells],
+      pinned: new Set(b.pinned),
+    }));
+    this.plan = snap.plan ? clonePlan(snap.plan) : null;
+    this.lastError = null;
+  }
+
+  /** Build the shareable URL (window.location based) for the current plan. */
+  async buildShareUrl(): Promise<string> {
+    const encoded = await encodeShareable(this.snapshot());
+    if (typeof window === "undefined") return encoded;
+    writeHash("plan", encoded, COMPOSE_PLAN_SCHEMA);
+    return window.location.href;
+  }
+
+  /** Try to rehydrate from the URL hash. No-op when nothing is set. */
+  async loadFromUrl(): Promise<boolean> {
+    const raw = readHash("plan", COMPOSE_PLAN_SCHEMA);
+    if (raw === null) return false;
+    const decoded = await decodeShareable<SharedComposePlanV1>(raw);
+    if (decoded === null) return false;
+    runInAction(() => this.applySnapshot(decoded));
+    return true;
+  }
+
   async generate(): Promise<void> {
     if (this.isGenerating) return;
     this.isGenerating = true;
@@ -195,6 +266,75 @@ function makeBoard(kind: BoardKind, range: { min: number; max: number }): BoardC
   };
   board.cells = regenerateCells(board);
   return board;
+}
+
+// ---------------------------------------------------------------------------
+//  Shared-plan envelope + URL hash schema
+//
+//  Independently versioned so the URL format can evolve without breaking
+//  older permalinks. The hash util only sees an opaque string —
+//  compression and JSON parsing happen in `compressedHashCodec`.
+// ---------------------------------------------------------------------------
+
+export interface SharedBoardV1 {
+  readonly id: string;
+  readonly kind: BoardKind;
+  readonly random: { readonly min: number; readonly max: number };
+  readonly pattern: { readonly multiples: readonly number[]; readonly start: number };
+  readonly rounds: number;
+  readonly cells: readonly number[];
+  readonly pinned: readonly number[];
+}
+
+export interface SharedComposePlanV1 {
+  version: 1;
+  modeId: ComposeModeId;
+  pool: CandidatePool;
+  timeBudgetMs: number;
+  seed: number | null;
+  boards: SharedBoardV1[];
+  plan?: CompetitionPlan;
+}
+
+/**
+ * Trivial pass-through schema. The compressed payload is already
+ * URL-safe (`v1.{base64url}`), so the hash util just stores it
+ * verbatim.
+ */
+const COMPOSE_PLAN_SCHEMA: HashSchema<string> = {
+  encode(value: string): string {
+    return value;
+  },
+  decode(raw: string): string | null {
+    return raw.length === 0 ? null : raw;
+  },
+};
+
+function clonePlan(plan: CompetitionPlan): CompetitionPlan {
+  return {
+    config: {
+      modeId: plan.config.modeId,
+      pool: plan.config.pool,
+      timeBudgetMs: plan.config.timeBudgetMs,
+      ...(plan.config.seed !== undefined ? { seed: plan.config.seed } : {}),
+      boards: plan.config.boards.map((b) => ({
+        id: b.id,
+        cells: [...b.cells],
+        rounds: b.rounds,
+      })),
+    },
+    results: plan.results.map((r) => ({
+      boardId: r.boardId,
+      rounds: r.rounds.map((round) => ({
+        index: round.index,
+        playerA: { dice: [...round.playerA.dice], expectedScore: round.playerA.expectedScore },
+        playerB: { dice: [...round.playerB.dice], expectedScore: round.playerB.expectedScore },
+        delta: round.delta,
+      })),
+      totals: { playerA: r.totals.playerA, playerB: r.totals.playerB },
+    })),
+    elapsedMs: plan.elapsedMs,
+  };
 }
 
 function regenerateCells(cfg: BoardConfig): number[] {

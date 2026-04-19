@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "id": "almanac",
+    "displayName": "Almanac",
+    "version": "1.0.0",
+    "summary": "Quiet parchment editorial reference book with oxblood accents and antique rules.",
+    "tags": ["light", "editorial", "warm"]
+  },
+  "extends": "tabletop",
+  "tokens": {
+    "color": {
+      "bg": "#fbf7ee",
+      "surface": "#ffffff",
+      "ink": "#1a1612",
+      "inkMuted": "#5a4f3f",
+      "accent": "#6f1f1f",
+      "rule": "#d6c79f",
+      "success": "#3f6b32",
+      "warning": "#a87a1f",
+      "danger": "#8b1a1a",
+      "extras": {
+        "vellum": "#f1e6cf",
+        "ochre": "#c8a24c",
+        "russet": "#7c2c1c"
+      }
+    },
+    "typography": {
+      "fontFamilySerif": "\"Source Serif Pro\", \"Georgia\", serif",
+      "fontFamilySans": "\"Inter\", \"Helvetica Neue\", Arial, sans-serif"
+    }
+  }
+}

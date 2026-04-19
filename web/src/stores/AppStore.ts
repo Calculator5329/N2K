@@ -60,7 +60,7 @@ export class AppStore {
       favorites: this.favorites,
     });
     this.compare = new CompareStore({ dataset: services.dataset });
-    this.visualize = new VisualizeStore({ explore: this.explore });
+    this.visualize = new VisualizeStore({ explore: this.explore, dataset: services.dataset });
     this.compose = new ComposeStore({ competition: services.competition });
     this.play = new PlayStore();
   }

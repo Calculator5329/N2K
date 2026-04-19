@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "id": "vaporwave",
+    "displayName": "Vaporwave",
+    "version": "1.0.0",
+    "summary": "90s mall sunset — neon pink and cyan over deep magenta, italic display vibes.",
+    "tags": ["dark", "neon", "playful"]
+  },
+  "extends": "tabletop",
+  "tokens": {
+    "color": {
+      "bg": "#1a0f3d",
+      "surface": "#2a1758",
+      "ink": "#f8c8ff",
+      "inkMuted": "#b390d1",
+      "accent": "#ff61b6",
+      "rule": "#5c2c8a",
+      "success": "#84e0fc",
+      "warning": "#ffd498",
+      "danger": "#ff61b6",
+      "extras": {
+        "cyan": "#84e0fc",
+        "magenta": "#ff61b6",
+        "sunset": "#ffd498"
+      }
+    },
+    "typography": {
+      "fontFamilySans": "\"Inter\", \"Helvetica Neue\", Arial, sans-serif"
+    },
+    "radius": {
+      "card": "6px",
+      "chip": "999px"
+    }
+  }
+}

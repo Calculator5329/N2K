@@ -13,16 +13,26 @@
 import type { Theme } from "../types.js";
 
 import tabletop from "./tabletop.theme.json" with { type: "json" };
+import almanac from "./almanac.theme.json" with { type: "json" };
+import blueprint from "./blueprint.theme.json" with { type: "json" };
 import ember from "./ember.theme.json" with { type: "json" };
 import frost from "./frost.theme.json" with { type: "json" };
+import manuscript from "./manuscript.theme.json" with { type: "json" };
 import noir from "./noir.theme.json" with { type: "json" };
+import phosphor from "./phosphor.theme.json" with { type: "json" };
+import vaporwave from "./vaporwave.theme.json" with { type: "json" };
 import verdant from "./verdant.theme.json" with { type: "json" };
 
 export const BUNDLED_THEMES: readonly Theme[] = [
   tabletop as Theme,
+  almanac as Theme,
+  blueprint as Theme,
   ember as Theme,
   frost as Theme,
+  manuscript as Theme,
   noir as Theme,
+  phosphor as Theme,
+  vaporwave as Theme,
   verdant as Theme,
 ];
 

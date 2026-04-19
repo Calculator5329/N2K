@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "id": "blueprint",
+    "displayName": "Blueprint",
+    "version": "1.0.0",
+    "summary": "Engineering drafting sheet — cyan ink, drafting grid, ochre call-outs.",
+    "tags": ["dark", "technical", "blue"]
+  },
+  "extends": "tabletop",
+  "tokens": {
+    "color": {
+      "bg": "#0e2a52",
+      "surface": "#16386a",
+      "ink": "#d8ecff",
+      "inkMuted": "#8eb6e0",
+      "accent": "#ffc857",
+      "rule": "#3678bc",
+      "success": "#7be0a4",
+      "warning": "#ffc857",
+      "danger": "#ff6f6f",
+      "extras": {
+        "deepBlueprint": "#0a1f3d",
+        "draftGrid": "#3678bc",
+        "revisionRed": "#dc3c3c"
+      }
+    },
+    "typography": {
+      "fontFamilyMono": "\"JetBrains Mono\", \"Fira Code\", Menlo, monospace",
+      "fontFamilySans": "\"Inter\", \"Helvetica Neue\", Arial, sans-serif"
+    },
+    "shadow": {
+      "card": "0 1px 2px rgba(0, 10, 30, 0.4), 0 4px 12px rgba(0, 10, 30, 0.3)",
+      "popover": "0 6px 20px rgba(0, 10, 30, 0.5), 0 24px 48px rgba(0, 10, 30, 0.4)"
+    }
+  }
+}

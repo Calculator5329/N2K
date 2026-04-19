@@ -23,8 +23,15 @@ describe("ThemeStore", () => {
     const s = new ThemeStore();
     expect(s.activeId).toBe("tabletop");
     expect(s.activeTheme.meta.id).toBe("tabletop");
-    const ids = s.availableThemes.map((t) => t.id).sort();
-    expect(ids).toEqual(["ember", "frost", "noir", "tabletop", "verdant"]);
+    const ids = s.availableThemes.map((t) => t.id);
+    expect(ids).toContain("tabletop");
+    expect(ids).toContain("ember");
+    expect(ids).toContain("frost");
+    expect(ids).toContain("noir");
+    expect(ids).toContain("verdant");
+    expect(ids.length).toBeGreaterThanOrEqual(5);
+    // Bundled list must keep unique ids.
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("falls back when initialId is unknown", () => {

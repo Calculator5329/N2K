@@ -63,6 +63,13 @@ export class ExploreStore {
   };
   sortKey: SortKey = "avgDifficulty";
   sortDir: SortDir = "asc";
+  /**
+   * Optional secondary sort stack — additional `{key, dir}` entries
+   * applied as tiebreakers in order. The primary `sortKey`/`sortDir`
+   * is always evaluated first; this array only kicks in when two
+   * rows tie on the primary key.
+   */
+  secondarySorts: ReadonlyArray<{ key: SortKey; dir: SortDir }> = [];
 
   private readonly tupleIndex: TupleIndexService;
   readonly favorites: FavoritesStore;
@@ -86,6 +93,7 @@ export class ExploreStore {
       filters: observable,
       sortKey: observable,
       sortDir: observable,
+      secondarySorts: observable.ref,
       mode: computed,
       filteredSorted: computed,
       selectedStat: computed,
@@ -95,6 +103,9 @@ export class ExploreStore {
       setMinSolvable: action,
       setAvgDifficultyRange: action,
       setSort: action,
+      addSecondarySort: action,
+      removeSecondarySort: action,
+      clearSecondarySorts: action,
       selectTuple: action,
       clearSelection: action,
     });
@@ -131,11 +142,17 @@ export class ExploreStore {
     if (f.avgDifficultyMax !== null) {
       rows = rows.filter((s) => s.avgDifficulty <= f.avgDifficultyMax!);
     }
-    const dir = this.sortDir === "asc" ? 1 : -1;
-    const key = this.sortKey;
+    const primaryDir = this.sortDir === "asc" ? 1 : -1;
+    const primaryKey = this.sortKey;
+    const secondary = this.secondarySorts;
     return [...rows].sort((a, b) => {
-      const cmp = compareStat(a, b, key);
-      return cmp * dir;
+      const primary = compareStat(a, b, primaryKey) * primaryDir;
+      if (primary !== 0) return primary;
+      for (const s of secondary) {
+        const cmp = compareStat(a, b, s.key) * (s.dir === "asc" ? 1 : -1);
+        if (cmp !== 0) return cmp;
+      }
+      return 0;
     });
   }
 
@@ -173,6 +190,35 @@ export class ExploreStore {
       this.sortKey = key;
       this.sortDir = key === "dice" || key === "minTarget" ? "asc" : "asc";
     }
+    // Clicking a header always resets the secondary stack — that's the
+    // common case. Use shift-click (`addSecondarySort`) to stack.
+    this.secondarySorts = [];
+  }
+
+  /**
+   * Add (or toggle the direction of) a secondary sort key. If the key
+   * is already in the secondary stack, its direction flips. If it's
+   * the same as the primary key, this is a no-op.
+   */
+  addSecondarySort(key: SortKey): void {
+    if (key === this.sortKey) return;
+    const existingIdx = this.secondarySorts.findIndex((s) => s.key === key);
+    if (existingIdx >= 0) {
+      const existing = this.secondarySorts[existingIdx]!;
+      const next = [...this.secondarySorts];
+      next[existingIdx] = { key, dir: existing.dir === "asc" ? "desc" : "asc" };
+      this.secondarySorts = next;
+      return;
+    }
+    this.secondarySorts = [...this.secondarySorts, { key, dir: "asc" }];
+  }
+
+  removeSecondarySort(key: SortKey): void {
+    this.secondarySorts = this.secondarySorts.filter((s) => s.key !== key);
+  }
+
+  clearSecondarySorts(): void {
+    this.secondarySorts = [];
   }
 
   selectTuple(stat: TupleStat | null): void {

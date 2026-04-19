@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "id": "phosphor",
+    "displayName": "Phosphor",
+    "version": "1.0.0",
+    "summary": "Late-night CRT terminal reissue — phosphor green text on near-black, amber warning glow.",
+    "tags": ["dark", "monospace", "retro"]
+  },
+  "extends": "tabletop",
+  "tokens": {
+    "color": {
+      "bg": "#050706",
+      "surface": "#0e1410",
+      "ink": "#7fe9ab",
+      "inkMuted": "#3f8a60",
+      "accent": "#ffb347",
+      "rule": "#1f3a2a",
+      "success": "#7fe9ab",
+      "warning": "#ffb347",
+      "danger": "#ff6f6f",
+      "extras": {
+        "scanline": "#0a1a12",
+        "glow": "#a5e069"
+      }
+    },
+    "typography": {
+      "fontFamilySans": "\"JetBrains Mono\", \"Fira Code\", Menlo, monospace",
+      "fontFamilySerif": "\"JetBrains Mono\", \"Fira Code\", Menlo, monospace",
+      "fontFamilyMono": "\"JetBrains Mono\", \"Fira Code\", Menlo, monospace"
+    },
+    "radius": {
+      "card": "4px",
+      "chip": "4px"
+    }
+  }
+}

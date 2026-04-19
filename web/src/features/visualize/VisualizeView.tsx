@@ -10,10 +10,10 @@
  * after Explore is instantaneous.
  */
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAppStore } from "../../stores/AppStoreContext.js";
 import { tierForDifficulty } from "../lookup/difficultyTier.js";
-import type { TargetCell } from "../../stores/VisualizeStore.js";
+import type { TargetCell, VisualizeStore } from "../../stores/VisualizeStore.js";
 
 type AtlasMode = "easiest" | "hardest" | "coverage";
 
@@ -76,6 +76,16 @@ export const VisualizeView = observer(function VisualizeView() {
           <Scatter points={scatter} />
         </Card>
       </div>
+
+      <Card>
+        <h3 className="text-sm font-semibold mb-2">Coverage gaps</h3>
+        <CoverageGaps store={visualize} />
+      </Card>
+
+      <Card>
+        <h3 className="text-sm font-semibold mb-2">Per-tuple sparklines</h3>
+        <SmallMultiples store={visualize} />
+      </Card>
     </div>
   );
 });
@@ -241,6 +251,291 @@ function Scatter(props: { points: readonly { dice: readonly number[]; solvable: 
           </circle>
         );
       })}
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+//  Coverage gaps panel
+// ---------------------------------------------------------------------------
+
+const CoverageGaps = observer(function CoverageGaps({ store }: { store: VisualizeStore }) {
+  const cov = store.coverage;
+  const peak = Math.max(1, ...cov.coverageBuckets);
+
+  if (cov.totalTargets === 0) {
+    return <Empty message="Index is still loading." />;
+  }
+
+  return (
+    <div>
+      <p className="text-xs mb-3 leading-relaxed" style={{ color: "var(--color-ink-muted)" }}>
+        {cov.unreachable === 0 ? (
+          <>
+            <strong style={{ color: "var(--color-ink)" }}>{cov.reachable}</strong>
+            {" "}of {cov.totalTargets} targets are reachable from at least one tuple — no
+            global gaps. The fragile targets below are the ones only a handful of tuples can solve.
+          </>
+        ) : (
+          <>
+            <strong style={{ color: "var(--color-danger)" }}>{cov.unreachable}</strong>
+            {" "}of {cov.totalTargets} targets cannot be reached from any indexed tuple.
+          </>
+        )}
+      </p>
+
+      <div className="mb-4">
+        <div className="text-[10px] uppercase tracking-wide mb-1" style={{ color: "var(--color-ink-muted)" }}>
+          How many tuples solve each reachable target
+        </div>
+        <div className="flex items-end gap-[2px]" style={{ height: "4rem" }}>
+          {cov.coverageBuckets.map((count, i) => {
+            const heightPct = (count / peak) * 100;
+            const t = cov.coverageBuckets.length > 1 ? i / (cov.coverageBuckets.length - 1) : 0;
+            const opacity = (0.85 - t * 0.55).toFixed(2);
+            return (
+              <div
+                key={i}
+                className="flex-1 h-full flex flex-col justify-end"
+                title={`bucket ${i + 1}: ${count} target${count === 1 ? "" : "s"}`}
+              >
+                <div
+                  style={{
+                    height: `${heightPct}%`,
+                    minHeight: count > 0 ? "2px" : "0",
+                    background: `color-mix(in oklab, var(--color-accent) ${Math.round(parseFloat(opacity) * 100)}%, transparent)`,
+                    borderRadius: "1px",
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-1 flex justify-between text-[10px]" style={{ color: "var(--color-ink-muted)" }}>
+          <span>fragile · {cov.minCoverage}</span>
+          <span>covered · {cov.maxCoverage}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <div className="text-[10px] uppercase tracking-wide mb-2" style={{ color: "var(--color-ink-muted)" }}>
+            Most fragile targets
+          </div>
+          <ul className="space-y-1 text-xs">
+            {cov.fragile.map((cell) => (
+              <li
+                key={cell.target}
+                className="flex items-center justify-between gap-2 py-1"
+                style={{ borderBottom: "1px solid var(--color-rule)" }}
+              >
+                <span className="tabular-nums font-mono" style={{ color: "var(--color-accent)" }}>
+                  {cell.target}
+                </span>
+                <span style={{ color: "var(--color-ink-muted)" }}>
+                  {cell.coverage} tuple{cell.coverage === 1 ? "" : "s"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wide mb-2" style={{ color: "var(--color-ink-muted)" }}>
+            Tuples with the worst coverage
+          </div>
+          <ul className="space-y-1 text-xs">
+            {cov.worstCovered.map((s) => {
+              const missing = cov.totalTargets - s.solvableCount;
+              return (
+                <li
+                  key={s.dice.join("-")}
+                  className="flex items-center justify-between gap-2 py-1"
+                  style={{ borderBottom: "1px solid var(--color-rule)" }}
+                >
+                  <span className="font-mono">{s.dice.join(" / ")}</span>
+                  <span style={{ color: "var(--color-danger)" }}>
+                    {missing} miss
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ---------------------------------------------------------------------------
+//  Small-multiples grid (per-tuple sparklines)
+// ---------------------------------------------------------------------------
+
+const SmallMultiples = observer(function SmallMultiples({ store }: { store: VisualizeStore }) {
+  const { explore, favorites } = useAppStore();
+  const [showHardest, setShowHardest] = useState(false);
+  const [showEasiest, setShowEasiest] = useState(true);
+
+  const dice = useMemo(() => {
+    const seen = new Set<string>();
+    const out: number[][] = [];
+    const add = (d: readonly number[]): void => {
+      const k = d.join(",");
+      if (seen.has(k)) return;
+      seen.add(k);
+      out.push([...d]);
+    };
+    for (const fav of favorites.forMode(store.mode.id)) add(fav);
+    const stats = explore.stats;
+    if (showEasiest) {
+      const easiest = [...stats]
+        .filter((s) => s.solvableCount > 0)
+        .sort((a, b) => a.avgDifficulty - b.avgDifficulty)
+        .slice(0, 6);
+      for (const s of easiest) add(s.dice);
+    }
+    if (showHardest) {
+      const hardest = [...stats]
+        .filter((s) => s.solvableCount > 0)
+        .sort((a, b) => b.avgDifficulty - a.avgDifficulty)
+        .slice(0, 6);
+      for (const s of hardest) add(s.dice);
+    }
+    return out;
+  }, [explore.stats, favorites, store.mode.id, showEasiest, showHardest]);
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
+          {dice.length} tuple{dice.length === 1 ? "" : "s"} — each sparkline runs target left → right,
+          height = difficulty. Gaps mark unreachable targets.
+        </p>
+        <div className="flex gap-1">
+          <ToggleChip active={showEasiest} onClick={() => setShowEasiest((v) => !v)}>
+            + 6 easiest
+          </ToggleChip>
+          <ToggleChip active={showHardest} onClick={() => setShowHardest((v) => !v)}>
+            + 6 hardest
+          </ToggleChip>
+        </div>
+      </div>
+
+      {dice.length === 0 ? (
+        <Empty message="Star a tuple in Lookup, or toggle the buttons above to populate this grid." />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {dice.map((d) => (
+            <SparklineCard key={d.join("-")} dice={d} store={store} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+function ToggleChip(props: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={props.onClick}
+      aria-pressed={props.active}
+      className="px-2.5 py-1 text-xs rounded"
+      style={{
+        background: props.active ? "var(--color-accent)" : "transparent",
+        color: props.active ? "var(--color-bg)" : "var(--color-ink)",
+        border: "1px solid var(--color-rule)",
+      }}
+    >
+      {props.children}
+    </button>
+  );
+}
+
+const SparklineCard = observer(function SparklineCard({
+  dice,
+  store,
+}: {
+  dice: readonly number[];
+  store: VisualizeStore;
+}) {
+  const profile = store.tupleProfile(dice);
+  const targetMin = store.mode.targetRange.min;
+  const targetMax = store.mode.targetRange.max;
+
+  return (
+    <div
+      className="px-3 py-2"
+      style={{
+        background: "color-mix(in oklab, var(--color-bg) 50%, var(--color-surface))",
+        border: "1px solid var(--color-rule)",
+        borderRadius: "var(--radius-card)",
+      }}
+    >
+      <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
+        <span className="font-mono">{dice.join(" / ")}</span>
+        {profile.kind === "ready" && (
+          <span className="tabular-nums" style={{ color: "var(--color-ink-muted)" }}>
+            {profile.points.length}/{targetMax - targetMin + 1}
+          </span>
+        )}
+      </div>
+      <div style={{ height: "36px" }}>
+        {profile.kind === "ready" ? (
+          <Sparkline points={profile.points} targetMin={targetMin} targetMax={targetMax} />
+        ) : profile.kind === "error" ? (
+          <div className="text-[10px]" style={{ color: "var(--color-danger)" }}>load failed</div>
+        ) : (
+          <div className="w-full h-full" style={{ background: "color-mix(in oklab, var(--color-rule) 40%, transparent)", borderRadius: "2px" }} />
+        )}
+      </div>
+    </div>
+  );
+});
+
+function Sparkline(props: {
+  points: readonly { target: number; difficulty: number }[];
+  targetMin: number;
+  targetMax: number;
+}) {
+  const { points, targetMin, targetMax } = props;
+  const W = 200;
+  const H = 36;
+  const span = Math.max(1, targetMax - targetMin);
+  const x = (t: number) => ((t - targetMin) / span) * W;
+  const y = (d: number) => H - (Math.max(0, Math.min(100, d)) / 100) * H;
+
+  // Split into runs of consecutive targets so unreachable gaps stay visible.
+  const sorted = [...points].sort((a, b) => a.target - b.target);
+  const runs: Array<typeof sorted> = [];
+  let current: typeof sorted = [];
+  for (const p of sorted) {
+    if (current.length === 0 || p.target === current[current.length - 1]!.target + 1) {
+      current.push(p);
+    } else {
+      runs.push(current);
+      current = [p];
+    }
+  }
+  if (current.length > 0) runs.push(current);
+
+  const avg =
+    points.length > 0
+      ? points.reduce((acc, p) => acc + p.difficulty, 0) / points.length
+      : 50;
+  const seriesColor = tierForDifficulty(avg).chipBg.replace(/0\.\d+/, "0.85");
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block w-full h-full">
+      <line x1={0} x2={W} y1={H - 0.5} y2={H - 0.5} stroke="var(--color-rule)" strokeWidth={0.5} />
+      {runs.map((run, i) => (
+        <polyline
+          key={i}
+          points={run.map((p) => `${x(p.target)},${y(p.difficulty)}`).join(" ")}
+          fill="none"
+          stroke={seriesColor}
+          strokeWidth={1.4}
+        />
+      ))}
     </svg>
   );
 }

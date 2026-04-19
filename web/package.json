@@ -12,6 +12,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "docx": "^9.6.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "mobx": "^6.13.5",
     "mobx-react-lite": "^4.0.7",
     "react": "^18.3.1",

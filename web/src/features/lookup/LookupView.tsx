@@ -3,6 +3,7 @@ import { useAppStore } from "../../stores/AppStoreContext.js";
 import { DicePicker } from "./DicePicker.js";
 import { ModePicker } from "./ModePicker.js";
 import { TargetGrid } from "./TargetGrid.js";
+import { TargetNeighborhood } from "./TargetNeighborhood.js";
 import { SolutionsPanel } from "./SolutionsPanel.js";
 
 /**
@@ -36,6 +37,7 @@ export const LookupView = observer(function LookupView() {
         <DicePicker store={store} />
       </section>
 
+      <TargetNeighborhood store={store} />
       <TargetGrid store={store} />
       <SolutionsPanel store={store} />
     </div>

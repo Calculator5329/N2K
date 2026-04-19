@@ -2,6 +2,46 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-19 — Visualize parity + theme palette expansion
+
+Final batch of v1 → v2 parity work after the share/export/lookup/explore/compose
+follow-ups committed earlier this session.
+
+- **VisualizeView — Coverage gaps panel.** New `coverage` computed on
+  `VisualizeStore` summarises reachable vs. unreachable target counts,
+  surfaces the eight most fragile reachable targets (lowest tuple
+  coverage), the eight tuples missing the most targets, and a 20-bin
+  histogram of "how many tuples solve each target". Renders below the
+  histogram + scatter row with the same `Card` shell as the other
+  panels.
+- **VisualizeView — Per-tuple sparklines (small multiples).** New
+  `tupleProfile(dice)` accessor on `VisualizeStore` lazily fetches a
+  tuple's per-target difficulty curve via the wired `DatasetClient`,
+  caches it in an observable map, and feeds a `<Sparkline>` SVG
+  (target → x, difficulty → y, gaps preserved as broken polylines).
+  The `<SmallMultiples>` grid pulls in favorited tuples for the active
+  mode plus opt-in "+ 6 easiest" / "+ 6 hardest" chips so users can
+  diff curves at a glance without leaving the Visualize surface.
+- **`AppStore` wiring.** `VisualizeStore` now receives the dataset
+  client alongside `ExploreStore`, keeping the per-tuple fetch in the
+  store layer (UI components stay observation-only).
+- **Five new bundled theme editions.** Ported `almanac`, `blueprint`,
+  `manuscript`, `phosphor`, and `vaporwave` from v1's swatches into
+  v2's token shape, all extending `tabletop` so the canonical
+  foundation pattern still holds. Bundled count: 5 → 10.
+  `tests/themes/editions.test.ts` (≥5 themes, all-extends-tabletop,
+  unique ids, summaries + tags) still passes; `web/tests/ThemeStore`
+  no longer hard-codes the bundled list — it asserts the canonical
+  five are present and the set has unique ids, so future additions
+  don't churn the test.
+
+Verification:
+
+- `npx tsc -b` clean in both `v2/` and `v2/web/`.
+- `npx vitest run` — 274/274 root tests + 60/60 web tests green
+  (`workerPool` concurrency check is timing-flaky on Windows; passes
+  on re-run, unrelated to this change).
+
 ## 2026-04-19 — Test stabilization on `main`
 
 **All suites green.** 274 root tests + 60 web tests now pass against the

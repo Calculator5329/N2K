@@ -9,7 +9,14 @@
 import { observer } from "mobx-react-lite";
 import { useAppStore } from "../../stores/AppStoreContext.js";
 import type { BoardConfig, ComposeModeId } from "../../stores/ComposeStore.js";
-import type { CompetitionPlan } from "../../services/competitionService.js";
+import type { CandidatePool, CompetitionPlan } from "../../services/competitionService.js";
+import { CANDIDATE_POOL_META } from "../../services/competitionService.js";
+import {
+  downloadBlob,
+  exportToDocx,
+  exportToPdf,
+  planToExportData,
+} from "../../services/competitionExport.js";
 
 export const ComposeView = observer(function ComposeView() {
   const { compose } = useAppStore();
@@ -121,12 +128,16 @@ const GlobalControls = observer(function GlobalControls() {
       <Field label="Candidate pool">
         <select
           value={compose.pool}
-          onChange={(e) => compose.setPool(e.target.value as "standard" | "aether-sample")}
+          onChange={(e) => compose.setPool(e.target.value as CandidatePool)}
           className="px-2 py-1 text-sm rounded border"
           style={{ background: "var(--color-bg)", color: "var(--color-ink)", borderColor: "var(--color-rule)" }}
+          title={CANDIDATE_POOL_META.find((m) => m.id === compose.pool)?.description ?? ""}
         >
-          <option value="standard">Standard 2..20</option>
-          <option value="aether-sample">Æther sample (-5..20)</option>
+          {CANDIDATE_POOL_META.map((m) => (
+            <option key={m.id} value={m.id} title={m.description}>
+              {m.label}
+            </option>
+          ))}
         </select>
       </Field>
       <Field label="Time budget">
@@ -313,7 +324,44 @@ const BoardGrid = observer(function BoardGrid(props: { board: BoardConfig }) {
   );
 });
 
-function PlanResults(props: { plan: CompetitionPlan }) {
+const ShareButton = observer(function ShareButton() {
+  const { compose } = useAppStore();
+  const onShare = async () => {
+    const url = await compose.buildShareUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      // eslint-disable-next-line no-alert -- explicit user-triggered confirmation
+      window.alert("Share link copied to clipboard.\n\n" + url);
+    } catch {
+      // eslint-disable-next-line no-alert -- fallback when clipboard is blocked
+      window.prompt("Copy this share link", url);
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={onShare}
+      className="px-2.5 py-1 text-xs rounded border"
+      style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
+    >
+      Share plan
+    </button>
+  );
+});
+
+const PlanResults = observer(function PlanResults(props: { plan: CompetitionPlan }) {
+  const { compose } = useAppStore();
+  const stamp = () => Date.now();
+  const exportPdf = async () => {
+    const data = planToExportData(props.plan, compose.boards);
+    const blob = await exportToPdf(data);
+    downloadBlob(blob, `n2k-competition-${stamp()}.pdf`);
+  };
+  const exportDocx = async () => {
+    const data = planToExportData(props.plan, compose.boards);
+    const blob = await exportToDocx(data);
+    downloadBlob(blob, `n2k-competition-${stamp()}.docx`);
+  };
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(planToJson(props.plan), null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -359,7 +407,8 @@ function PlanResults(props: { plan: CompetitionPlan }) {
               Generated in {(props.plan.elapsedMs / 1000).toFixed(1)} s.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <ShareButton />
             <button
               type="button"
               onClick={exportJson}
@@ -378,6 +427,22 @@ function PlanResults(props: { plan: CompetitionPlan }) {
             </button>
             <button
               type="button"
+              onClick={() => void exportPdf()}
+              className="px-2.5 py-1 text-xs rounded border"
+              style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
+            >
+              Export PDF
+            </button>
+            <button
+              type="button"
+              onClick={() => void exportDocx()}
+              className="px-2.5 py-1 text-xs rounded border"
+              style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
+            >
+              Export Word
+            </button>
+            <button
+              type="button"
               onClick={() => window.print()}
               className="px-2.5 py-1 text-xs rounded border"
               style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
@@ -386,10 +451,6 @@ function PlanResults(props: { plan: CompetitionPlan }) {
             </button>
           </div>
         </div>
-        <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
-          PDF / DOCX export ships once the print stylesheets are themed for export rather than browser layout — the JSON
-          above contains every input and output needed to recreate them externally.
-        </p>
       </Card>
 
       {props.plan.results.map((r) => (
@@ -428,7 +489,7 @@ function PlanResults(props: { plan: CompetitionPlan }) {
       ))}
     </div>
   );
-}
+});
 
 function planToJson(plan: CompetitionPlan): object {
   return {

@@ -76,21 +76,42 @@ export const ExploreView = observer(function ExploreView() {
           >
             <tr>
               <th className="px-2 py-2 text-left font-medium" style={{ width: "32px" }}></th>
-              {COLUMN_DEFS.map((c) => (
-                <th
-                  key={c.key}
-                  className={`px-3 py-2 font-medium select-none cursor-pointer ${
-                    c.align === "right" ? "text-right" : "text-left"
-                  }`}
-                  onClick={() => explore.setSort(c.key)}
-                  style={{ color: "var(--color-ink-muted)" }}
-                >
-                  {c.label}
-                  {explore.sortKey === c.key ? (
-                    <span aria-hidden="true">{explore.sortDir === "asc" ? " ▲" : " ▼"}</span>
-                  ) : null}
-                </th>
-              ))}
+              {COLUMN_DEFS.map((c) => {
+                const secondaryIdx = explore.secondarySorts.findIndex((s) => s.key === c.key);
+                const secondary = secondaryIdx >= 0 ? explore.secondarySorts[secondaryIdx]! : null;
+                const arrow = (dir: "asc" | "desc") => (dir === "asc" ? "▲" : "▼");
+                return (
+                  <th
+                    key={c.key}
+                    className={`px-3 py-2 font-medium select-none cursor-pointer ${
+                      c.align === "right" ? "text-right" : "text-left"
+                    }`}
+                    onClick={(e) => {
+                      if (e.shiftKey) explore.addSecondarySort(c.key);
+                      else explore.setSort(c.key);
+                    }}
+                    onContextMenu={(e) => {
+                      if (secondary !== null) {
+                        e.preventDefault();
+                        explore.removeSecondarySort(c.key);
+                      }
+                    }}
+                    style={{ color: "var(--color-ink-muted)" }}
+                    title="Click to sort · Shift-click to add secondary · Right-click to remove"
+                  >
+                    {c.label}
+                    {explore.sortKey === c.key ? (
+                      <span aria-hidden="true"> {arrow(explore.sortDir)}</span>
+                    ) : null}
+                    {secondary !== null ? (
+                      <span aria-hidden="true" style={{ opacity: 0.6 }}>
+                        {" "}
+                        {secondaryIdx + 2}{arrow(secondary.dir)}
+                      </span>
+                    ) : null}
+                  </th>
+                );
+              })}
               <th className="px-3 py-2 text-right font-medium" style={{ color: "var(--color-ink-muted)" }}>
                 Mix
               </th>

@@ -57,9 +57,12 @@
 
 - [x] **Explore** — `ExploreStore` + `ExploreView`: sortable / filterable tuple index streamed from `LiveTupleIndexService` with a selection drawer and Send-to-Lookup / Send-to-Compare actions.
 - [x] **Compare** — `CompareStore` + `CompareView`: up to four tuples on a SVG difficulty chart with four chart modes, persisted to localStorage.
-- [x] **Visualize** — `VisualizeStore` + `VisualizeView`: atlas heatmap, difficulty histogram, and solvable-vs-difficulty scatter, computed off the `ExploreStore` index.
-- [x] **Gallery** — every bundled theme rendered side-by-side with live activation.
-- [x] **FavoritesStore** — `localStorage`-backed starred-tuple set used by Explore + Compare.
+- [x] **Visualize** — `VisualizeStore` + `VisualizeView`: atlas heatmap, difficulty histogram, solvable-vs-difficulty scatter, **coverage-gaps panel**, and **per-tuple sparkline grid (small multiples)** — all computed off the live tuple index + `DatasetClient`.
+- [x] **Gallery** — every bundled theme rendered side-by-side with live activation. Bundled editions: tabletop, almanac, blueprint, ember, frost, manuscript, noir, phosphor, vaporwave, verdant.
+- [x] **FavoritesStore** — `localStorage`-backed starred-tuple set used by Explore + Compare + Visualize sparklines.
+- [x] **Compose share + export** — compressed URL-hash plan codec, deep-link auto-routing, and PDF / DOCX exporters.
+- [x] **Lookup polish** — favorite-toggle + print sheet on the dice picker, adjacent-target sparkline + keyboard-driven target navigation.
+- [x] **Explore polish** — shift-click multi-column sort with right-click removal.
 - [x] **Test stabilization** — 274 root + 60 web tests green on `main` (2026-04-19).
 
 ## Phase 6 — Platform extensions
