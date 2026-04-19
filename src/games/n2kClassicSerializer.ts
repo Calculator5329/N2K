@@ -29,6 +29,8 @@ interface SerializedConfig {
   readonly initialDicePool: readonly number[];
   readonly turnLimit?: number;
   readonly rngSeed?: number;
+  readonly timeBudget?: number;
+  readonly hardSkipThreshold?: number;
 }
 
 interface SerializedClaim {
@@ -46,6 +48,7 @@ export interface SerializedN2KClassicState {
   readonly currentPlayerIdx: number;
   readonly turn: number;
   readonly consecutivePasses: ReadonlyArray<readonly [PlayerId, number]>;
+  readonly remainingBudget: ReadonlyArray<readonly [PlayerId, number]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -90,8 +93,10 @@ export function serializeState(
   claimed.sort(([a], [b]) => a - b);
 
   const passes: Array<readonly [PlayerId, number]> = [];
+  const budgets: Array<readonly [PlayerId, number]> = [];
   for (const id of state.playerIds) {
     passes.push([id, state.consecutivePasses.get(id) ?? 0]);
+    budgets.push([id, state.remainingBudget.get(id) ?? 0]);
   }
 
   const wireConfig: SerializedConfig = {
@@ -100,6 +105,10 @@ export function serializeState(
     initialDicePool: state.config.initialDicePool,
     ...(state.config.turnLimit !== undefined ? { turnLimit: state.config.turnLimit } : {}),
     ...(state.config.rngSeed !== undefined ? { rngSeed: state.config.rngSeed } : {}),
+    ...(state.config.timeBudget !== undefined ? { timeBudget: state.config.timeBudget } : {}),
+    ...(state.config.hardSkipThreshold !== undefined
+      ? { hardSkipThreshold: state.config.hardSkipThreshold }
+      : {}),
   };
 
   return {
@@ -111,6 +120,7 @@ export function serializeState(
     currentPlayerIdx: state.currentPlayerIdx,
     turn: state.turn,
     consecutivePasses: passes,
+    remainingBudget: budgets,
   };
 }
 
@@ -148,6 +158,10 @@ export function deserializeState(raw: unknown): N2KClassicState {
     initialDicePool: obj.config.initialDicePool,
     ...(obj.config.turnLimit !== undefined ? { turnLimit: obj.config.turnLimit } : {}),
     ...(obj.config.rngSeed !== undefined ? { rngSeed: obj.config.rngSeed } : {}),
+    ...(obj.config.timeBudget !== undefined ? { timeBudget: obj.config.timeBudget } : {}),
+    ...(obj.config.hardSkipThreshold !== undefined
+      ? { hardSkipThreshold: obj.config.hardSkipThreshold }
+      : {}),
   };
 
   const claimed = new Map<number, ClaimedCell>();
@@ -165,6 +179,17 @@ export function deserializeState(raw: unknown): N2KClassicState {
     consecutivePasses.set(id, n);
   }
 
+  // Back-compat: pre-budget wires omit `remainingBudget`. Initialize fresh.
+  const remainingBudget = new Map<PlayerId, number>();
+  const defaultBudget = config.timeBudget ?? 60;
+  if (Array.isArray(obj.remainingBudget)) {
+    for (const [id, n] of obj.remainingBudget as ReadonlyArray<readonly [PlayerId, number]>) {
+      remainingBudget.set(id, n);
+    }
+  } else {
+    for (const id of obj.playerIds) remainingBudget.set(id, defaultBudget);
+  }
+
   return {
     config,
     playerIds: obj.playerIds,
@@ -173,6 +198,7 @@ export function deserializeState(raw: unknown): N2KClassicState {
     currentPlayerIdx: obj.currentPlayerIdx ?? 0,
     turn: obj.turn ?? 0,
     consecutivePasses,
+    remainingBudget,
   };
 }
 

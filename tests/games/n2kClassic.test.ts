@@ -430,7 +430,7 @@ describe("n2kClassicGame.score", () => {
     expect(n2kClassicGame.score(state)).toEqual({ alice: 0, bob: 0 });
   });
 
-  it("sums (target - difficulty) per player", () => {
+  it("sums target per player (difficulty was paid in time budget)", () => {
     const init = n2kClassicGame.init(standardConfig(), [ALICE, BOB]);
     const move: N2KClassicMove = {
       kind: "claim",
@@ -439,8 +439,7 @@ describe("n2kClassicGame.score", () => {
     };
     const next = n2kClassicGame.applyMove(init, move, "alice");
     const scores = n2kClassicGame.score(next);
-    const claim = next.claimed.get(9)!;
-    expect(scores.alice).toBeCloseTo(10 - claim.difficulty);
+    expect(scores.alice).toBe(10);
     expect(scores.bob).toBe(0);
   });
 
