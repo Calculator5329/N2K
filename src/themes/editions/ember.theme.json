@@ -4,9 +4,17 @@
     "displayName": "Ember",
     "version": "1.0.0",
     "summary": "Saturated crimson/amber palette over deep ash. Demonstrates a maximally vivid accent palette.",
-    "tags": ["dark", "warm", "high-saturation"]
+    "tags": ["dark", "warm", "high-saturation"],
+    "tagline": "Pressed in volcanic ink.",
+    "swatches": ["#1a0e0a", "#fff1e2", "#ff6b1a"]
   },
   "extends": "tabletop",
+  "style": {
+    "layout": "frame",
+    "glyph": "tarot",
+    "equation": "pretty",
+    "ornaments": { "ruleStyle": "ornament", "sectionMarker": "✶", "corner": "✦" }
+  },
   "tokens": {
     "color": {
       "bg": "#1a0e0a",

@@ -86,6 +86,26 @@ function validateMeta(value: object, ctx: Ctx): void {
   optionalString(value, "authorId", ctx);
   optionalString(value, "summary", ctx);
   optionalStringArray(value, "tags", ctx);
+  optionalString(value, "tagline", ctx);
+  if (hasKey(value, "swatches")) {
+    const raw = (value as Record<string, unknown>)["swatches"];
+    if (!Array.isArray(raw) || raw.length !== 3) {
+      ctx.errors.push({
+        path: join(ctx, "swatches"),
+        message: "must be a tuple of 3 color strings [surface, ink, accent]",
+      });
+    } else {
+      for (let i = 0; i < raw.length; i++) {
+        const v = raw[i];
+        if (typeof v !== "string" || v.length === 0) {
+          ctx.errors.push({
+            path: `${join(ctx, "swatches")}[${i}]`,
+            message: "must be a non-empty string",
+          });
+        }
+      }
+    }
+  }
   // Discourage stray keys silently — extra unknown fields are allowed but
   // we surface the type so authors notice typos that produce wrong types.
   // (We do NOT reject unknown keys; future fields should be additive.)

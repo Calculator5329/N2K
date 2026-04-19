@@ -20,6 +20,10 @@
  */
 import type { BulkSolution, Mode } from "@platform/core/types.js";
 import { sweepOneTuple } from "@platform/services/solver.js";
+import {
+  getSharedSolverWorkerClient,
+  type SolverWorkerClient,
+} from "./workerSolverClient.js";
 
 /**
  * Result of fetching one dice tuple. The map covers exactly the targets
@@ -136,4 +140,72 @@ export class LiveSolverDatasetClient implements DatasetClient {
 /** Stable cache key for a `(mode, dice)` pair. Order-insensitive on dice. */
 export function chunkKey(mode: Mode, dice: readonly number[]): string {
   return `${mode.id}:${[...dice].sort((a, b) => a - b).join(",")}`;
+}
+
+// ---------------------------------------------------------------------------
+//  WorkerSolverDatasetClient — same as Live, but `sweepOneTuple` runs
+//  on a Web Worker so the main thread isn't blocked for hundreds of
+//  ms during arity-4/5 Æther sweeps.
+// ---------------------------------------------------------------------------
+
+/**
+ * Drop-in replacement for {@link LiveSolverDatasetClient} that pushes
+ * the sweep onto a shared Web Worker (see `workerSolverClient.ts`).
+ *
+ * Same caching semantics — repeated calls with the same `(mode.id,
+ * sorted dice)` reuse the cached chunk. The worker is shared with
+ * `WorkerSolverService` so the page only spawns one thread total.
+ */
+export class WorkerSolverDatasetClient implements DatasetClient {
+  private readonly cache = new Map<string, ChunkData>();
+  private readonly inflight = new Map<string, Promise<ChunkData>>();
+  private readonly client: SolverWorkerClient;
+
+  constructor(client: SolverWorkerClient = getSharedSolverWorkerClient()) {
+    this.client = client;
+  }
+
+  async getChunk(mode: Mode, dice: readonly number[]): Promise<ChunkData> {
+    const key = chunkKey(mode, dice);
+    const cached = this.cache.get(key);
+    if (cached !== undefined) return cached;
+    const pending = this.inflight.get(key);
+    if (pending !== undefined) return pending;
+
+    const job = this.compute(mode, dice).then((data) => {
+      this.cache.set(key, data);
+      this.inflight.delete(key);
+      return data;
+    });
+    this.inflight.set(key, job);
+    return job;
+  }
+
+  async listAvailableTuples(_mode: Mode): Promise<null> {
+    return null;
+  }
+
+  cacheSize(): number {
+    return this.cache.size;
+  }
+
+  reset(): void {
+    this.cache.clear();
+    this.inflight.clear();
+  }
+
+  private async compute(
+    mode: Mode,
+    dice: readonly number[],
+  ): Promise<ChunkData> {
+    const start = Date.now();
+    const solutions = await this.client.sweep(mode, dice);
+    return {
+      mode,
+      dice: [...dice],
+      solutions,
+      source: "computed",
+      elapsedMs: Date.now() - start,
+    };
+  }
 }

@@ -4,9 +4,17 @@
     "displayName": "Verdant",
     "version": "1.0.0",
     "summary": "Mossy forest palette with heavy elevated shadows. Demonstrates the shadow group and a layered surface treatment.",
-    "tags": ["light", "natural", "shadows"]
+    "tags": ["light", "natural", "shadows"],
+    "tagline": "Hand-pressed botanical.",
+    "swatches": ["#eaf0e3", "#1a2a1c", "#3d8b46"]
   },
   "extends": "tabletop",
+  "style": {
+    "layout": "scrapbook",
+    "glyph": "polaroid",
+    "equation": "pretty",
+    "ornaments": { "ruleStyle": "plain", "sectionMarker": "✿" }
+  },
   "tokens": {
     "color": {
       "bg": "#eaf0e3",

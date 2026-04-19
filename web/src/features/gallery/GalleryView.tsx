@@ -11,6 +11,8 @@ import {
   loadBundledThemes,
   type Theme,
 } from "@platform/themes/index.js";
+import { PageHeader } from "../../ui/primitives/PageHeader.js";
+import { navItemById } from "../../ui/layouts/nav.js";
 
 const SAMPLE_DICE = [3, 5, 8] as const;
 const SAMPLE_TARGETS = [12, 24, 39, 64, 96, 144] as const;
@@ -18,14 +20,15 @@ const SAMPLE_TARGETS = [12, 24, 39, 64, 96, 144] as const;
 export const GalleryView = observer(function GalleryView() {
   const { theme } = useAppStore();
   const themes = loadBundledThemes();
+  const item = navItemById("gallery");
   return (
-    <div className="mx-auto max-w-7xl px-6 py-6 space-y-4">
-      <header>
-        <h2 className="text-lg font-semibold">Gallery</h2>
-        <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
-          Every bundled theme rendered with the same demo content. Click a tile to make it active everywhere.
-        </p>
-      </header>
+    <div className="space-y-4">
+      <PageHeader
+        folio={item.folio}
+        eyebrow="Every edition"
+        title="Gallery"
+        dek="Every bundled theme rendered with the same demo content. Click a tile to make it active everywhere."
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {themes.map((t) => (

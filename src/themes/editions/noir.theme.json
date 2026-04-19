@@ -4,9 +4,17 @@
     "displayName": "Noir",
     "version": "1.0.0",
     "summary": "High-contrast black-on-charcoal theme with a single neon accent. Demonstrates dark-mode token swaps over the tabletop foundation.",
-    "tags": ["dark", "high-contrast"]
+    "tags": ["dark", "high-contrast"],
+    "tagline": "Pulped at midnight.",
+    "swatches": ["#0d0d10", "#f4f4f6", "#e0d000"]
   },
   "extends": "tabletop",
+  "style": {
+    "layout": "topbar",
+    "glyph": "newsroom",
+    "equation": "pretty",
+    "ornaments": { "ruleStyle": "dashed", "sectionMarker": "·" }
+  },
   "tokens": {
     "color": {
       "bg": "#0d0d10",

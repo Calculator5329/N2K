@@ -17,6 +17,8 @@ import {
 } from "@platform/services/parsing.js";
 import type { NEquation } from "@platform/core/types.js";
 import type { PlayModeId } from "../../stores/PlayStore.js";
+import { PageHeader } from "../../ui/primitives/PageHeader.js";
+import { navItemById } from "../../ui/layouts/nav.js";
 
 export const PlayView = observer(function PlayView() {
   const { play } = useAppStore();
@@ -27,14 +29,15 @@ export const PlayView = observer(function PlayView() {
 const SetupScreen = observer(function SetupScreen() {
   const { play } = useAppStore();
   const personas = personasForMode(play.mode);
+  const item = navItemById("play");
   return (
-    <div className="mx-auto max-w-3xl px-6 py-8 space-y-4">
-      <header>
-        <h2 className="text-lg font-semibold">Play</h2>
-        <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
-          Solo match against a bot. Claim cells with dice equations; whoever ends with the highest score wins.
-        </p>
-      </header>
+    <div className="space-y-4">
+      <PageHeader
+        folio={item.folio}
+        eyebrow="N2K Classic, vs bots"
+        title="Play"
+        dek="Solo match against a bot. Claim cells with dice equations; whoever ends with the highest score wins."
+      />
       <Card>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Mode">
@@ -94,42 +97,45 @@ const MatchScreen = observer(function MatchScreen() {
   const state = play.state!;
   const board = state.config.board;
   const dice = state.dicePool;
+  const item = navItemById("play");
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-6 space-y-4">
-      <header className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Play — N2K Classic</h2>
-          <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
-            {play.isTerminal
-              ? "Match complete."
-              : play.isMyTurn
-                ? "Your turn — pick a cell to claim."
-                : play.isBotThinking
-                  ? "Bot is thinking…"
-                  : "Bot's turn."}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => play.pass()}
-            disabled={!play.isMyTurn || play.isTerminal}
-            className="px-3 py-1.5 text-sm rounded border"
-            style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
-          >
-            Pass
-          </button>
-          <button
-            type="button"
-            onClick={() => play.restart()}
-            className="px-3 py-1.5 text-sm rounded border"
-            style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
-          >
-            New match
-          </button>
-        </div>
-      </header>
+    <div className="space-y-4">
+      <PageHeader
+        folio={item.folio}
+        eyebrow="N2K Classic, in progress"
+        title="Play"
+        dek={
+          play.isTerminal
+            ? "Match complete."
+            : play.isMyTurn
+              ? "Your turn — pick a cell to claim."
+              : play.isBotThinking
+                ? "Bot is thinking…"
+                : "Bot's turn."
+        }
+        right={
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => play.pass()}
+              disabled={!play.isMyTurn || play.isTerminal}
+              className="px-3 py-1.5 text-sm rounded border"
+              style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
+            >
+              Pass
+            </button>
+            <button
+              type="button"
+              onClick={() => play.restart()}
+              className="px-3 py-1.5 text-sm rounded border"
+              style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
+            >
+              New match
+            </button>
+          </div>
+        }
+      />
 
       <div
         className="px-5 py-4"

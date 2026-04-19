@@ -3,9 +3,13 @@ import { useMemo, useState } from "react";
 import type { LookupStore } from "../../stores/LookupStore.js";
 import { formatExpressionAgainstPool } from "@platform/services/parsing.js";
 import { tierForDifficulty } from "./difficultyTier.js";
+import { VirtualRows } from "../../ui/virtualization/VirtualRows.js";
 
 const TIERS = ["all", "trivial", "easy", "moderate", "hard", "very hard", "extreme", "legendary", "mythic"] as const;
 type Filter = (typeof TIERS)[number];
+
+const ROW_HEIGHT = 40;
+const GRID_COLUMNS = "92px minmax(0, 1fr) 96px 110px";
 
 export interface TargetGridProps {
   readonly store: LookupStore;
@@ -16,11 +20,8 @@ export interface TargetGridProps {
  * each target the dice can hit, sorted by difficulty. Click a row to
  * drill down into "all solutions for this target".
  *
- * Three view states:
- *   - loading (Resource state = "loading", no previous value): skeleton
- *   - error: error message + retry button
- *   - ready / loading-with-previous: the table itself, optionally
- *     dimmed to indicate a refresh is in flight
+ * Row body is virtualized via {@link VirtualRows} so 500+ targets
+ * scroll smoothly even on low-end laptops.
  */
 export const TargetGrid = observer(function TargetGrid({ store }: TargetGridProps) {
   const [filter, setFilter] = useState<Filter>("all");
@@ -117,99 +118,130 @@ export const TargetGrid = observer(function TargetGrid({ store }: TargetGridProp
         <EmptyState message="No targets reachable for this dice tuple under this mode." />
       ) : !hasData && isLoading ? (
         <SkeletonRows />
+      ) : filtered.length === 0 ? (
+        <>
+          <GridHeader />
+          <EmptyState message="No targets match the current filter." />
+        </>
       ) : (
-        <div className="overflow-auto" style={{ maxHeight: "60vh" }}>
-          <table className="w-full text-sm border-collapse">
-            <thead className="sticky top-0" style={{ background: "var(--color-surface)" }}>
-              <tr style={{ color: "var(--color-ink-muted)" }}>
-                <Th>Target</Th>
-                <Th>Easiest equation</Th>
-                <Th align="right">Difficulty</Th>
-                <Th>Tier</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((sol) => {
-                const tier = tierForDifficulty(sol.difficulty);
-                const active = store.selectedTarget === sol.equation.total;
-                return (
-                  <tr
-                    key={sol.equation.total}
-                    onClick={() =>
-                      active ? store.clearTarget() : store.setTarget(sol.equation.total)
-                    }
-                    className="cursor-pointer"
-                    style={{
-                      background: active ? "var(--color-accent-soft, rgba(0,0,0,0.04))" : "transparent",
-                      borderTop: "1px solid var(--color-rule)",
-                    }}
-                  >
-                    <Td mono bold>{sol.equation.total}</Td>
-                    <Td mono>{formatExpressionAgainstPool(sol.equation, store.dice, store.mode)}</Td>
-                    <Td align="right" mono>{sol.difficulty.toFixed(1)}</Td>
-                    <Td>
-                      <span
-                        className="inline-block px-2 py-0.5 rounded text-xs"
-                        style={{ background: tier.chipBg, color: tier.chipFg }}
-                      >
-                        {tier.label}
-                      </span>
-                    </Td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && hasData ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-4 py-6 text-sm italic text-center"
-                    style={{ color: "var(--color-ink-muted)" }}
-                  >
-                    No targets match the current filter.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+        <VirtualRows
+          count={filtered.length}
+          rowHeight={ROW_HEIGHT}
+          maxHeight="60vh"
+          // Resetting on the (filter, search, dice) tuple keeps users
+          // anchored at the top whenever the underlying list identity
+          // shifts, instead of stranding them mid-list with rows that
+          // no longer exist.
+          resetKey={`${store.mode.id}|${store.dice.join(",")}|${filter}|${search}`}
+          header={<GridHeader />}
+          renderRow={(i) => {
+            const sol = filtered[i];
+            if (sol === undefined) return null;
+            return (
+              <Row
+                key={sol.equation.total}
+                target={sol.equation.total}
+                equation={formatExpressionAgainstPool(sol.equation, store.dice, store.mode)}
+                difficulty={sol.difficulty}
+                active={store.selectedTarget === sol.equation.total}
+                onClick={() =>
+                  store.selectedTarget === sol.equation.total
+                    ? store.clearTarget()
+                    : store.setTarget(sol.equation.total)
+                }
+              />
+            );
+          }}
+        />
       )}
     </section>
   );
 });
 
-function Th({ children, align }: { readonly children: React.ReactNode; readonly align?: "right" }) {
+function GridHeader() {
   return (
-    <th
-      className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider"
-      style={{ textAlign: align ?? "left" }}
+    <div
+      className="sticky top-0 z-10 grid items-center px-4 text-xs font-semibold uppercase tracking-wider"
+      style={{
+        gridTemplateColumns: GRID_COLUMNS,
+        height: ROW_HEIGHT,
+        background: "var(--color-surface)",
+        borderBottom: "1px solid var(--color-rule)",
+        color: "var(--color-ink-muted)",
+      }}
     >
-      {children}
-    </th>
+      <div>Target</div>
+      <div>Easiest equation</div>
+      <div style={{ textAlign: "right" }}>Difficulty</div>
+      <div>Tier</div>
+    </div>
   );
 }
 
-function Td({
-  children,
-  align,
-  mono,
-  bold,
-}: {
-  readonly children: React.ReactNode;
-  readonly align?: "right";
-  readonly mono?: boolean;
-  readonly bold?: boolean;
-}) {
+interface RowProps {
+  readonly target: number;
+  readonly equation: string;
+  readonly difficulty: number;
+  readonly active: boolean;
+  readonly onClick: () => void;
+}
+
+function Row({ target, equation, difficulty, active, onClick }: RowProps) {
+  const tier = tierForDifficulty(difficulty);
   return (
-    <td
-      className="px-4 py-2"
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className="grid items-center px-4 cursor-pointer text-sm"
       style={{
-        textAlign: align ?? "left",
-        fontFamily: mono === true ? "ui-monospace, SFMono-Regular, Menlo, monospace" : undefined,
-        fontWeight: bold === true ? 600 : undefined,
+        gridTemplateColumns: GRID_COLUMNS,
+        height: ROW_HEIGHT,
+        background: active
+          ? "var(--color-accent-soft, rgba(0,0,0,0.04))"
+          : "transparent",
+        borderTop: "1px solid var(--color-rule)",
       }}
     >
-      {children}
-    </td>
+      <div
+        style={{
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+          fontWeight: 600,
+        }}
+      >
+        {target}
+      </div>
+      <div
+        className="truncate"
+        style={{
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        }}
+      >
+        {equation}
+      </div>
+      <div
+        style={{
+          textAlign: "right",
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        }}
+      >
+        {difficulty.toFixed(1)}
+      </div>
+      <div>
+        <span
+          className="inline-block px-2 py-0.5 rounded text-xs"
+          style={{ background: tier.chipBg, color: tier.chipFg }}
+        >
+          {tier.label}
+        </span>
+      </div>
+    </div>
   );
 }
 

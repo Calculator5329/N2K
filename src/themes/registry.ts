@@ -134,10 +134,31 @@ function resolveChain(theme: Theme, all: ReadonlyMap<string, Theme>): Theme {
     mergedTokens = mergedTokens === null ? link.tokens : mergeTokens(mergedTokens, link.tokens);
   }
 
+  // Resolve `style` similarly — eldest first, child fields win.
+  let mergedStyle: Theme["style"] | undefined;
+  for (let i = chain.length - 1; i >= 0; i--) {
+    const link = chain[i]!;
+    if (link.style === undefined) continue;
+    if (mergedStyle === undefined) {
+      mergedStyle = link.style;
+      continue;
+    }
+    mergedStyle = {
+      ...mergedStyle,
+      ...link.style,
+      ornaments:
+        link.style.ornaments !== undefined || mergedStyle.ornaments !== undefined
+          ? { ...(mergedStyle.ornaments ?? {}), ...(link.style.ornaments ?? {}) }
+          : undefined,
+      scale: link.style.scale ?? mergedStyle.scale,
+    };
+  }
+
   // Strip `extends` from the resolved theme — it's already been applied.
   return {
     meta: theme.meta,
     tokens: mergedTokens!,
+    ...(mergedStyle !== undefined ? { style: mergedStyle } : {}),
   };
 }
 

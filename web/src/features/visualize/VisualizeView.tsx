@@ -14,6 +14,8 @@ import { useMemo, useState } from "react";
 import { useAppStore } from "../../stores/AppStoreContext.js";
 import { tierForDifficulty } from "../lookup/difficultyTier.js";
 import type { TargetCell, VisualizeStore } from "../../stores/VisualizeStore.js";
+import { PageHeader } from "../../ui/primitives/PageHeader.js";
+import { navItemById } from "../../ui/layouts/nav.js";
 
 type AtlasMode = "easiest" | "hardest" | "coverage";
 
@@ -24,38 +26,38 @@ export const VisualizeView = observer(function VisualizeView() {
   const cells = visualize.targetCells;
   const histogram = visualize.histogram;
   const scatter = visualize.scatter;
+  const item = navItemById("visualize");
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-6 space-y-4">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">Visualize</h2>
-          <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
-            Target atlas + difficulty distribution + tuple scatter, derived live from the
-            tuple index ({explore.stats.length.toLocaleString()} tuples loaded).
-          </p>
-        </div>
-        <div className="flex gap-1">
-          {(["easiest", "hardest", "coverage"] as AtlasMode[]).map((m) => {
-            const active = atlasMode === m;
-            return (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setAtlasMode(m)}
-                className="px-2.5 py-1 text-xs rounded"
-                style={{
-                  background: active ? "var(--color-accent)" : "transparent",
-                  color: active ? "var(--color-bg)" : "var(--color-ink)",
-                  border: "1px solid var(--color-rule)",
-                }}
-              >
-                {m === "easiest" ? "Easiest" : m === "hardest" ? "Hardest" : "Coverage"}
-              </button>
-            );
-          })}
-        </div>
-      </header>
+    <div className="space-y-4">
+      <PageHeader
+        folio={item.folio}
+        eyebrow="Atlas, scatter, hist."
+        title="Visualize"
+        dek={`Target atlas + difficulty distribution + tuple scatter, derived live from the tuple index (${explore.stats.length.toLocaleString()} tuples loaded).`}
+        right={
+          <div className="flex gap-1">
+            {(["easiest", "hardest", "coverage"] as AtlasMode[]).map((m) => {
+              const active = atlasMode === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setAtlasMode(m)}
+                  className="px-2.5 py-1 text-xs rounded"
+                  style={{
+                    background: active ? "var(--color-accent)" : "transparent",
+                    color: active ? "var(--color-bg)" : "var(--color-ink)",
+                    border: "1px solid var(--color-rule)",
+                  }}
+                >
+                  {m === "easiest" ? "Easiest" : m === "hardest" ? "Hardest" : "Coverage"}
+                </button>
+              );
+            })}
+          </div>
+        }
+      />
 
       <Card>
         <h3 className="text-sm font-semibold mb-2">Atlas — every target</h3>

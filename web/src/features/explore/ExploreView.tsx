@@ -7,13 +7,17 @@
  *
  * Rows are clickable: selecting a tuple opens a side drawer with the
  * easiest-difficulty equation, the hardest target, a histogram chip strip,
- * and quick-jump links to Lookup / Compare.
+ * and quick-jump links to Lookup / Compare. Body is virtualized via
+ * {@link VirtualRows} so 1000+ tuples scroll smoothly.
  */
 import { observer } from "mobx-react-lite";
 import { useAppStore } from "../../stores/AppStoreContext.js";
 import type { ExploreModeId, SortKey } from "../../stores/ExploreStore.js";
 import { tierForDifficulty } from "../lookup/difficultyTier.js";
 import type { TupleStat } from "../../services/tupleIndexService.js";
+import { VirtualRows } from "../../ui/virtualization/VirtualRows.js";
+import { PageHeader } from "../../ui/primitives/PageHeader.js";
+import { navItemById } from "../../ui/layouts/nav.js";
 
 const COLUMN_DEFS: ReadonlyArray<{ key: SortKey; label: string; align: "left" | "right" }> = [
   { key: "dice", label: "Dice", align: "left" },
@@ -24,6 +28,14 @@ const COLUMN_DEFS: ReadonlyArray<{ key: SortKey; label: string; align: "left" | 
   { key: "avgDifficulty", label: "Avg", align: "right" },
   { key: "maxDifficulty", label: "Hardest", align: "right" },
 ];
+
+// Single source of truth for column widths so header + virtualized rows
+// stay aligned regardless of viewport. Columns: fav | dice | solvable |
+// minT | maxT | easiest | avg | hardest | mix | actions.
+const GRID_COLUMNS =
+  "32px minmax(120px, 1.4fr) 90px 96px 96px 84px 72px 84px 140px 180px";
+
+const ROW_HEIGHT = 44;
 
 export const ExploreView = observer(function ExploreView() {
   const { explore, lookup, compare } = useAppStore();
@@ -40,146 +52,186 @@ export const ExploreView = observer(function ExploreView() {
     compare.add(explore.modeId, stat.dice);
   };
 
+  const item = navItemById("explore");
   return (
-    <div className="mx-auto max-w-7xl px-6 py-6 space-y-4">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">Explore</h2>
-          <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
-            Every legal tuple, sortable + filterable. {loaded.toLocaleString()} / {total.toLocaleString()} indexed
-            {explore.isLoading ? " — warming…" : ""}.
-          </p>
-        </div>
-        <ModeSwitch />
-      </header>
+    <div className="space-y-4">
+      <PageHeader
+        folio={item.folio}
+        eyebrow="Every legal tuple"
+        title="Explore"
+        dek={`Sortable, filterable. ${loaded.toLocaleString()} / ${total.toLocaleString()} indexed${explore.isLoading ? " — warming…" : ""}.`}
+        right={<ModeSwitch />}
+      />
 
       {explore.isLoading && total > 0 ? <ProgressBar pct={pct} /> : null}
 
       <Toolbar />
 
       <div
-        className="overflow-auto"
         style={{
           background: "var(--color-surface)",
           borderRadius: "var(--radius-card)",
           boxShadow: "var(--shadow-card)",
-          maxHeight: "70vh",
+          overflow: "hidden",
         }}
       >
-        <table className="w-full text-sm">
-          <thead
-            className="sticky top-0 z-10"
-            style={{
-              background: "var(--color-surface)",
-              borderBottom: "1px solid var(--color-rule)",
-            }}
-          >
-            <tr>
-              <th className="px-2 py-2 text-left font-medium" style={{ width: "32px" }}></th>
-              {COLUMN_DEFS.map((c) => {
-                const secondaryIdx = explore.secondarySorts.findIndex((s) => s.key === c.key);
-                const secondary = secondaryIdx >= 0 ? explore.secondarySorts[secondaryIdx]! : null;
-                const arrow = (dir: "asc" | "desc") => (dir === "asc" ? "▲" : "▼");
-                return (
-                  <th
-                    key={c.key}
-                    className={`px-3 py-2 font-medium select-none cursor-pointer ${
-                      c.align === "right" ? "text-right" : "text-left"
-                    }`}
-                    onClick={(e) => {
-                      if (e.shiftKey) explore.addSecondarySort(c.key);
-                      else explore.setSort(c.key);
-                    }}
-                    onContextMenu={(e) => {
-                      if (secondary !== null) {
-                        e.preventDefault();
-                        explore.removeSecondarySort(c.key);
-                      }
-                    }}
-                    style={{ color: "var(--color-ink-muted)" }}
-                    title="Click to sort · Shift-click to add secondary · Right-click to remove"
-                  >
-                    {c.label}
-                    {explore.sortKey === c.key ? (
-                      <span aria-hidden="true"> {arrow(explore.sortDir)}</span>
-                    ) : null}
-                    {secondary !== null ? (
-                      <span aria-hidden="true" style={{ opacity: 0.6 }}>
-                        {" "}
-                        {secondaryIdx + 2}{arrow(secondary.dir)}
-                      </span>
-                    ) : null}
-                  </th>
-                );
-              })}
-              <th className="px-3 py-2 text-right font-medium" style={{ color: "var(--color-ink-muted)" }}>
-                Mix
-              </th>
-              <th className="px-3 py-2 text-right" style={{ width: "180px" }} />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 && !explore.isLoading ? (
-              <tr>
-                <td colSpan={COLUMN_DEFS.length + 3} className="px-4 py-12 text-center" style={{ color: "var(--color-ink-muted)" }}>
-                  No tuples match.
-                </td>
-              </tr>
-            ) : null}
-            {rows.map((r) => {
+        {rows.length === 0 && !explore.isLoading ? (
+          <>
+            <ExploreHeaderRow />
+            <div
+              className="px-4 py-12 text-center"
+              style={{ color: "var(--color-ink-muted)" }}
+            >
+              No tuples match.
+            </div>
+          </>
+        ) : (
+          <VirtualRows
+            count={rows.length}
+            rowHeight={ROW_HEIGHT}
+            maxHeight="70vh"
+            resetKey={`${explore.modeId}|${rows.length}|${explore.sortKey}|${explore.sortDir}`}
+            header={<ExploreHeaderRow />}
+            renderRow={(i) => {
+              const r = rows[i];
+              if (r === undefined) return null;
               const isFav = explore.favorites.isFavorite(explore.modeId, r.dice);
               const isSel = explore.selectedStat === r;
               return (
-                <tr
+                <ExploreRow
                   key={`${r.modeId}-${r.dice.join(",")}`}
-                  onClick={() => explore.selectTuple(isSel ? null : r)}
-                  className="cursor-pointer"
-                  style={{
-                    background: isSel ? "color-mix(in oklab, var(--color-accent) 14%, transparent)" : "transparent",
-                    borderBottom: "1px solid var(--color-rule)",
-                  }}
-                >
-                  <td className="px-2 py-2">
-                    <button
-                      type="button"
-                      aria-label={isFav ? "Unfavorite" : "Favorite"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        explore.favorites.toggle(explore.modeId, r.dice);
-                      }}
-                      className="text-base leading-none"
-                      style={{ color: isFav ? "var(--color-accent)" : "var(--color-ink-muted)" }}
-                    >
-                      {isFav ? "★" : "☆"}
-                    </button>
-                  </td>
-                  <td className="px-3 py-2 font-mono">{r.dice.join(" / ")}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.solvableCount}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.minTarget ?? "—"}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.maxTarget ?? "—"}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.minDifficulty.toFixed(1)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.avgDifficulty.toFixed(1)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.maxDifficulty.toFixed(1)}</td>
-                  <td className="px-3 py-2 text-right">
-                    <DistributionStrip buckets={r.buckets} />
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <div className="flex justify-end gap-1.5">
-                      <RowAction onClick={(e) => { e.stopPropagation(); onSendToLookup(r); }}>Lookup</RowAction>
-                      <RowAction onClick={(e) => { e.stopPropagation(); onSendToCompare(r); }}>Compare</RowAction>
-                    </div>
-                  </td>
-                </tr>
+                  stat={r}
+                  isFav={isFav}
+                  isSel={isSel}
+                  onSelect={() => explore.selectTuple(isSel ? null : r)}
+                  onToggleFav={() => explore.favorites.toggle(explore.modeId, r.dice)}
+                  onLookup={() => onSendToLookup(r)}
+                  onCompare={() => onSendToCompare(r)}
+                />
               );
-            })}
-          </tbody>
-        </table>
+            }}
+          />
+        )}
       </div>
 
       {explore.selectedStat !== null ? <SelectionDrawer stat={explore.selectedStat} /> : null}
     </div>
   );
 });
+
+const ExploreHeaderRow = observer(function ExploreHeaderRow() {
+  const { explore } = useAppStore();
+  const arrow = (dir: "asc" | "desc") => (dir === "asc" ? "▲" : "▼");
+  return (
+    <div
+      className="sticky top-0 z-10 grid items-center px-4 text-xs font-semibold uppercase tracking-wider select-none"
+      style={{
+        gridTemplateColumns: GRID_COLUMNS,
+        height: ROW_HEIGHT,
+        background: "var(--color-surface)",
+        borderBottom: "1px solid var(--color-rule)",
+        color: "var(--color-ink-muted)",
+      }}
+    >
+      <div />
+      {COLUMN_DEFS.map((c) => {
+        const secondaryIdx = explore.secondarySorts.findIndex((s) => s.key === c.key);
+        const secondary = secondaryIdx >= 0 ? explore.secondarySorts[secondaryIdx]! : null;
+        return (
+          <div
+            key={c.key}
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              if (e.shiftKey) explore.addSecondarySort(c.key);
+              else explore.setSort(c.key);
+            }}
+            onContextMenu={(e) => {
+              if (secondary !== null) {
+                e.preventDefault();
+                explore.removeSecondarySort(c.key);
+              }
+            }}
+            title="Click to sort · Shift-click to add secondary · Right-click to remove"
+            style={{
+              textAlign: c.align,
+              cursor: "pointer",
+            }}
+          >
+            {c.label}
+            {explore.sortKey === c.key ? <span aria-hidden="true"> {arrow(explore.sortDir)}</span> : null}
+            {secondary !== null ? (
+              <span aria-hidden="true" style={{ opacity: 0.6 }}>
+                {" "}
+                {secondaryIdx + 2}
+                {arrow(secondary.dir)}
+              </span>
+            ) : null}
+          </div>
+        );
+      })}
+      <div style={{ textAlign: "right" }}>Mix</div>
+      <div />
+    </div>
+  );
+});
+
+interface ExploreRowProps {
+  readonly stat: TupleStat;
+  readonly isFav: boolean;
+  readonly isSel: boolean;
+  readonly onSelect: () => void;
+  readonly onToggleFav: () => void;
+  readonly onLookup: () => void;
+  readonly onCompare: () => void;
+}
+
+function ExploreRow({ stat, isFav, isSel, onSelect, onToggleFav, onLookup, onCompare }: ExploreRowProps) {
+  return (
+    <div
+      role="row"
+      onClick={onSelect}
+      className="grid items-center px-4 cursor-pointer text-sm tabular-nums"
+      style={{
+        gridTemplateColumns: GRID_COLUMNS,
+        height: ROW_HEIGHT,
+        background: isSel ? "color-mix(in oklab, var(--color-accent) 14%, transparent)" : "transparent",
+        borderBottom: "1px solid var(--color-rule)",
+      }}
+    >
+      <div>
+        <button
+          type="button"
+          aria-label={isFav ? "Unfavorite" : "Favorite"}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFav();
+          }}
+          className="text-base leading-none"
+          style={{ color: isFav ? "var(--color-accent)" : "var(--color-ink-muted)", background: "transparent", border: "none" }}
+        >
+          {isFav ? "★" : "☆"}
+        </button>
+      </div>
+      <div className="font-mono truncate">{stat.dice.join(" / ")}</div>
+      <div style={{ textAlign: "right" }}>{stat.solvableCount}</div>
+      <div style={{ textAlign: "right" }}>{stat.minTarget ?? "—"}</div>
+      <div style={{ textAlign: "right" }}>{stat.maxTarget ?? "—"}</div>
+      <div style={{ textAlign: "right" }}>{stat.minDifficulty.toFixed(1)}</div>
+      <div style={{ textAlign: "right" }}>{stat.avgDifficulty.toFixed(1)}</div>
+      <div style={{ textAlign: "right" }}>{stat.maxDifficulty.toFixed(1)}</div>
+      <div style={{ textAlign: "right" }}>
+        <DistributionStrip buckets={stat.buckets} />
+      </div>
+      <div style={{ textAlign: "right" }}>
+        <div className="flex justify-end gap-1.5">
+          <RowAction onClick={(e) => { e.stopPropagation(); onLookup(); }}>Lookup</RowAction>
+          <RowAction onClick={(e) => { e.stopPropagation(); onCompare(); }}>Compare</RowAction>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const ModeSwitch = observer(function ModeSwitch() {
   const { explore } = useAppStore();

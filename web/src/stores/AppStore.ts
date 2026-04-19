@@ -18,6 +18,7 @@ import type { DatasetClient } from "../services/datasetClient.js";
 import type { IdentityService } from "../services/identityService.js";
 import type { SolverWorkerService } from "../services/solverWorkerService.js";
 import type { TupleIndexService } from "../services/tupleIndexService.js";
+import { disposeSharedSolverWorkerClient } from "../services/workerSolverClient.js";
 import { BoardLibraryStore } from "./BoardLibraryStore.js";
 import { CompareStore } from "./CompareStore.js";
 import { ComposeStore } from "./ComposeStore.js";
@@ -88,5 +89,9 @@ export class AppStore {
     this.compare.dispose();
     this.boardLibrary.dispose();
     this.services.solverWorker.dispose();
+    // The solver worker is shared between dataset + solver service, so
+    // we dispose it exactly once here regardless of which factory wired
+    // up the AppStore.
+    disposeSharedSolverWorkerClient();
   }
 }

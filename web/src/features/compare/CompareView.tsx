@@ -17,6 +17,8 @@ import {
   type CompareModeId,
   projectSeries,
 } from "../../stores/CompareStore.js";
+import { PageHeader } from "../../ui/primitives/PageHeader.js";
+import { navItemById } from "../../ui/layouts/nav.js";
 
 const SERIES_COLORS = [
   "var(--color-accent)",
@@ -35,17 +37,16 @@ const CHART_MODES: ReadonlyArray<{ id: CompareChartMode; label: string }> = [
 export const CompareView = observer(function CompareView() {
   const { compare } = useAppStore();
   const domain = compare.domain;
+  const item = navItemById("compare");
   return (
-    <div className="mx-auto max-w-7xl px-6 py-6 space-y-4">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">Compare</h2>
-          <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
-            Up to 4 tuples on one chart. Click "Compare" rows in Explore or add manually.
-          </p>
-        </div>
-        <ChartModeSelector />
-      </header>
+    <div className="space-y-4">
+      <PageHeader
+        folio={item.folio}
+        eyebrow="Tuples side-by-side"
+        title="Compare"
+        dek="Up to 4 tuples on one chart. Click 'Compare' rows in Explore or add manually."
+        right={<ChartModeSelector />}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
         <Card>

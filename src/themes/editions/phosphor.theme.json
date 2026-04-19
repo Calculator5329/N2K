@@ -4,9 +4,17 @@
     "displayName": "Phosphor",
     "version": "1.0.0",
     "summary": "Late-night CRT terminal reissue — phosphor green text on near-black, amber warning glow.",
-    "tags": ["dark", "monospace", "retro"]
+    "tags": ["dark", "monospace", "retro"],
+    "tagline": "ROM dump · CRT decay.",
+    "swatches": ["#050706", "#7fe9ab", "#ffb347"]
   },
   "extends": "tabletop",
+  "style": {
+    "layout": "spreadsheet",
+    "glyph": "pixel",
+    "equation": "ascii",
+    "ornaments": { "ruleStyle": "plain", "sectionMarker": ">" }
+  },
   "tokens": {
     "color": {
       "bg": "#050706",

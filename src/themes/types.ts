@@ -27,6 +27,17 @@ export interface Theme {
    */
   readonly extends?: string;
   readonly tokens: ThemeTokens;
+  /**
+   * Structural skin: which page layout, which dice glyph + equation
+   * variant, which ornament glyphs to use. All optional — themes that
+   * omit it fall back to the platform defaults (sidebar layout, plain
+   * dice tile, ASCII equation, no ornaments).
+   *
+   * Decoupled from `tokens` because tokens are pure CSS variables
+   * shared with arbitrary consumers (Tailwind, third-party editors)
+   * while `style` only matters to the v2 web layout system.
+   */
+  readonly style?: ThemeStyle;
 }
 
 export interface ThemeMeta {
@@ -41,6 +52,80 @@ export interface ThemeMeta {
   readonly summary?: string;
   /** Free-form tags for search / filtering ("dark", "warm", "high-contrast"). */
   readonly tags?: readonly string[];
+  /** Short marketing line shown under the wordmark in nav chrome. */
+  readonly tagline?: string;
+  /**
+   * Three swatch colors `[surface, ink, accent]` for the picker flag
+   * micro-preview. If omitted, the picker derives them from
+   * `tokens.color`.
+   */
+  readonly swatches?: readonly [string, string, string];
+}
+
+/** Page layout to use when the theme is active. */
+export type LayoutId =
+  | "board"
+  | "manuscript"
+  | "blueprint"
+  | "scrapbook"
+  | "receipt"
+  | "platform"
+  | "panels"
+  | "frame"
+  | "chart"
+  | "sidebar"
+  | "topbar"
+  | "spreadsheet"
+  | "studio"
+  | "sandbox";
+
+/** Visual variant of a dice glyph. Drives a CSS class root in v2. */
+export type DiceGlyphStyle =
+  | "tile"
+  | "ascii"
+  | "newsroom"
+  | "pixel"
+  | "illuminated"
+  | "blueprint"
+  | "tarot"
+  | "boardgame"
+  | "bullet"
+  | "cell"
+  | "polaroid"
+  | "panel"
+  | "buoy";
+
+/** Equation rendering style. */
+export type EquationStyle = "ascii" | "pretty";
+
+export interface ThemeOrnaments {
+  /** Inline glyph used between nav items in framed layouts. */
+  readonly sectionMarker?: string;
+  /** Suffix appended to the masthead title. */
+  readonly mastheadSuffix?: string;
+  /** Glyph rendered in corner-bracket layouts (Frame, Chart, Board). */
+  readonly corner?: string;
+  /** Style hint for divider rules ("plain", "dashed", "double", "ornament"). */
+  readonly ruleStyle?: "plain" | "dashed" | "double" | "ornament";
+}
+
+export interface ThemeStyle {
+  readonly layout?: LayoutId;
+  readonly glyph?: DiceGlyphStyle;
+  readonly equation?: EquationStyle;
+  readonly ornaments?: ThemeOrnaments;
+  /**
+   * Optional difficulty heatmap stops, low → high. Visualize / Explore
+   * use this to color the histogram and atlas; falls back to a neutral
+   * 5-stop ramp built from `accent` + `ink-muted`.
+   */
+  readonly scale?: ThemeScale;
+}
+
+export interface ThemeScale {
+  readonly stops: readonly string[];
+  /** Color for "no solution" cells; defaults to `inkMuted`. */
+  readonly impossible?: string;
 }
 
 // ---------------------------------------------------------------------------

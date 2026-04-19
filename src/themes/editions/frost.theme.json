@@ -4,9 +4,17 @@
     "displayName": "Frost",
     "version": "1.0.0",
     "summary": "Cool steel-and-ice palette with a custom serif type stack. Demonstrates the typography group.",
-    "tags": ["light", "cool", "typography"]
+    "tags": ["light", "cool", "typography"],
+    "tagline": "Embossed on cold-press.",
+    "swatches": ["#eef3f7", "#10222e", "#1f7aa6"]
   },
   "extends": "tabletop",
+  "style": {
+    "layout": "chart",
+    "glyph": "buoy",
+    "equation": "pretty",
+    "ornaments": { "ruleStyle": "double", "sectionMarker": "◆" }
+  },
   "tokens": {
     "color": {
       "bg": "#eef3f7",

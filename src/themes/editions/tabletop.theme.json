@@ -4,7 +4,19 @@
     "displayName": "Tabletop",
     "version": "1.0.0",
     "summary": "Warm parchment palette evoking a felt-and-paper game table; the platform's reference theme.",
-    "tags": ["light", "warm", "default", "reference"]
+    "tags": ["light", "warm", "default", "reference"],
+    "tagline": "The reference edition.",
+    "swatches": ["#f5efe1", "#2b241b", "#a85b2a"]
+  },
+  "style": {
+    "layout": "board",
+    "glyph": "boardgame",
+    "equation": "pretty",
+    "ornaments": {
+      "corner": "✦",
+      "sectionMarker": "·",
+      "ruleStyle": "double"
+    }
   },
   "tokens": {
     "color": {

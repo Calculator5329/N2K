@@ -4,9 +4,17 @@
     "displayName": "Almanac",
     "version": "1.0.0",
     "summary": "Quiet parchment editorial reference book with oxblood accents and antique rules.",
-    "tags": ["light", "editorial", "warm"]
+    "tags": ["light", "editorial", "warm"],
+    "tagline": "Bound for the home table.",
+    "swatches": ["#fbf7ee", "#1a1612", "#6f1f1f"]
   },
   "extends": "tabletop",
+  "style": {
+    "layout": "sidebar",
+    "glyph": "tile",
+    "equation": "pretty",
+    "ornaments": { "ruleStyle": "plain", "sectionMarker": "§" }
+  },
   "tokens": {
     "color": {
       "bg": "#fbf7ee",

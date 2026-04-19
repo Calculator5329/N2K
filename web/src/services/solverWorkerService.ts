@@ -26,6 +26,10 @@
  */
 import type { Mode, NEquation } from "@platform/core/types.js";
 import { allSolutions, easiestSolution } from "@platform/services/solver.js";
+import {
+  getSharedSolverWorkerClient,
+  type SolverWorkerClient,
+} from "./workerSolverClient.js";
 
 export interface SolveRequest {
   readonly mode: Mode;
@@ -66,5 +70,44 @@ export class InlineSolverService implements SolverWorkerService {
 
   dispose(): void {
     /* nothing to clean up */
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  Worker-backed implementation
+// ---------------------------------------------------------------------------
+
+/**
+ * Routes every solve query through a shared `Worker`. Used in the
+ * browser so arity-4/5 Æther solves don't freeze the React render
+ * loop. The shared worker is created lazily on the first request,
+ * shared with `WorkerDatasetClient` (so we don't double up on threads),
+ * and disposed via `disposeSharedSolverWorkerClient()` from
+ * `AppStore.dispose`.
+ */
+export class WorkerSolverService implements SolverWorkerService {
+  private readonly client: SolverWorkerClient;
+
+  constructor(client: SolverWorkerClient = getSharedSolverWorkerClient()) {
+    this.client = client;
+  }
+
+  async allSolutions(req: SolveRequest): Promise<readonly NEquation[]> {
+    if (!req.mode.arities.includes(req.dice.length as 3 | 4 | 5)) {
+      return [];
+    }
+    return this.client.allSolutions(req.mode, req.dice, req.total);
+  }
+
+  async easiestSolution(req: SolveRequest): Promise<NEquation | null> {
+    const minArity = Math.min(...req.mode.arities);
+    if (req.dice.length < minArity) return null;
+    return this.client.easiestSolution(req.mode, req.dice, req.total);
+  }
+
+  dispose(): void {
+    // Don't terminate here — the worker is shared with the dataset
+    // client. AppStore.dispose calls `disposeSharedSolverWorkerClient()`
+    // exactly once.
   }
 }

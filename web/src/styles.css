@@ -1,13 +1,28 @@
 @import "tailwindcss";
 
-/* Theme tokens are intentionally empty here. Each theme registers its own
-   tokens via a `style` attribute (or, for built-in themes, by emitting
-   CSS variables on `:root[data-theme="<id>"]`). The Tabletop edition
-   declares its tokens in `themes/editions/tabletop.theme.json`; the
-   ThemeStore reads them and writes the corresponding CSS variables. */
+/* ----------------------------------------------------------------------------
+   N2K v2 — global stylesheet.
+
+   Three concerns live here:
+
+     1. Reset + base typography (everything inherits the active theme's
+        sans / serif / mono via CSS variables emitted by `ThemeStore`).
+     2. Layout chrome utilities used by the per-theme layouts in
+        `web/src/ui/layouts/` (page-surface, divider-hair, label-caps,
+        board-layout-frame, etc.). One stylesheet so layouts stay
+        side-effect-free TSX files.
+     3. Dice glyph variants (`.dice-tile`, `.dice-pixel`, `.dice-tarot`,
+        …) keyed by `[data-theme]` so the same React component renders
+        differently per active edition.
+   --------------------------------------------------------------------------*/
 
 :root {
   color-scheme: light;
+  /* Sensible defaults — overridden per theme by ThemeStore.applyTo. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Source Serif Pro", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 html,
@@ -15,6 +30,343 @@ body,
 #root {
   height: 100%;
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
+  background: var(--color-bg, #fafaf7);
+  color: var(--color-ink, #1a1a1a);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 35%, transparent);
+}
+
+/* ===========================================================================
+   Layout-chrome utilities
+   ===========================================================================*/
+
+.page-surface {
+  background: var(--color-surface);
+  border-radius: var(--radius-card, 8px);
+  box-shadow: var(--shadow-card, 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.04));
+  border: 1px solid color-mix(in oklab, var(--color-rule) 70%, transparent);
+}
+
+.label-caps {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.divider-hair {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0,
+    var(--color-rule) 8%,
+    var(--color-rule) 92%,
+    transparent 100%
+  );
+}
+
+.tracking-wide-caps {
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.font-display {
+  font-family: var(--font-serif);
+}
+
+.font-body {
+  font-family: var(--font-serif);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===========================================================================
+   Board layout — vintage game-box frame
+   ===========================================================================*/
+
+.board-layout-frame {
+  background: var(--color-accent);
+  border: 2px solid var(--color-ink);
+  box-shadow:
+    6px 6px 0 0 rgba(0, 0, 0, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+}
+
+.board-layout-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-ink);
+  border-radius: 2px;
+}
+
+.board-layout-rule {
+  height: 6px;
+  background: var(--color-ink);
+  position: relative;
+}
+
+.board-layout-rule::after {
+  content: "";
+  position: absolute;
+  inset: 1px 0 auto 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* ===========================================================================
+   Dice glyph variants
+   Each variant maps to a CSS class on the `<DiceGlyph>` root so the
+   same React tree renders very differently per theme. The classes are
+   intentionally lightweight — they pull color tokens from CSS vars so
+   nothing gets baked at build time.
+   ===========================================================================*/
+
+.dice {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.dice > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6em;
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+
+.dice-tile > span {
+  background: var(--color-bg);
+  border: 1px solid var(--color-ink);
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  box-shadow: 1px 1px 0 0 var(--color-ink);
+}
+
+.dice-newsroom > span {
+  background: transparent;
+  border: 1px solid var(--color-ink-muted);
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  font-weight: 600;
+}
+
+.dice-pixel > span {
+  background: var(--color-ink);
+  color: var(--color-bg);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  letter-spacing: -0.04em;
+}
+
+.dice-illuminated > span {
+  background: color-mix(in oklab, var(--color-accent) 18%, var(--color-surface));
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 700;
+  text-shadow: 0 0 6px color-mix(in oklab, var(--color-accent) 50%, transparent);
+}
+
+.dice-blueprint > span {
+  background: transparent;
+  border: 1px dashed var(--color-accent);
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  border-radius: 0;
+}
+
+.dice-tarot > span {
+  background: var(--color-bg);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  font-family: var(--font-serif);
+  letter-spacing: 0.08em;
+}
+
+.dice-boardgame > span {
+  background: var(--color-surface);
+  border: 2px solid var(--color-ink);
+  color: var(--color-ink);
+  box-shadow: 2px 2px 0 0 var(--color-ink);
+  font-family: var(--font-serif);
+  font-weight: 700;
+}
+
+.dice-bullet > span {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.dice-cell > span {
+  background: var(--color-bg);
+  border: 1px solid var(--color-ink-muted);
+  color: var(--color-ink);
+  border-radius: 0;
+  font-family: var(--font-mono);
+}
+
+.dice-polaroid > span {
+  background: #fefcf3;
+  color: #2a241c;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  box-shadow: 1px 1px 0 0 rgba(0, 0, 0, 0.14);
+  border-radius: 2px;
+  font-family: var(--font-serif);
+}
+
+.dice-panel > span {
+  background: var(--color-bg);
+  border: 2px solid var(--color-ink);
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  font-weight: 800;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0 0 var(--color-ink);
+}
+
+.dice-buoy > span {
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  color: var(--color-ink);
+  border-radius: 999px;
+  font-family: var(--font-serif);
+  box-shadow:
+    inset 0 0 0 2px var(--color-bg),
+    inset 0 0 0 3px var(--color-accent);
+}
+
+.dice-ascii > span {
+  background: transparent;
+  border: none;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  padding: 0 0.05em;
+}
+
+.dice-ascii > .dice-ascii__bracket {
+  color: var(--color-ink-muted);
+}
+
+/* ===========================================================================
+   Equation — pretty rendering with superscript exponents
+   ===========================================================================*/
+
+.equation-display {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-family: var(--font-serif);
+  color: var(--color-ink);
+}
+
+.equation-display sup {
+  vertical-align: super;
+  line-height: 1;
+  font-size: 0.6em;
+  margin-left: 1px;
+  margin-top: -2px;
+  color: var(--color-accent);
+}
+
+.equation-display .equation-op {
+  font-weight: 300;
+  color: var(--color-ink-muted);
+}
+
+.equation-display .equation-result {
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-left: 0.25em;
+}
+
+.equation-ascii {
+  font-family: var(--font-mono);
+  color: var(--color-ink);
+}
+
+/* ===========================================================================
+   Receipt-style dashed perforation rules
+   ===========================================================================*/
+
+.dashed-rule {
+  height: 1px;
+  background-image: linear-gradient(
+    to right,
+    var(--color-ink-muted) 50%,
+    transparent 50%
+  );
+  background-size: 6px 1px;
+  background-repeat: repeat-x;
+}
+
+/* ===========================================================================
+   Subway "tactile strip"
+   ===========================================================================*/
+
+.tactile-strip {
+  height: 22px;
+  background-color: var(--color-accent);
+  background-image: radial-gradient(
+    rgba(0, 0, 0, 0.3) 1.6px,
+    transparent 2px
+  );
+  background-size: 10px 10px;
+  border-top: 2px solid var(--color-ink);
+  border-bottom: 2px solid var(--color-ink);
+}
+
+/* ===========================================================================
+   Comic-panel splat badge
+   ===========================================================================*/
+
+.splat-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  background: color-mix(in oklab, var(--color-accent) 90%, white 10%);
+  color: var(--color-bg);
+  font-family: var(--font-serif);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 2px solid var(--color-ink);
+  box-shadow: 3px 3px 0 0 var(--color-ink);
+  clip-path: polygon(
+    0 12%, 12% 0, 25% 12%, 38% 0, 52% 12%, 65% 0, 78% 14%, 92% 4%,
+    100% 22%, 96% 38%, 100% 52%, 90% 64%, 100% 78%, 88% 88%, 96% 100%,
+    78% 92%, 64% 100%, 50% 88%, 38% 100%, 22% 90%, 8% 100%, 0 82%, 6% 64%, 0 50%, 8% 36%, 0 22%
+  );
+  transform: rotate(-3deg);
+}
+
+/* ===========================================================================
+   Print
+   ===========================================================================*/
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
 }

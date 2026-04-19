@@ -4,9 +4,17 @@
     "displayName": "Vaporwave",
     "version": "1.0.0",
     "summary": "90s mall sunset — neon pink and cyan over deep magenta, italic display vibes.",
-    "tags": ["dark", "neon", "playful"]
+    "tags": ["dark", "neon", "playful"],
+    "tagline": "Mall sunset, MMXCVI.",
+    "swatches": ["#1a0f3d", "#f8c8ff", "#ff61b6"]
   },
   "extends": "tabletop",
+  "style": {
+    "layout": "platform",
+    "glyph": "cell",
+    "equation": "pretty",
+    "ornaments": { "ruleStyle": "plain", "sectionMarker": "★" }
+  },
   "tokens": {
     "color": {
       "bg": "#1a0f3d",

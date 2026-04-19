@@ -2,6 +2,73 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-20 — Visual fidelity restore + service-aware showcase layouts
+
+Addressed user feedback: "really really laggy and the graphics are
+not even close to as good as the original." Two tranches landed in
+the same session.
+
+### Performance — main-thread relief
+
+- **Web Worker solver.** `services/workerSolverClient.ts` lazily
+  spins up a single shared `solver.worker.ts` and proxies
+  `sweepOneTuple`, `allSolutions`, and `easiestSolution` over it. New
+  `WorkerSolverService` and `WorkerSolverDatasetClient` plug in via
+  `createDefaultAppStore` whenever `globalThis.Worker` is available;
+  tests fall back to the inline implementations transparently. Map
+  results are flattened to `[k, v]` entry tuples for structured
+  cloning.
+- **Vertical virtualization.** Hand-rolled `ui/virtualization/VirtualRows.tsx`
+  with `requestAnimationFrame`-throttled scroll handling, sticky
+  header, and overscan. `LookupView`'s `TargetGrid` and the entire
+  `ExploreView` now render only visible rows; both swapped their
+  native `<table>` for CSS-grid `div`s so columns stay aligned with
+  the sticky header.
+
+### Visual fidelity — port v1 layouts + add 2 new showcases
+
+- **Theme schema extended.** `Theme.style` now carries `layout`,
+  `glyph`, `equation`, `ornaments`, and `scale`. `ThemeMeta` gained
+  `tagline` and `swatches`. `ThemeRegistry.resolveChain` deep-merges
+  `style` through `extends` chains so child themes only declare what
+  they want to change.
+- **All 10 bundled themes wired.** Every edition now declares its
+  layout / glyph / equation / ornaments and a tagline + swatches:
+  tabletop→board, almanac→sidebar, blueprint→blueprint,
+  manuscript→manuscript, noir→topbar, ember→frame, frost→chart,
+  phosphor→spreadsheet, vaporwave→platform, verdant→scrapbook.
+- **Layout system.** `ui/layouts/PageShell.tsx` reads the active
+  theme's `style.layout` and renders the matching layout from
+  `LAYOUTS`. Twelve v1 layouts ported (`board`, `manuscript`,
+  `blueprint`, `sidebar`, `topbar`, `scrapbook`, `receipt`,
+  `platform`, `panels`, `frame`, `chart`, `spreadsheet`).
+- **Two new v2-only showcase layouts:**
+  - `studio` — surfaces every `PlatformServices` seam with its bound
+    impl name + hint, primed for the "go online" toggle.
+  - `sandbox` — game-room HUD with seat slots (1–4 + multiplayer
+    placeholder) and a live `Game<Config, State, Move>` kernel
+    inspector wired to `PlayStore`.
+- **Primitives ported from v1.** `Wordmark`, `Equation` (with
+  `<sup>` exponents and Unicode operators), `DiceGlyph`,
+  `PageHeader`, `ThemeSelector` (vertical / horizontal / discreet
+  popover), `DifficultyMeter`, `FavoriteToggle`. CSS variants for
+  every `dice-*` glyph and `equation-display` / `equation-ascii`
+  modes live in the global `styles.css`.
+- **Feature views adopt the layout.** Every `*View` (Lookup, Explore,
+  Compare, Visualize, Compose, Play, Gallery) drops its bare
+  `<header>` + outer container in favor of `<PageHeader>` + the
+  layout's page surface. Two new surface ids (`studio`, `sandbox`)
+  were added to `SurfaceId`, `NAV_ITEMS`, and `App.tsx`'s
+  `renderSurface()`. About copy refreshed to reflect 10 editions +
+  Studio + Sandbox + worker / virtualization wins.
+
+### Verification
+
+- 285 tests pass (`npm test`).
+- `tsc -p web` and `tsc -p tsconfig.json` both clean.
+- `vite build` succeeds (worker bundled separately as
+  `solver.worker-*.js`).
+
 ## 2026-04-19 — Phase 6 starter + depower display polish
 
 Continuing from the post-merge audit. Three quality-of-life fixes

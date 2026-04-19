@@ -24,16 +24,16 @@ import vaporwave from "./vaporwave.theme.json" with { type: "json" };
 import verdant from "./verdant.theme.json" with { type: "json" };
 
 export const BUNDLED_THEMES: readonly Theme[] = [
-  tabletop as Theme,
-  almanac as Theme,
-  blueprint as Theme,
-  ember as Theme,
-  frost as Theme,
-  manuscript as Theme,
-  noir as Theme,
-  phosphor as Theme,
-  vaporwave as Theme,
-  verdant as Theme,
+  tabletop as unknown as Theme,
+  almanac as unknown as Theme,
+  blueprint as unknown as Theme,
+  ember as unknown as Theme,
+  frost as unknown as Theme,
+  manuscript as unknown as Theme,
+  noir as unknown as Theme,
+  phosphor as unknown as Theme,
+  vaporwave as unknown as Theme,
+  verdant as unknown as Theme,
 ];
 
 export const BUNDLED_THEME_IDS: readonly string[] = BUNDLED_THEMES.map((t) => t.meta.id);

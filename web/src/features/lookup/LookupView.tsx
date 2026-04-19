@@ -5,6 +5,8 @@ import { ModePicker } from "./ModePicker.js";
 import { TargetGrid } from "./TargetGrid.js";
 import { TargetNeighborhood } from "./TargetNeighborhood.js";
 import { SolutionsPanel } from "./SolutionsPanel.js";
+import { PageHeader } from "../../ui/primitives/PageHeader.js";
+import { navItemById } from "../../ui/layouts/nav.js";
 
 /**
  * Lookup — pick a (mode, dice) and explore every reachable target with
@@ -13,17 +15,16 @@ import { SolutionsPanel } from "./SolutionsPanel.js";
  */
 export const LookupView = observer(function LookupView() {
   const store = useAppStore().lookup;
+  const item = navItemById("lookup");
 
   return (
-    <div className="flex flex-col gap-6 p-6 mx-auto" style={{ maxWidth: 1100 }}>
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Lookup</h1>
-        <p className="text-sm" style={{ color: "var(--color-ink-muted)" }}>
-          Pick a mode and a dice tuple. The platform shows every target the
-          dice can hit, sorted by difficulty. Click a target to see every
-          distinct equation.
-        </p>
-      </header>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        folio={item.folio}
+        eyebrow="Targets, by dice"
+        title="Lookup"
+        dek="Pick a mode and a dice tuple. The platform shows every target the dice can hit, sorted by difficulty. Click a target to see every distinct equation."
+      />
 
       <section
         className="grid gap-4 p-4 rounded border"

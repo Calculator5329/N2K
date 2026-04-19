@@ -4,9 +4,17 @@
     "displayName": "Manuscript",
     "version": "1.0.0",
     "summary": "Illuminated medieval codex — vellum field with ink-gall serif and gold-leaf accents.",
-    "tags": ["light", "ornate", "warm"]
+    "tags": ["light", "ornate", "warm"],
+    "tagline": "Lapis & gold leaf.",
+    "swatches": ["#efe4c7", "#1a0e04", "#9b2a1f"]
   },
   "extends": "tabletop",
+  "style": {
+    "layout": "manuscript",
+    "glyph": "illuminated",
+    "equation": "pretty",
+    "ornaments": { "ruleStyle": "ornament", "sectionMarker": "❦" }
+  },
   "tokens": {
     "color": {
       "bg": "#efe4c7",

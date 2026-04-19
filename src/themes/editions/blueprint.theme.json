@@ -4,9 +4,17 @@
     "displayName": "Blueprint",
     "version": "1.0.0",
     "summary": "Engineering drafting sheet — cyan ink, drafting grid, ochre call-outs.",
-    "tags": ["dark", "technical", "blue"]
+    "tags": ["dark", "technical", "blue"],
+    "tagline": "DWG-001 · Rev.A",
+    "swatches": ["#0e2a52", "#d8ecff", "#ffc857"]
   },
   "extends": "tabletop",
+  "style": {
+    "layout": "blueprint",
+    "glyph": "blueprint",
+    "equation": "ascii",
+    "ornaments": { "ruleStyle": "plain", "sectionMarker": "+" }
+  },
   "tokens": {
     "color": {
       "bg": "#0e2a52",

@@ -17,20 +17,21 @@ import {
   exportToPdf,
   planToExportData,
 } from "../../services/competitionExport.js";
+import { PageHeader } from "../../ui/primitives/PageHeader.js";
+import { navItemById } from "../../ui/layouts/nav.js";
 
 export const ComposeView = observer(function ComposeView() {
   const { compose } = useAppStore();
+  const item = navItemById("compose");
   return (
-    <div className="mx-auto max-w-7xl px-6 py-6 space-y-4">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">Compose</h2>
-          <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
-            Author boards, generate balanced two-player dice rolls, export the plan.
-          </p>
-        </div>
-        <ModePicker />
-      </header>
+    <div className="space-y-4">
+      <PageHeader
+        folio={item.folio}
+        eyebrow="Boards & contests"
+        title="Compose"
+        dek="Author boards, generate balanced two-player dice rolls, export the plan."
+        right={<ModePicker />}
+      />
 
       <Card>
         <GlobalControls />
