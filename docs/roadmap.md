@@ -60,6 +60,7 @@
 - [x] **Visualize** — `VisualizeStore` + `VisualizeView`: atlas heatmap, difficulty histogram, and solvable-vs-difficulty scatter, computed off the `ExploreStore` index.
 - [x] **Gallery** — every bundled theme rendered side-by-side with live activation.
 - [x] **FavoritesStore** — `localStorage`-backed starred-tuple set used by Explore + Compare.
+- [x] **Test stabilization** — 274 root + 60 web tests green on `main` (2026-04-19).
 
 ## Phase 6 — Platform extensions
 

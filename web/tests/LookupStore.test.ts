@@ -1,8 +1,23 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { autorun, runInAction } from "mobx";
 import { LookupStore } from "../src/stores/LookupStore.js";
-import { LiveSolverDatasetClient } from "../src/services/datasetClient.js";
+import {
+  LiveSolverDatasetClient,
+  type ChunkData,
+  type DatasetClient,
+} from "../src/services/datasetClient.js";
 import { InlineSolverService } from "../src/services/solverWorkerService.js";
+import type { Mode } from "@platform/core/types.js";
+
+/** A no-op dataset client used when the test only cares about state, not data. */
+class NullDatasetClient implements DatasetClient {
+  async getChunk(mode: Mode, dice: readonly number[]): Promise<ChunkData> {
+    return { mode, dice: [...dice], solutions: new Map(), source: "computed", elapsedMs: 0 };
+  }
+  async listAvailableTuples(): Promise<null> {
+    return null;
+  }
+}
 
 function settle(): Promise<void> {
   // The store fires a fetcher synchronously inside `reaction`, which
@@ -54,17 +69,22 @@ describe("LookupStore", () => {
   });
 
   it("setMode replaces dice when the current tuple is illegal for the new mode", () => {
+    // Use a null dataset client: the aether arity-5 sweep through the
+    // live solver is slow enough to time out the test, and this case is
+    // only about selection state, not chunk data.
     const aetherStore = new LookupStore({
-      dataset: new LiveSolverDatasetClient(),
+      dataset: new NullDatasetClient(),
       solverWorker: new InlineSolverService(),
+      initialModeId: "aether",
       initialDice: [3, 4, 5, 6, 7],
     });
     expect(aetherStore.dice).toEqual([3, 4, 5, 6, 7]);
-    runInAction(() => aetherStore.setMode("aether"));
     expect(aetherStore.modeId).toBe("aether");
     runInAction(() => aetherStore.setMode("standard"));
     expect(aetherStore.modeId).toBe("standard");
+    // 5-tuple is illegal in standard (arity=[3]) so the store regenerates.
     expect(aetherStore.dice.length).toBe(3);
+    aetherStore.dispose();
   });
 
   it("solutionsForTarget is idle until a target is set", async () => {

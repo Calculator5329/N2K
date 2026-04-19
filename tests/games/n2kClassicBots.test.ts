@@ -132,15 +132,26 @@ describe("LocalBot.selectMove", () => {
   });
 
   it("passes when every claim is above passThreshold", () => {
-    // Synthesize legal moves whose difficulty all exceed the persona's
-    // passThreshold by hand-feeding a hard equation.
+    // Hand-feed legal moves: only one claim, with a deliberately
+    // expensive equation under standard mode (2^5 + 3^4 + 5 = 118 → high
+    // exponents push difficulty well above 0.001). The persona's tight
+    // pass threshold then forces the bot to pass instead of claim.
     const veryStrictPersona: Persona = {
       ...HARD_PERSONA,
       passThreshold: 0.001,
       difficultyTarget: { min: 0, max: 0.001 },
     };
     const state = n2kClassicGame.init(standardConfig(), [ALICE]);
-    const legal = n2kClassicGame.legalMoves(state, "alice");
+    const hardEquation: NEquation = {
+      dice: [2, 3, 5],
+      exps: [5, 4, 1],
+      ops: [OP.ADD, OP.ADD],
+      total: 32 + 81 + 5,
+    };
+    const legal: readonly N2KClassicMove[] = [
+      { kind: "pass" },
+      { kind: "claim", cellIndex: 0, equation: hardEquation },
+    ];
     const bot = makeBot(veryStrictPersona);
     const choice = bot.selectMove(state, legal);
     expect(choice.kind).toBe("pass");

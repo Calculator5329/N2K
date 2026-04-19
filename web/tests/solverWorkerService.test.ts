@@ -14,7 +14,7 @@ describe("InlineSolverService", () => {
 
   it("allSolutions returns [] when target is unreachable", async () => {
     const svc = new InlineSolverService();
-    const sols = await svc.allSolutions({ mode: standard, dice: [2, 3, 5], total: 99999 });
+    const sols = await svc.allSolutions({ mode: standard, dice: [2, 2, 2], total: 99999 });
     expect(sols).toEqual([]);
   });
 
@@ -26,7 +26,7 @@ describe("InlineSolverService", () => {
 
   it("easiestSolution returns null when nothing matches", async () => {
     const svc = new InlineSolverService();
-    const eq = await svc.easiestSolution({ mode: standard, dice: [2, 3, 5], total: 99999 });
+    const eq = await svc.easiestSolution({ mode: standard, dice: [2, 2, 2], total: 99999 });
     expect(eq).toBeNull();
   });
 

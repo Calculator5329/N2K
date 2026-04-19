@@ -246,7 +246,7 @@ describe("n2kClassicGame.applyMove (claim)", () => {
     // cell index 9 = target 10; equation 2+3+5=10
     const move: N2KClassicMove = { kind: "claim", cellIndex: CELL_TEN, equation: eq235Sum10() };
     const next = n2kClassicGame.applyMove(init, move, "alice");
-    const claim = next.claimed.get(9);
+    const claim = next.claimed.get(CELL_TEN);
     expect(claim).toBeDefined();
     expect(claim!.byPlayer).toBe("alice");
     expect(claim!.equation.total).toBe(10);
@@ -439,7 +439,7 @@ describe("n2kClassicGame.score", () => {
     };
     const next = n2kClassicGame.applyMove(init, move, "alice");
     const scores = n2kClassicGame.score(next);
-    const claim = next.claimed.get(9)!;
+    const claim = next.claimed.get(CELL_TEN)!;
     expect(scores.alice).toBeCloseTo(10 - claim.difficulty);
     expect(scores.bob).toBe(0);
   });
@@ -523,16 +523,19 @@ describe("enumerateClaimEquations", () => {
   });
 
   it("returns an empty list for an unreachable target", () => {
-    // 7 is prime and not in the dice pool {2,3,5}; 7 cannot be reached
-    // by any combination of 2/3/5 raised to any cap (no negative
-    // intermediates either since standard mode has no -1 base).
-    const eqs = enumerateClaimEquations([2, 3, 5], 7919, STANDARD_MODE);
+    // 7919 is a large prime. With dice [2,2,2] under standard mode
+    // (caps exponents at 5), the maximum product 2^5 * 2^5 * 2^5 = 32768
+    // is reachable but no combination of 2-power additions/products
+    // hits a prime this large — verified empirically.
+    const eqs = enumerateClaimEquations([2, 2, 2], 7919, STANDARD_MODE);
     expect(eqs).toEqual([]);
   });
 
   it("walks subsets in Æther mode when pool is larger than min arity", () => {
-    // 5-dice pool, target reachable by some 3-subset.
-    const eqs = enumerateClaimEquations([2, 3, 5, 7, 11], 16, AETHER_MODE);
+    // 4-dice pool with a small target keeps the test cheap (~1s) while
+    // still exercising the subset-walking path — arity=[3,4,5] in Æther,
+    // so we expect both 3- and 4-die solutions in the result.
+    const eqs = enumerateClaimEquations([2, 3, 5, 7], 12, AETHER_MODE);
     expect(eqs.length).toBeGreaterThan(0);
     // Some result should be arity-3 (the smallest reachable arity).
     expect(eqs.some((e) => e.dice.length === 3)).toBe(true);

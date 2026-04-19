@@ -2,6 +2,45 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-19 — Test stabilization on `main`
+
+**All suites green.** 274 root tests + 60 web tests now pass against the
+freshly merged `main`. Five surgical fixes:
+
+- `tests/games/n2kClassic.test.ts` — `enumerateClaimEquations`
+  "unreachable target" case used dice `[2, 3, 5]` with target `7919`,
+  but standard mode actually finds two solutions there. Switched to
+  `[2, 2, 2]` (max reachable = 32768; 7919 is genuinely unreachable
+  with sums of three powers-of-2). The Æther subset-walking case
+  shrank from `[2, 3, 5, 7, 11]` / target `16` (172k results, ~150s)
+  to `[2, 3, 5, 7]` / target `12` (2.1k results, ~1s) so the test
+  finishes in seconds. The "score sums target − difficulty" case
+  read `claimed.get(9)` instead of `claimed.get(CELL_TEN)` (cell 3),
+  fixed.
+- `tests/games/n2kClassicBots.test.ts` — "passes when every claim is
+  above passThreshold" was unsatisfiable because `legalMoves` always
+  surfaced a difficulty-0 equation that beat any positive threshold.
+  Now hand-feeds the bot a single high-difficulty claim
+  (`2^5 + 3^4 + 5 = 118`) so the persona's strict cap actually fires.
+- `web/tests/solverWorkerService.test.ts` — "unreachable" target
+  cases moved from `[2, 3, 5]` (which can hit `99999`) to `[2, 2, 2]`
+  for the same reason as above.
+- `web/tests/LookupStore.test.ts` — "setMode replaces dice when
+  illegal for the new mode" was constructing the store with
+  `initialDice: [3, 4, 5, 6, 7]` and the default `standard` mode,
+  which silently rejected the dice and obscured the assertion. Now
+  starts with `initialModeId: "aether"` and a `NullDatasetClient`
+  stub so the mandatory chunk fetch doesn't block on an arity-5
+  Æther sweep through the live solver.
+- `web/src/stores/FavoritesStore.ts` — `forMode` was annotated as
+  `computed.struct` in `makeObservable`, but it's a regular method
+  (takes `modeId` as an argument) so MobX rejected it at construct
+  time and broke `AppStore` initialization. Annotation switched to
+  `false`; tests pass.
+
+**Verified.** `npm run typecheck` (root), `tsc --noEmit` (web),
+`npx vitest run` (root, 274/274), `npx vitest run` (web, 60/60).
+
 ## 2026-04-18 — Phase 5: Feature parity with v1
 
 **Six new feature surfaces.** Lookup is no longer the only working tab. The

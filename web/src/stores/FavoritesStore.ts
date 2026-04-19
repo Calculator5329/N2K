@@ -6,7 +6,7 @@
  * backend. The shape is intentionally trivial (sorted-tuple → boolean) so
  * the entire payload is cheap to serialize on every mutation.
  */
-import { action, computed, makeObservable, observable } from "mobx";
+import { action, makeObservable, observable } from "mobx";
 
 const STORAGE_KEY = "n2k.favorites.v1";
 
@@ -50,7 +50,7 @@ export class FavoritesStore {
 
     makeObservable(this, {
       isFavorite: false,
-      forMode: computed.struct,
+      forMode: false,
       toggle: action,
       clearAll: action,
     });
