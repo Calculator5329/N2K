@@ -1,12 +1,20 @@
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore } from "./stores/AppStoreContext.js";
+import { LookupView } from "./features/lookup/LookupView.js";
+
+type SurfaceId = "lookup" | "about";
+
+const SURFACES: ReadonlyArray<{ id: SurfaceId; label: string }> = [
+  { id: "lookup", label: "Lookup" },
+  { id: "about", label: "About" },
+];
 
 export const App = observer(function App() {
   const store = useAppStore();
-  const { theme, identity } = store;
+  const { theme } = store;
+  const [surface, setSurface] = useState<SurfaceId>("lookup");
 
-  // Apply the active theme tokens to the document root whenever it changes.
   useEffect(() => {
     theme.applyTo(document.documentElement);
   }, [theme, theme.activeId]);
@@ -17,42 +25,77 @@ export const App = observer(function App() {
       style={{ background: "var(--color-bg)", color: "var(--color-ink)" }}
     >
       <header className="border-b" style={{ borderColor: "var(--color-rule)" }}>
-        <div className="mx-auto max-w-5xl px-6 py-5 flex items-baseline justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">N2K</h1>
-            <p className="text-sm" style={{ color: "var(--color-ink-muted)" }}>
-              v2 platform — foundation
-            </p>
+        <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between gap-6">
+          <div className="flex items-baseline gap-6">
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight">N2K</h1>
+              <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
+                v2 platform
+              </p>
+            </div>
+            <nav role="tablist" aria-label="Surfaces" className="flex gap-1">
+              {SURFACES.map((s) => {
+                const active = surface === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setSurface(s.id)}
+                    className="px-3 py-1.5 text-sm rounded"
+                    style={{
+                      background: active ? "var(--color-accent)" : "transparent",
+                      color: active ? "var(--color-bg)" : "var(--color-ink)",
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
           <ThemeSwitcher />
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10 space-y-8">
-        <Card title="Identity">
-          <p className="text-sm" style={{ color: "var(--color-ink-muted)" }}>
-            Signed in as
-          </p>
-          <p className="text-lg font-medium">{identity.user.displayName}</p>
-          <p className="text-xs mt-1" style={{ color: "var(--color-ink-muted)" }}>
-            id: <code>{identity.user.id}</code>
-            {identity.user.anonymous ? " (anonymous, local)" : ""}
-          </p>
-        </Card>
+      <main>{surface === "lookup" ? <LookupView /> : <AboutView />}</main>
+    </div>
+  );
+});
 
-        <Card title="Status">
-          <ul className="text-sm space-y-1.5" style={{ color: "var(--color-ink-muted)" }}>
-            <li>• Three-layer architecture: UI &rarr; Stores &rarr; Services</li>
-            <li>• Pluggable backends: ContentBackend / IdentityService / AIService</li>
-            <li>• Single domain: NEquation + Mode-parameterized solver</li>
-            <li>• Game kernel ready for N2K Classic + future minigames</li>
-          </ul>
-          <p className="mt-4 text-xs" style={{ color: "var(--color-ink-muted)" }}>
-            Phase 3 (web foundation) in progress. Phase 4 (Play surface) and
-            Phase 5 (compose / dataset / lookup) follow.
-          </p>
-        </Card>
-      </main>
+const AboutView = observer(function AboutView() {
+  const { identity } = useAppStore();
+  return (
+    <div className="mx-auto max-w-3xl px-6 py-10 space-y-6">
+      <Card title="Identity">
+        <p className="text-sm" style={{ color: "var(--color-ink-muted)" }}>
+          Signed in as
+        </p>
+        <p className="text-lg font-medium">{identity.user.displayName}</p>
+        <p className="text-xs mt-1" style={{ color: "var(--color-ink-muted)" }}>
+          id: <code>{identity.user.id}</code>
+          {identity.user.anonymous ? " (anonymous, local)" : ""}
+        </p>
+      </Card>
+
+      <Card title="What works today">
+        <ul className="text-sm space-y-1.5" style={{ color: "var(--color-ink-muted)" }}>
+          <li>• Lookup — pick mode + dice, see every reachable target with the easiest equation, drill into all solutions</li>
+          <li>• Theme switcher (tabletop / noir) with CSS-variable plumbing</li>
+          <li>• Three pluggable service seams: ContentBackend / IdentityService / AIService</li>
+          <li>• DatasetClient + SolverWorkerService (live solver fallback today, Phase 1 chunks + Web Worker tomorrow)</li>
+        </ul>
+      </Card>
+
+      <Card title="Coming next">
+        <ul className="text-sm space-y-1.5" style={{ color: "var(--color-ink-muted)" }}>
+          <li>• N2K Classic Play surface (PLAN-B)</li>
+          <li>• Theme registry as data + custom themes (PLAN-C)</li>
+          <li>• Bulk export pipeline + HttpDatasetClient swap (PLAN-A)</li>
+          <li>• Compose: board generator + visualizer</li>
+        </ul>
+      </Card>
     </div>
   );
 });
