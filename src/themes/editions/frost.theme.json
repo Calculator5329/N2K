@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "id": "frost",
+    "displayName": "Frost",
+    "version": "1.0.0",
+    "summary": "Cool steel-and-ice palette with a custom serif type stack. Demonstrates the typography group.",
+    "tags": ["light", "cool", "typography"]
+  },
+  "extends": "tabletop",
+  "tokens": {
+    "color": {
+      "bg": "#eef3f7",
+      "surface": "#ffffff",
+      "ink": "#10222e",
+      "inkMuted": "#5b7484",
+      "accent": "#1f7aa6",
+      "rule": "#c4d4df",
+      "success": "#2f8f6f",
+      "warning": "#a07614",
+      "danger": "#a8331f",
+      "extras": {
+        "iceBlue": "#9ec8e0",
+        "glacier": "#cfe1ec"
+      }
+    },
+    "typography": {
+      "fontFamilySans": "\"Manrope\", \"Inter\", Helvetica, Arial, sans-serif",
+      "fontFamilySerif": "\"Cormorant Garamond\", Garamond, Georgia, serif",
+      "fontFamilyMono": "\"IBM Plex Mono\", Menlo, monospace",
+      "scaleRatio": 1.25
+    },
+    "radius": {
+      "card": "6px",
+      "chip": "4px"
+    }
+  }
+}

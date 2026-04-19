@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "id": "tabletop",
+    "displayName": "Tabletop",
+    "version": "1.0.0",
+    "summary": "Warm parchment palette evoking a felt-and-paper game table; the platform's reference theme.",
+    "tags": ["light", "warm", "default", "reference"]
+  },
+  "tokens": {
+    "color": {
+      "bg": "#f5efe1",
+      "surface": "#fffaf0",
+      "ink": "#2b241b",
+      "inkMuted": "#6b5d49",
+      "accent": "#a85b2a",
+      "rule": "#d8caa8",
+      "success": "#3f7a3a",
+      "warning": "#c08a1f",
+      "danger": "#a8331f",
+      "extras": {
+        "feltGreen": "#3a6b4f",
+        "diceShadow": "#7a6238",
+        "highlight": "#f3d27a"
+      }
+    },
+    "typography": {
+      "fontFamilySans": "\"Inter\", \"Helvetica Neue\", Arial, sans-serif",
+      "fontFamilySerif": "\"Source Serif Pro\", Georgia, serif",
+      "fontFamilyMono": "\"JetBrains Mono\", \"Fira Code\", Menlo, monospace",
+      "scaleRatio": 1.2
+    },
+    "spacing": {
+      "unitPx": 4
+    },
+    "radius": {
+      "card": "12px",
+      "chip": "999px"
+    },
+    "shadow": {
+      "card": "0 1px 2px rgba(43, 36, 27, 0.08), 0 4px 12px rgba(43, 36, 27, 0.06)",
+      "popover": "0 4px 8px rgba(43, 36, 27, 0.12), 0 16px 32px rgba(43, 36, 27, 0.10)"
+    }
+  }
+}

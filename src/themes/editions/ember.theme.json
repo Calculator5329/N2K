@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "id": "ember",
+    "displayName": "Ember",
+    "version": "1.0.0",
+    "summary": "Saturated crimson/amber palette over deep ash. Demonstrates a maximally vivid accent palette.",
+    "tags": ["dark", "warm", "high-saturation"]
+  },
+  "extends": "tabletop",
+  "tokens": {
+    "color": {
+      "bg": "#1a0e0a",
+      "surface": "#241410",
+      "ink": "#fff1e2",
+      "inkMuted": "#caa089",
+      "accent": "#ff6b1a",
+      "rule": "#3d2218",
+      "success": "#7fcf6c",
+      "warning": "#ffb74d",
+      "danger": "#ff3d3d",
+      "extras": {
+        "ember1": "#ff8a3d",
+        "ember2": "#ffba7a",
+        "coal": "#0a0604",
+        "spark": "#ffd25d"
+      }
+    },
+    "typography": {
+      "fontFamilySans": "\"Inter\", \"Helvetica Neue\", Arial, sans-serif",
+      "scaleRatio": 1.18
+    },
+    "radius": {
+      "card": "16px",
+      "chip": "999px"
+    },
+    "shadow": {
+      "card": "0 2px 4px rgba(0, 0, 0, 0.5), 0 12px 28px rgba(255, 107, 26, 0.15)",
+      "popover": "0 12px 32px rgba(0, 0, 0, 0.65), 0 24px 56px rgba(255, 107, 26, 0.18)"
+    }
+  }
+}
