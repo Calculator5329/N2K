@@ -67,11 +67,13 @@
 
 ## Phase 6 — Platform extensions
 
-- [ ] Persisted boards as `BoardDoc` content entities
+- [x] Persisted boards as `BoardDoc` content entities (`BoardLibraryService` + `BoardLibraryStore`; Compose UI wired)
+- [x] `LocalStorageContentBackend` so saved content survives reloads (default in `createDefaultAppStore`)
 - [ ] Persisted competitions as `CompetitionDoc`
 - [ ] Persisted custom themes as `ThemeDoc`
 - [ ] Game replay UI (read game log, scrub move-by-move)
 - [ ] AI-generated theme prompt + validation
+- [ ] IndexedDB-backed `ContentBackend` (for boards / competitions that exceed `localStorage`'s ~5MB quota)
 
 ## Phase 7 — Backend swap (when ready)
 

@@ -2,6 +2,50 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-19 — Phase 6 starter + depower display polish
+
+Continuing from the post-merge audit. Three quality-of-life fixes
+plus the first slice of Phase 6 persistence work.
+
+- **`effectivePool` lifted to `core/`.** N2K Classic's depower-aware
+  pool view now lives next to `depowerDice` in `core/constants.ts`,
+  so any game built on the kernel inherits the same semantics. `games/n2kClassic.ts`
+  imports it instead of redefining its own copy.
+- **Equation rendering uses the original rolled dice.** Added
+  `formatEquationAgainstPool` / `formatExpressionAgainstPool` (and
+  the underlying `relabelDepoweredDice` helper). Standard-mode
+  equations from a `[16, 8, 12]` pool now render as `16 - 8 + 12 = 20`
+  in the Lookup target grid, the Lookup solutions panel, and the Play
+  claim picker — matching what the player sees on the table instead
+  of the depowered `[2, 2, 12]` form. Æther mode is a passthrough
+  (no compound dice to depower). 7 new parsing tests cover the helper
+  + ties-broken-by-largest-compound-first rule.
+- **`TargetNeighborhood` selection feedback.** Adjacent-target bars
+  now carry an explicit accent-colored outline + bolder label on the
+  selected bar plus an `aria-current="true"` for screen readers, so
+  arrow-key navigation has unambiguous visual feedback even when
+  document focus stays on `<body>`.
+- **Phase 6 — Saved boards (BoardDoc).** New `BoardLibraryService`
+  (default impl `ContentBackendBoardLibrary`) wraps any
+  `ContentBackend` for `kind: "board"` storage; `BoardLibraryStore`
+  exposes the list as MobX observables and stays subscribed to the
+  backend change feed. `ComposeStore` gained `toLibraryBody`,
+  `loadFromLibrary`, and `appendFromLibrary`. The Compose view shows
+  a new "Saved boards" panel with Load / Append / Delete and a "★
+  Save" button per board editor. Owner isolation is wired through
+  `IdentityStore.user.id` — anonymous users get their own per-browser
+  bucket today, ready to swap to Firestore later. 9 new web tests
+  cover the service + store CRUD, multi-owner isolation, and the
+  subscription change feed.
+- **`LocalStorageContentBackend`.** Drop-in `ContentBackend` that
+  persists to `window.localStorage` (with an in-memory fallback for
+  jsdom / SSR). `createDefaultAppStore` now uses it instead of
+  `MemoryContentBackend`, so saved boards survive reloads. Wire
+  format: per-entity records under `n2k.content.v1.entity.{kind}.{id}`
+  + per-kind index under `n2k.content.v1.index.{kind}`. 6 new web
+  tests cover round-trip persistence across instances, owner
+  filtering, change-feed delivery, and corrupted-index tolerance.
+
 ## 2026-04-18 — Games: N2K Classic — time-budget scoring model
 
 **Replaced `score = target − difficulty` with v1's expected-score model applied as live game rules.** Each player has a per-match `timeBudget` (default 60s). Claiming a cell costs `difficultyOfEquation(eq, mode)` seconds from that player's remaining budget — the heuristic doubles as a "seconds to solve" estimate, exactly as the v1 `expectedScore` heuristic does. Claims with difficulty above `hardSkipThreshold` (default 10) are filtered out of `legalMoves`; claims that would exceed remaining budget are rejected by `applyMove`. **Score per player is now simply `Σ board.cells[i]` over the cells they claimed** — the difficulty was already paid in time. Matches now produce realistic 60–150 totals on standard boards instead of near-zero "target minus difficulty" deltas. State carries `remainingBudget: ReadonlyMap<PlayerId, number>` and the wire format includes both the new config fields and the per-player remaining budget (back-compat: pre-budget wires re-initialize each player to the default budget on deserialize). Added exports `DEFAULT_TIME_BUDGET`, `DEFAULT_HARD_SKIP_THRESHOLD`, `effectiveTimeBudget(config)`, `effectiveHardSkip(config)`. Existing tests updated; bots and `replay()` continue to work unchanged because the LocalBot's persona-band filter is strictly tighter than the new hard-skip filter.

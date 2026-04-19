@@ -24,7 +24,7 @@
  * intermediate state from `(config, players, log)`.
  */
 import type { Board, Mode, NEquation } from "../core/types.js";
-import { FLOAT_EQ_EPSILON, depowerDice } from "../core/constants.js";
+import { FLOAT_EQ_EPSILON, effectivePool } from "../core/constants.js";
 import { applyOperator, unorderedSubsets } from "../services/arithmetic.js";
 import {
   buildAllBasesCache,
@@ -122,19 +122,6 @@ export function evaluateEquation(eq: NEquation): number {
     acc = applyOperator(acc, next, ops[i]!);
   }
   return acc;
-}
-
-/**
- * Mode-aware view of a dice pool: standard mode depowers compound dice
- * (4 / 8 / 16 → 2; 9 → 3) before solver / difficulty / subset checks
- * so equations produced by `allSolutions` (which solves on the
- * depowered values) line up with the pool the player actually rolled.
- *
- * Æther mode is a no-op.
- */
-function effectivePool(pool: readonly number[], mode: Mode): readonly number[] {
-  if (!mode.depower) return pool;
-  return pool.map(depowerDice);
 }
 
 /** True iff the equation's dice values are a multiset subset of the pool. */

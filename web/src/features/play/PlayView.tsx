@@ -13,7 +13,7 @@ import {
   type PersonaId,
 } from "@platform/games/personas.js";
 import {
-  formatEquation,
+  formatEquationAgainstPool,
 } from "@platform/services/parsing.js";
 import type { NEquation } from "@platform/core/types.js";
 import type { PlayModeId } from "../../stores/PlayStore.js";
@@ -300,19 +300,32 @@ const ClaimPanel = observer(function ClaimPanel() {
       </p>
       <ul className="space-y-1.5">
         {eqs.map((eq, i) => (
-          <ClaimRow key={i} idx={idx} equation={eq} />
+          <ClaimRow
+            key={i}
+            idx={idx}
+            equation={eq}
+            originalPool={state.dicePool}
+            mode={state.config.mode}
+          />
         ))}
       </ul>
     </div>
   );
 });
 
-function ClaimRow(props: { idx: number; equation: NEquation }) {
+function ClaimRow(props: {
+  idx: number;
+  equation: NEquation;
+  originalPool: readonly number[];
+  mode: import("@platform/core/types.js").Mode;
+}) {
   const { play } = useAppStore();
   const [busy, setBusy] = useState(false);
   return (
     <li className="flex items-center justify-between gap-2 px-2 py-1.5 rounded" style={{ border: "1px solid var(--color-rule)" }}>
-      <span className="font-mono text-sm">{formatEquation(props.equation)}</span>
+      <span className="font-mono text-sm">
+        {formatEquationAgainstPool(props.equation, props.originalPool, props.mode)}
+      </span>
       <button
         type="button"
         disabled={busy || !play.isMyTurn}

@@ -235,3 +235,76 @@ export function depowerDice(dice: number): number {
       return dice;
   }
 }
+
+/**
+ * Mode-aware view of a dice pool. Standard mode depowers compound
+ * dice (4 / 8 / 16 → 2; 9 → 3) before solver / difficulty / subset
+ * checks so equations produced by `allSolutions` (which solves on the
+ * depowered values) line up with the pool the player actually rolled.
+ *
+ * Æther mode is a no-op.
+ *
+ * Lives in `core/` so every game built on the kernel inherits the same
+ * depower semantics — Phase 1 surfaced this when N2K Classic was the
+ * only game implementation; future games (Speed, Daily, …) get it for
+ * free by routing all pool / subset comparisons through this helper.
+ */
+export function effectivePool(pool: readonly number[], mode: Mode): readonly number[] {
+  if (!mode.depower) return pool;
+  return pool.map(depowerDice);
+}
+
+/**
+ * Inverse-ish of `depowerDice` for *display*: given an equation whose
+ * `dice` array carries depowered values (because the solver depowers
+ * before enumerating in standard mode), best-effort relabel each
+ * depowered die back to one of the original "compound" dice in the
+ * rolled pool so the rendered equation matches what the player sees
+ * on the table.
+ *
+ * Strategy: walk `equationDice` in order; for each value, prefer to
+ * spend a still-unused original die from `originalPool` whose
+ * `depowerDice` mapping equals the equation value. Falls back to the
+ * raw equation value when no remaining original matches (e.g. the die
+ * is itself non-compound, or the equation uses two depowered 2s but
+ * the pool only had one compound 8). Ties are broken by "highest
+ * compound die first" so a `[16, 8, 12]` pool with equation `[2, 2,
+ * 12]` renders as `[16, 8, 12]` rather than `[8, 16, 12]` — players
+ * read left-to-right and expect the bigger compound to bind first.
+ *
+ * Pure: caller mutates nothing.
+ */
+export function relabelDepoweredDice(
+  equationDice: readonly number[],
+  originalPool: readonly number[],
+  mode: Mode,
+): readonly number[] {
+  if (!mode.depower) return equationDice;
+
+  // Group originals by the value they depower to, sorted descending so
+  // the largest compound (e.g. 16 before 8 before 4) is picked first.
+  const byDepowered = new Map<number, number[]>();
+  for (const orig of originalPool) {
+    const dep = depowerDice(orig);
+    let bucket = byDepowered.get(dep);
+    if (bucket === undefined) {
+      bucket = [];
+      byDepowered.set(dep, bucket);
+    }
+    bucket.push(orig);
+  }
+  for (const bucket of byDepowered.values()) {
+    bucket.sort((a, b) => b - a);
+  }
+
+  const out: number[] = [];
+  for (const d of equationDice) {
+    const bucket = byDepowered.get(d);
+    if (bucket !== undefined && bucket.length > 0) {
+      out.push(bucket.shift()!);
+    } else {
+      out.push(d);
+    }
+  }
+  return out;
+}

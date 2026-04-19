@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import type { LookupStore } from "../../stores/LookupStore.js";
-import { formatExpression } from "@platform/services/parsing.js";
+import { formatExpressionAgainstPool } from "@platform/services/parsing.js";
 import { tierForDifficulty } from "./difficultyTier.js";
 
 const TIERS = ["all", "trivial", "easy", "moderate", "hard", "very hard", "extreme", "legendary", "mythic"] as const;
@@ -145,7 +145,7 @@ export const TargetGrid = observer(function TargetGrid({ store }: TargetGridProp
                     }}
                   >
                     <Td mono bold>{sol.equation.total}</Td>
-                    <Td mono>{formatExpression(sol.equation)}</Td>
+                    <Td mono>{formatExpressionAgainstPool(sol.equation, store.dice, store.mode)}</Td>
                     <Td align="right" mono>{sol.difficulty.toFixed(1)}</Td>
                     <Td>
                       <span

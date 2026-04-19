@@ -16,8 +16,8 @@
  *   - Operators are surrounded by single spaces.
  *   - The total is appended with ` = total` (no parens).
  */
-import { OPERATOR_TO_SYMBOL } from "../core/constants.js";
-import type { NEquation } from "../core/types.js";
+import { OPERATOR_TO_SYMBOL, relabelDepoweredDice } from "../core/constants.js";
+import type { Mode, NEquation } from "../core/types.js";
 
 /** Render one die (value^exp) as a string. */
 export function formatBase(dice: number, exp: number): string {
@@ -56,4 +56,40 @@ export function formatEquation(eq: NEquation): string {
  */
 export function formatExpression(eq: NEquation): string {
   return formatEquation(eq).replace(/\s*=.*$/, "");
+}
+
+/**
+ * Like {@link formatEquation} but relabels the equation's dice back to
+ * the originals from `originalPool` for display. Standard mode depowers
+ * compound dice (16/8/4 → 2; 9 → 3) before solving, so an equation
+ * generated from a `[16, 8, 12]` pool comes back with `dice = [2, 2,
+ * 12]` and renders as `2^2 + 2 / 12 = …` by default — confusing for
+ * the player who's holding a 16 and an 8 in their hand. This helper
+ * relabels each depowered value back to the largest matching original
+ * die from the pool so the rendered form lines up with what the
+ * player rolled: `16^0 + 8^1 / 12 = …`.
+ *
+ * Æther mode (`mode.depower === false`) is a pure passthrough — no
+ * relabeling, no surprises.
+ *
+ * If `originalPool` doesn't contain enough compound dice to cover the
+ * equation (e.g. the equation uses two depowered 2s but the pool only
+ * had one 8), the leftover values render as-is.
+ */
+export function formatEquationAgainstPool(
+  eq: NEquation,
+  originalPool: readonly number[],
+  mode: Mode,
+): string {
+  const labeledDice = relabelDepoweredDice(eq.dice, originalPool, mode);
+  return formatEquation({ ...eq, dice: labeledDice });
+}
+
+/** Expression-only counterpart of {@link formatEquationAgainstPool}. */
+export function formatExpressionAgainstPool(
+  eq: NEquation,
+  originalPool: readonly number[],
+  mode: Mode,
+): string {
+  return formatEquationAgainstPool(eq, originalPool, mode).replace(/\s*=.*$/, "");
 }

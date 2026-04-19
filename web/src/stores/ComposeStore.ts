@@ -15,6 +15,7 @@ import {
   generatePatternBoard,
   generateRandomBoard,
 } from "@platform/services/generators.js";
+import type { BoardDocBody } from "../services/boardLibrary.js";
 import type {
   CandidatePool,
   CompetitionConfig,
@@ -86,6 +87,8 @@ export class ComposeStore {
       generate: action,
       clearPlan: action,
       applySnapshot: action,
+      loadFromLibrary: action,
+      appendFromLibrary: action,
     });
   }
 
@@ -157,6 +160,70 @@ export class ComposeStore {
   clearPlan(): void {
     this.plan = null;
     this.lastError = null;
+  }
+
+  // -----------------------------------------------------------------
+  // Board library (Phase 6)
+  //
+  // Helpers that bridge a runtime `BoardConfig` to the wire-format
+  // `BoardDocBody` consumed by `BoardLibraryStore`. Lives on Compose
+  // because Compose owns the runtime board shape — the library store
+  // intentionally only sees the persisted body.
+  // -----------------------------------------------------------------
+
+  /** Snapshot a single board into a persistable body. */
+  toLibraryBody(boardId: string): BoardDocBody | null {
+    const b = this.boards.find((x) => x.id === boardId);
+    if (b === undefined) return null;
+    return {
+      modeId: this.modeId,
+      kind: b.kind,
+      random: { min: b.random.min, max: b.random.max },
+      pattern: { multiples: [...b.pattern.multiples], start: b.pattern.start },
+      rounds: b.rounds,
+      cells: [...b.cells],
+      pinned: [...b.pinned].sort((a, c) => a - c),
+    };
+  }
+
+  /**
+   * Replace `targetBoardId`'s config with the contents of `body`. Mode
+   * is also switched to match the saved board so the cells make sense
+   * (a standard board loaded into Æther mode would render fine but the
+   * generator pool would be wrong).
+   */
+  loadFromLibrary(targetBoardId: string, body: BoardDocBody): void {
+    this.modeId = body.modeId;
+    this.boards = this.boards.map((b) => {
+      if (b.id !== targetBoardId) return b;
+      return {
+        ...b,
+        kind: body.kind,
+        random: { min: body.random.min, max: body.random.max },
+        pattern: { multiples: [...body.pattern.multiples], start: body.pattern.start },
+        rounds: body.rounds,
+        cells: [...body.cells],
+        pinned: new Set(body.pinned),
+      };
+    });
+  }
+
+  /** Append a brand-new board populated from a saved body. */
+  appendFromLibrary(body: BoardDocBody): void {
+    const id = `board-${nextBoardId++}`;
+    this.modeId = body.modeId;
+    this.boards = [
+      ...this.boards,
+      {
+        id,
+        kind: body.kind,
+        random: { min: body.random.min, max: body.random.max },
+        pattern: { multiples: [...body.pattern.multiples], start: body.pattern.start },
+        rounds: body.rounds,
+        cells: [...body.cells],
+        pinned: new Set(body.pinned),
+      },
+    ];
   }
 
   // -----------------------------------------------------------------

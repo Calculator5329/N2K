@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import type { LookupStore } from "../../stores/LookupStore.js";
-import { formatExpression } from "@platform/services/parsing.js";
+import { formatExpressionAgainstPool } from "@platform/services/parsing.js";
 import { difficultyOfEquation } from "@platform/services/difficulty.js";
 import { tierForDifficulty } from "./difficultyTier.js";
 
@@ -123,7 +123,7 @@ export const SolutionsPanel = observer(function SolutionsPanel({
                         fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
                       }}
                     >
-                      {formatExpression(eq)}
+                      {formatExpressionAgainstPool(eq, store.dice, store.mode)}
                     </span>
                     <span className="flex items-center gap-2">
                       <span

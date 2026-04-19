@@ -36,6 +36,10 @@ export const ComposeView = observer(function ComposeView() {
         <GlobalControls />
       </Card>
 
+      <Card>
+        <BoardLibraryPanel />
+      </Card>
+
       <div className="space-y-4">
         {compose.boards.map((b) => (
           <Card key={b.id}>
@@ -186,16 +190,19 @@ const BoardEditor = observer(function BoardEditor(props: { board: BoardConfig })
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold">{board.id}</h3>
-          {compose.boards.length > 1 ? (
-            <button
-              type="button"
-              onClick={() => compose.removeBoard(board.id)}
-              className="text-xs underline"
-              style={{ color: "var(--color-ink-muted)" }}
-            >
-              Remove
-            </button>
-          ) : null}
+          <div className="flex items-center gap-2">
+            <SaveBoardButton boardId={board.id} />
+            {compose.boards.length > 1 ? (
+              <button
+                type="button"
+                onClick={() => compose.removeBoard(board.id)}
+                className="text-xs underline"
+                style={{ color: "var(--color-ink-muted)" }}
+              >
+                Remove
+              </button>
+            ) : null}
+          </div>
         </div>
         <Field label="Kind">
           <select
@@ -488,6 +495,113 @@ const PlanResults = observer(function PlanResults(props: { plan: CompetitionPlan
         </Card>
       ))}
     </div>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Board library (Phase 6)
+//
+// Persists individual boards through `BoardLibraryStore`. The list shows
+// the user's saved boards newest-first; loading replaces the *first*
+// editor board so the user immediately sees the result inline. Append
+// adds it as a new board so they can compare.
+// ---------------------------------------------------------------------------
+
+const BoardLibraryPanel = observer(function BoardLibraryPanel() {
+  const { compose, boardLibrary } = useAppStore();
+  const entries = boardLibrary.entries;
+  const onLoadInto = (bodyEntry: (typeof entries)[number]) => {
+    const target = compose.boards[0]?.id;
+    if (target === undefined) return;
+    compose.loadFromLibrary(target, bodyEntry.body);
+  };
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Saved boards</h3>
+        <span className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
+          {entries.length === 0
+            ? "Save any board with the ★ button to add it here."
+            : `${entries.length} saved`}
+        </span>
+      </div>
+      {boardLibrary.lastError !== null ? (
+        <p className="text-xs" style={{ color: "var(--color-ink)" }}>
+          {boardLibrary.lastError}
+        </p>
+      ) : null}
+      {entries.length === 0 ? null : (
+        <ul className="divide-y" style={{ borderColor: "var(--color-rule)" }}>
+          {entries.map((entry) => (
+            <li
+              key={entry.id}
+              className="flex items-center justify-between gap-3 py-1.5"
+              style={{ borderTopColor: "var(--color-rule)" }}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium truncate">{entry.title ?? "Untitled board"}</div>
+                <div className="text-[11px]" style={{ color: "var(--color-ink-muted)" }}>
+                  {entry.body.modeId} · {entry.body.kind} · {entry.body.cells.length} cells ·{" "}
+                  {entry.body.pinned.length} pinned
+                </div>
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onLoadInto(entry)}
+                  className="px-2 py-1 text-xs rounded border"
+                  style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
+                  title="Replace the first editor board with this saved board."
+                >
+                  Load
+                </button>
+                <button
+                  type="button"
+                  onClick={() => compose.appendFromLibrary(entry.body)}
+                  className="px-2 py-1 text-xs rounded border"
+                  style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
+                  title="Append as a new editor board."
+                >
+                  Append
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void boardLibrary.remove(entry.id)}
+                  className="px-2 py-1 text-xs rounded border"
+                  style={{ borderColor: "var(--color-rule)", color: "var(--color-ink-muted)" }}
+                  title="Delete this saved board."
+                >
+                  ✕
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+});
+
+const SaveBoardButton = observer(function SaveBoardButton(props: { boardId: string }) {
+  const { compose, boardLibrary } = useAppStore();
+  const onSave = () => {
+    const body = compose.toLibraryBody(props.boardId);
+    if (body === null) return;
+    // eslint-disable-next-line no-alert -- minimal MVP prompt; replace with a modal once Phase 6 UI lands.
+    const title = window.prompt("Name this board", `Board ${new Date().toLocaleString()}`);
+    if (title === null || title.trim() === "") return;
+    void boardLibrary.save(title.trim(), body);
+  };
+  return (
+    <button
+      type="button"
+      onClick={onSave}
+      className="px-2 py-1 text-xs rounded border"
+      style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
+      title="Save this board to the library."
+    >
+      ★ Save
+    </button>
   );
 });
 

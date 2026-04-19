@@ -143,8 +143,21 @@ export const TargetNeighborhood = observer(function TargetNeighborhood({
               key={s.equation.total}
               type="button"
               onClick={() => store.setTarget(s.equation.total)}
+              aria-current={active ? "true" : undefined}
+              aria-label={`Target ${s.equation.total}, difficulty ${s.difficulty.toFixed(1)}${active ? " (selected)" : ""}`}
               className="flex flex-col items-center justify-end gap-0.5 flex-1 min-w-0 group"
-              style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer" }}
+              style={{
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                // Solid outline + ink-color label for the selected bar so
+                // keyboard navigation has unambiguous visual feedback even
+                // when the underlying focus stays on document.body.
+                outline: active ? "2px solid var(--color-accent)" : "none",
+                outlineOffset: active ? 2 : 0,
+                borderRadius: 4,
+              }}
               title={`Target ${s.equation.total} · difficulty ${s.difficulty.toFixed(1)}`}
             >
               <div
@@ -160,7 +173,7 @@ export const TargetNeighborhood = observer(function TargetNeighborhood({
                 className="text-[10px] tabular-nums"
                 style={{
                   color: active ? "var(--color-ink)" : "var(--color-ink-muted)",
-                  fontWeight: active ? 600 : 400,
+                  fontWeight: active ? 700 : 400,
                 }}
               >
                 {s.equation.total}
