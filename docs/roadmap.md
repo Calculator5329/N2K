@@ -45,7 +45,7 @@
 
 - [x] **Lookup feature** — `LookupStore` + `LookupView` (mode/dice/target pickers + sortable target grid + per-target drill-down); `DatasetClient` (`LiveSolverDatasetClient` bootstrap; `HttpDatasetClient` after PLAN-A); `SolverWorkerService` (`InlineSolverService`; Web Worker impl when warranted)
 - [ ] Compose feature (board editor + competition generator + DOCX/PDF export)
-- [ ] Play feature (single-player + bot, on the game kernel)
+- [~] Play feature (single-player + bot, on the game kernel) — game/bot foundation landed (`src/games/n2kClassic*`); web UI pending
 - [ ] Information / About
 
 ## Phase 5 — Hidden features (future admin gate)
