@@ -2,6 +2,73 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-18 — Phase 1: Bulk export pipeline
+
+**Mode-aware bulk export.** `scripts/export.ts` walks every legal dice tuple for a mode, runs `solveForExport` per tuple in a `WorkerPool`, and writes per-tuple JSON chunks + an aggregate bit-packed `.n2k` blob + `manifest.json`. Entry point: `npm run export -- --mode <standard|aether> [--arity 3|4|5|all] [--out <dir>] [--concurrency N] [--no-binary] [--no-json]`.
+
+**Binary format (`src/core/n2kBinary.ts`).** LSB-first `BitWriter`/`BitReader` with zigzag signed varints and unsigned LEB128. Chunk layout: magic `N2KC` + version + modeId(1b) + arity(3b) + reserved(4b) + sorted-dice varints + targetMin/Max/count uvarints + per-record `(permIndex, shared-width exps, 2-bit ops, delta-encoded target, diff×100)`. The per-record `permIndex` resolves into `distinctPermutations(diceTuple)` because the solver returns permuted dice per equation. `encodeChunks`/`decodeChunks` concatenate + stream chunks back.
+
+**Exporter (`src/services/exporter.ts`).** Pure helpers: `canonicalizeTuple` (depower+sort for standard, sort-only for Æther), `exportOneTuple` (runs `solveForExport` over full target range; returns sorted-by-target equations + elapsed ms), `toBinaryChunk` / `toChunkJson` shape converters, `chunkFilename` / `chunkRelativePath` (negatives render as `n10`; Æther nests by arity), `verifyEquation`. `Manifest` / `ManifestChunkEntry` types live here.
+
+**Worker pool (`src/services/workerPool.ts`).** Generic `WorkerPool<TInput, TOutput>` over `node:worker_threads` with a typed `{id, payload}` → `{ok, id, result|error}` envelope. Concurrency, queueing, per-job rejection, worker auto-respawn on crash, `close()` (drain-then-terminate) and `terminate()` (immediate). Defaults to `cpus().length - 1`.
+
+**Worker bootstrap.** `src/services/exporter.worker.bootstrap.mjs` calls `register` from `tsx/esm/api` and then dynamic-imports the `.ts` worker. Node 22 does not reliably propagate `--import tsx` through `execArgv` on Windows, so pointing the `Worker` at a tiny `.mjs` bootstrap avoids that whole class of breakage.
+
+**Tests (46 new).** 22 in `tests/n2kBinary.test.ts`, 14 in `tests/exporter.test.ts`, 10 in `tests/workerPool.test.ts`.
+
+**Wall-clock.** `npm run export -- --mode standard` → 1311 tuples, 518,415 equations, 2.74 MB `.n2k`, **9.64s**. `npm run export -- --mode aether --arity 3` → 14,190 tuples, 5,874,050 equations, 31.8 MB `.n2k`, **53.39s**. Both under the plan's 60s budget.
+
+**Tooling.** `tsconfig.check.json` type-checks `src/`+`scripts/`+`tests/` without disturbing the build's `rootDir: ./src`/`outDir: ./dist`. `npm run typecheck` now runs against that.
+
+## 2026-04-18 — Phase 4 Lookup (on `agent/phase-4-lookup`)
+
+**First real feature surface.** Lookup lets you pick a mode + dice tuple
+and see every reachable target, sorted easiest-first, with the easiest
+known equation per target. Click a target to drill into every distinct
+equation that hits it. Sets the pattern every other feature will follow.
+
+**New services (`web/src/services/`).** Two new pluggable seams, each
+with a "live solver" bootstrap impl and a documented upgrade path:
+
+- `datasetClient.ts` — `DatasetClient` interface for fetching the
+  per-tuple solution set. `LiveSolverDatasetClient` computes chunks
+  on demand via the core solver, dedupes concurrent requests, and
+  caches by sorted `(modeId, dice)`. `HttpDatasetClient` arrives once
+  PLAN-A's `.json` chunks ship — drop-in swap from `createDefaultAppStore`.
+- `solverWorkerService.ts` — `SolverWorkerService` for interactive
+  on-demand solves (the dataset covers the cached "easiest known" set;
+  this handles "all solutions for this exact total"). `InlineSolverService`
+  runs on the current task with a `Promise.resolve()` yield so the UI
+  stays responsive. `WorkerSolverService` (Web Worker) lands when
+  arity-5 sweeps need it.
+
+**New store (`web/src/stores/LookupStore.ts`).** First feature store.
+Owns selection state (mode, dice, optional target) and exposes two
+`Resource<T>`s: `chunk` (driven by the dataset client) and
+`solutionsForTarget` (driven by the worker service). MobX `reaction`s
+re-fetch each resource exactly when its inputs change. Zero `cacheTick`
+anywhere — `Resource<T>` already covers the use case.
+
+**Lookup view (`web/src/features/lookup/`).**
+`ModePicker`, `DicePicker` (text input + roll button + per-mode
+validation), `TargetGrid` (sortable, filterable table with difficulty
+tier chips), `SolutionsPanel` (drill-down for a single target). Wired
+into `App.tsx` with a tab nav (`Lookup` / `About`). All theming via
+CSS variables — works in `tabletop` and `noir` without a re-style.
+`difficultyTier.ts` centralizes the bucket → label/color mapping so
+the grid and the drill-down agree.
+
+**Shape of every future feature.** This phase establishes the recipe:
+`web/src/services/<thing>.ts` (interface + bootstrap impl), `stores/<Thing>Store.ts`
+(`Resource<T>`-backed selection state + reactions), `features/<thing>/<Thing>View.tsx`
+(observer components only, no logic), wire in `AppStore` + `createDefaultAppStore`,
+add a tab to `App.tsx`. Compose, Visualize, and Play will all follow it.
+
+**Tests.** New suites for `LiveSolverDatasetClient` (caching, dedupe,
+order-insensitive keys), `InlineSolverService` (reachability + arity
+guards), and `LookupStore` (initial load, mode-switch dice replacement,
+target reactivity, sorting invariant, dispose).
+
 ## 2026-04-18 — Phase 0 foundation
 
 **Workspace.** `package.json`, `tsconfig.json`, `vitest.config.ts`, `.gitignore`, `README.md`. Standalone npm package — no shared deps with v1. `tsc -p .` and `vitest run` are the only build commands.
