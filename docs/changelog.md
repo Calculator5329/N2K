@@ -2,6 +2,79 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-18 — Phase 5: Feature parity with v1
+
+**Six new feature surfaces.** Lookup is no longer the only working tab. The
+nav now reads `Lookup · Play · Explore · Compare · Visualize · Compose ·
+Gallery · About`, and every tab is functional against the unified core.
+
+**Cross-cutting infrastructure (`web/src/services/`, `web/src/stores/`).**
+
+- `tupleIndexService.ts` (`LiveTupleIndexService`) — enumerates every legal
+  dice tuple for a mode, fetches each chunk via the existing
+  `DatasetClient`, and computes per-tuple summary stats (solvable count,
+  target span, avg/min/max/median difficulty, per-bucket histogram). Caps
+  Æther at a configurable sample (default 800) so the live solver doesn't
+  block the UI; the cloud-hosted index lands once Phase 1's chunks ship to
+  a server. Streams progress via `onProgress` and caches per-modeId.
+- `competitionService.ts` (`LiveCompetitionService`) — Monte-Carlo over a
+  configurable candidate pool to find balanced two-player rolls per board
+  per round, expected score = sum of easiest-known difficulties for cells
+  the rolled tuple can hit. Time-budgeted; deterministic with `--seed`.
+- `FavoritesStore` — `localStorage`-backed starred-tuple set, keyed by
+  `(modeId, sorted dice csv)`.
+
+**Play (`features/play/PlayView.tsx` + `stores/PlayStore.ts`).** Single human
+vs. single bot N2K Classic match against the existing game kernel from Plan
+B. Setup screen picks mode, persona (`easy`/`standard`/`hard`/`Æther`), and
+seat order. Match screen shows the dice pool, scoreboard, 6×6 board with
+claimed-cell coloring per player, and a per-cell claim panel that lists the
+first 12 enumerated equations from `enumerateClaimEquations`. Bot turns tick
+automatically via `LocalBot.pickMove` with the persona's `thinkMs` jitter.
+
+**Explore (`features/explore/ExploreView.tsx` + `stores/ExploreStore.ts`).**
+Sortable, filterable table of every legal dice tuple per mode. Filters:
+substring query on the printed tuple, favorites-only, min solvable count,
+avg-difficulty band. Sorts: dice / solvable / minTarget / maxTarget /
+avg/min/max difficulty. Live progress bar while the index warms; partial
+data is filterable mid-warmup. Selection drawer shows full per-target stats
++ "send to Lookup" / "send to Compare" actions.
+
+**Compare (`features/compare/CompareView.tsx` + `stores/CompareStore.ts`).**
+Up to four bench entries overlaid on a hand-rolled SVG difficulty chart.
+Chart modes: per-target / avg-per-bucket / count-per-bucket / cumulative.
+Bench restored from `localStorage` across reloads. Manual `mode + dice`
+picker plus a favorites picker fed by `FavoritesStore`.
+
+**Visualize (`features/visualize/VisualizeView.tsx` +
+`stores/VisualizeStore.ts`).** Three SVG charts driven off the
+`ExploreStore` index: an Atlas heatmap of easiest/hardest difficulty per
+target with coverage strip, a difficulty-bucket histogram, and a scatter
+of `solvable count` vs. `avg difficulty` per tuple. All computeds — no
+extra fetches if Explore is already warm.
+
+**Compose (`features/compose/ComposeView.tsx` + `stores/ComposeStore.ts`).**
+Multi-board editor (random range or arithmetic pattern, with rounds + per-
+cell pinning), competition pool / time-budget / seed controls, and a
+generate button that calls `CompetitionService.generate`. Result view
+renders per-board / per-round tables and exports the plan as JSON or CSV
+(plus a print button — DOCX/PDF wait on themed export styles).
+
+**Gallery (`features/gallery/GalleryView.tsx`).** Every bundled theme
+rendered side-by-side in isolated `--theme-*` variable scopes so each tile
+shows its real palette + dice/board sample without page-level activation.
+Click a tile to make it active everywhere.
+
+**`AppStore` composition.** Now holds `identity / theme / favorites /
+lookup / explore / compare / visualize / compose / play`. `PlatformServices`
+gains `tupleIndex` and `competition`. `createDefaultAppStore` shares a
+single `LiveSolverDatasetClient` across every feature so chunks computed
+for Lookup are reused by Compare / Explore / Visualize / Compose.
+
+**Verified.** `tsc -p tsconfig.app.json --noEmit`, `tsc -p
+tsconfig.test.json --noEmit`, `tsc -p tsconfig.check.json` (root), and
+`vite build` (web) all pass.
+
 ## 2026-04-18 — Phase 1: Bulk export pipeline
 
 **Mode-aware bulk export.** `scripts/export.ts` walks every legal dice tuple for a mode, runs `solveForExport` per tuple in a `WorkerPool`, and writes per-tuple JSON chunks + an aggregate bit-packed `.n2k` blob + `manifest.json`. Entry point: `npm run export -- --mode <standard|aether> [--arity 3|4|5|all] [--out <dir>] [--concurrency N] [--no-binary] [--no-json]`.

@@ -5,15 +5,20 @@ import { AnonIdentityService } from "../src/services/local/anonIdentityService.j
 import { StubAIService } from "../src/services/local/stubAIService.js";
 import { LiveSolverDatasetClient } from "../src/services/datasetClient.js";
 import { InlineSolverService } from "../src/services/solverWorkerService.js";
+import { LiveTupleIndexService } from "../src/services/tupleIndexService.js";
+import { LiveCompetitionService } from "../src/services/competitionService.js";
 import { createDefaultAppStore } from "../src/createDefaultAppStore.js";
 
 function makeServices(overrides: Partial<PlatformServices> = {}): PlatformServices {
+  const dataset = new LiveSolverDatasetClient();
   return {
     content: new MemoryContentBackend(),
     identity: new AnonIdentityService(),
     ai: new StubAIService(),
-    dataset: new LiveSolverDatasetClient(),
+    dataset,
     solverWorker: new InlineSolverService(),
+    tupleIndex: new LiveTupleIndexService(dataset),
+    competition: new LiveCompetitionService(dataset),
     ...overrides,
   };
 }

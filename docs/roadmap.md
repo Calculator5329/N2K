@@ -46,19 +46,20 @@
 - [ ] Theme registry hydrates from `ContentBackend` (built-ins seeded on first launch)
 - [ ] Layout primitives (3-4 of them), starting with the Tabletop layout
 
-## Phase 4 — Feature parity
+## Phase 4 — Feature parity ✅
 
 - [x] **Lookup feature** — `LookupStore` + `LookupView` (mode/dice/target pickers + sortable target grid + per-target drill-down); `DatasetClient` (`LiveSolverDatasetClient` bootstrap; `HttpDatasetClient` after PLAN-A); `SolverWorkerService` (`InlineSolverService`; Web Worker impl when warranted)
-- [ ] Compose feature (board editor + competition generator + DOCX/PDF export)
-- [~] Play feature (single-player + bot, on the game kernel) — game/bot foundation landed (`src/games/n2kClassic*`); web UI pending
-- [ ] Information / About
+- [x] **Compose feature** — multi-board editor (random / pattern, per-cell pinning), `CompetitionService`-backed balanced two-player generator, JSON / CSV / print export. DOCX/PDF deferred until themed export styles ship.
+- [x] **Play feature** — `PlayStore` + `PlayView` driving `n2kClassicGame` against `LocalBot` personas (easy / standard / hard / Æther) with auto-ticking bot turns + per-cell claim picker.
+- [x] **Information / About** — refreshed "what works today" / "coming next" copy.
 
-## Phase 5 — Hidden features (future admin gate)
+## Phase 5 — Power-user surfaces ✅
 
-- [ ] Explore (sortable index of dice tuples)
-- [ ] Compare (up to 4 tuples, chart projections)
-- [ ] Visualize (heatmap + scatter + histogram)
-- [ ] Gallery (theme showcase across all editions)
+- [x] **Explore** — `ExploreStore` + `ExploreView`: sortable / filterable tuple index streamed from `LiveTupleIndexService` with a selection drawer and Send-to-Lookup / Send-to-Compare actions.
+- [x] **Compare** — `CompareStore` + `CompareView`: up to four tuples on a SVG difficulty chart with four chart modes, persisted to localStorage.
+- [x] **Visualize** — `VisualizeStore` + `VisualizeView`: atlas heatmap, difficulty histogram, and solvable-vs-difficulty scatter, computed off the `ExploreStore` index.
+- [x] **Gallery** — every bundled theme rendered side-by-side with live activation.
+- [x] **FavoritesStore** — `localStorage`-backed starred-tuple set used by Explore + Compare.
 
 ## Phase 6 — Platform extensions
 

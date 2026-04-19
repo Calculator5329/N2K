@@ -2,11 +2,31 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useAppStore } from "./stores/AppStoreContext.js";
 import { LookupView } from "./features/lookup/LookupView.js";
+import { ExploreView } from "./features/explore/ExploreView.js";
+import { CompareView } from "./features/compare/CompareView.js";
+import { VisualizeView } from "./features/visualize/VisualizeView.js";
+import { ComposeView } from "./features/compose/ComposeView.js";
+import { PlayView } from "./features/play/PlayView.js";
+import { GalleryView } from "./features/gallery/GalleryView.js";
 
-type SurfaceId = "lookup" | "about";
+type SurfaceId =
+  | "lookup"
+  | "play"
+  | "explore"
+  | "compare"
+  | "visualize"
+  | "compose"
+  | "gallery"
+  | "about";
 
 const SURFACES: ReadonlyArray<{ id: SurfaceId; label: string }> = [
   { id: "lookup", label: "Lookup" },
+  { id: "play", label: "Play" },
+  { id: "explore", label: "Explore" },
+  { id: "compare", label: "Compare" },
+  { id: "visualize", label: "Visualize" },
+  { id: "compose", label: "Compose" },
+  { id: "gallery", label: "Gallery" },
   { id: "about", label: "About" },
 ];
 
@@ -25,15 +45,15 @@ export const App = observer(function App() {
       style={{ background: "var(--color-bg)", color: "var(--color-ink)" }}
     >
       <header className="border-b" style={{ borderColor: "var(--color-rule)" }}>
-        <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between gap-6">
-          <div className="flex items-baseline gap-6">
+        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-6 flex-wrap">
+          <div className="flex items-baseline gap-6 flex-wrap">
             <div>
               <h1 className="text-xl font-semibold tracking-tight">N2K</h1>
               <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
                 v2 platform
               </p>
             </div>
-            <nav role="tablist" aria-label="Surfaces" className="flex gap-1">
+            <nav role="tablist" aria-label="Surfaces" className="flex gap-1 flex-wrap">
               {SURFACES.map((s) => {
                 const active = surface === s.id;
                 return (
@@ -47,6 +67,7 @@ export const App = observer(function App() {
                     style={{
                       background: active ? "var(--color-accent)" : "transparent",
                       color: active ? "var(--color-bg)" : "var(--color-ink)",
+                      border: "1px solid var(--color-rule)",
                     }}
                   >
                     {s.label}
@@ -59,10 +80,31 @@ export const App = observer(function App() {
         </div>
       </header>
 
-      <main>{surface === "lookup" ? <LookupView /> : <AboutView />}</main>
+      <main>{renderSurface(surface)}</main>
     </div>
   );
 });
+
+function renderSurface(surface: SurfaceId) {
+  switch (surface) {
+    case "lookup":
+      return <LookupView />;
+    case "play":
+      return <PlayView />;
+    case "explore":
+      return <ExploreView />;
+    case "compare":
+      return <CompareView />;
+    case "visualize":
+      return <VisualizeView />;
+    case "compose":
+      return <ComposeView />;
+    case "gallery":
+      return <GalleryView />;
+    case "about":
+      return <AboutView />;
+  }
+}
 
 const AboutView = observer(function AboutView() {
   const { identity } = useAppStore();
@@ -82,18 +124,22 @@ const AboutView = observer(function AboutView() {
       <Card title="What works today">
         <ul className="text-sm space-y-1.5" style={{ color: "var(--color-ink-muted)" }}>
           <li>• Lookup — pick mode + dice, see every reachable target with the easiest equation, drill into all solutions</li>
+          <li>• Play — N2K Classic against four bot personas (easy / standard / hard / Æther)</li>
+          <li>• Explore — sortable, filterable index of every legal dice tuple per mode with starring</li>
+          <li>• Compare — overlay up to four tuples on a difficulty-vs-target chart, persisted across reloads</li>
+          <li>• Visualize — atlas heatmap, difficulty histogram, and scatter of solvable count vs. average difficulty</li>
+          <li>• Compose — multi-board editor + balanced two-player competition generator with JSON / CSV / print export</li>
+          <li>• Gallery — every bundled theme rendered side-by-side with live activation</li>
           <li>• Theme switcher backed by the structured theme registry (5 bundled editions)</li>
-          <li>• Three pluggable service seams: ContentBackend / IdentityService / AIService</li>
-          <li>• DatasetClient + SolverWorkerService (live solver fallback today, Phase 1 chunks + Web Worker tomorrow)</li>
         </ul>
       </Card>
 
       <Card title="Coming next">
         <ul className="text-sm space-y-1.5" style={{ color: "var(--color-ink-muted)" }}>
-          <li>• Play — N2K Classic playable surface against bot personas</li>
-          <li>• Compose — board editor + competition generator + DOCX/PDF export</li>
-          <li>• Compare / Visualize — multi-tuple charts, heatmaps, scatter plots</li>
-          <li>• Gallery — browse the bundled theme editions in a single grid</li>
+          <li>• Web Worker solver + HTTP dataset client backed by the bulk export pipeline (Phase 1 output)</li>
+          <li>• User-authored themes (NLP-generated via Gemini) registered into the same `ThemeRegistry`</li>
+          <li>• Async multiplayer + tournaments backed by Cloud Run + Firestore + Firebase Auth</li>
+          <li>• Branded DOCX / PDF export from Compose plans (today they round-trip JSON + CSV + print)</li>
         </ul>
       </Card>
     </div>
