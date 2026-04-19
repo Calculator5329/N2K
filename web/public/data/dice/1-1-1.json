@@ -1,0 +1,1 @@
+{"dice":[1,1,1],"summary":{"solvableCount":3,"impossibleCount":996,"minDifficulty":-5.6,"maxDifficulty":-4.42,"averageDifficulty":-4.99},"solutions":{"1":{"difficulty":-5.6,"equation":"1^0 + 1^0 - 1^0 = 1"},"2":{"difficulty":-4.96,"equation":"1^0 + 1^0 * 1^0 = 2"},"3":{"difficulty":-4.42,"equation":"1^0 + 1^0 + 1^0 = 3"}}}

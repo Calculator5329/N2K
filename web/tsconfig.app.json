@@ -23,7 +23,8 @@
     "skipLibCheck": true,
 
     "paths": {
-      "@platform/*": ["../src/*"]
+      "@platform/*": ["../src/*"],
+      "@solver/*":   ["../../src/*"]
     }
   },
   "include": ["src"]

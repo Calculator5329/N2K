@@ -25,24 +25,33 @@
  * Bundled by Vite via the `?worker` import in
  * `services/workerSolverClient.ts`.
  */
-import type { Mode, NEquation, BulkSolution } from "@platform/core/types.js";
+import type { NEquation, BulkSolution } from "@platform/core/types.js";
+import { BUILT_IN_MODES } from "@platform/core/constants.js";
 import {
   allSolutions,
   easiestSolution,
   sweepOneTuple,
 } from "@platform/services/solver.js";
 
+/**
+ * Wire-mode is just an id ("standard" | "aether"). Real `Mode` objects
+ * carry a function (`exponentCap`) that the structured-clone algorithm
+ * can't transfer, so the main thread sends the id and the worker
+ * rehydrates from `BUILT_IN_MODES`.
+ */
+export type WireModeId = "standard" | "aether";
+
 type SweepRequest = {
   readonly id: number;
   readonly kind: "sweep";
-  readonly mode: Mode;
+  readonly modeId: WireModeId;
   readonly dice: readonly number[];
 };
 
 type AllRequest = {
   readonly id: number;
   readonly kind: "all";
-  readonly mode: Mode;
+  readonly modeId: WireModeId;
   readonly dice: readonly number[];
   readonly total: number;
 };
@@ -50,7 +59,7 @@ type AllRequest = {
 type EasiestRequest = {
   readonly id: number;
   readonly kind: "easiest";
-  readonly mode: Mode;
+  readonly modeId: WireModeId;
   readonly dice: readonly number[];
   readonly total: number;
 };
@@ -64,26 +73,27 @@ export type WorkerResponse =
 self.addEventListener("message", (event: MessageEvent<WorkerRequest>) => {
   const req = event.data;
   try {
+    const mode = BUILT_IN_MODES[req.modeId];
     let value: unknown;
     switch (req.kind) {
       case "sweep": {
         const map: ReadonlyMap<number, BulkSolution> = sweepOneTuple(
           req.dice,
-          req.mode.targetRange.min,
-          req.mode.targetRange.max,
-          req.mode,
+          mode.targetRange.min,
+          mode.targetRange.max,
+          mode,
         );
         // Map doesn't structured-clone; flatten to entries.
         value = [...map.entries()];
         break;
       }
       case "all": {
-        const eqs: readonly NEquation[] = allSolutions(req.dice, req.total, req.mode);
+        const eqs: readonly NEquation[] = allSolutions(req.dice, req.total, mode);
         value = eqs;
         break;
       }
       case "easiest": {
-        const eq: NEquation | null = easiestSolution(req.dice, req.total, req.mode);
+        const eq: NEquation | null = easiestSolution(req.dice, req.total, mode);
         value = eq;
         break;
       }

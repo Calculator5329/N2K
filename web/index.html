@@ -1,12 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%2280%22 font-size=%2280%22 font-family=%22serif%22>\u00a7</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>N2K — Platform</title>
+    <meta name="description" content="The N2K Almanac — every dice triple, every equation, indexed and scored." />
+
+    <!-- Fonts for every edition (see THEME_IDS in src/core/themes.ts), preloaded so switching is flicker-free. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bangers&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Caveat:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;500;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;700&family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Major+Mono+Display&family=Pacifico&family=Patrick+Hand&family=Playfair+Display+SC:wght@400;700;900&family=Press+Start+2P&family=Roboto+Condensed:wght@400;700;900&family=Source+Serif+4:opsz,wght@8..60,300..700&family=Space+Mono:wght@400;700&family=Special+Elite&family=Tangerine:wght@400;700&family=UnifrakturMaguntia&family=VT323&family=Work+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>The N2K Almanac</title>
   </head>
   <body>
+    <script>
+      // Apply persisted (or default) edition before React mounts so there's
+      // no flash of the wrong theme on reload. Keep in sync with THEME_IDS
+      // and DEFAULT_THEME in src/core/themes.ts.
+      (function () {
+        var DEFAULT = "tabletop";
+        var ok = {
+          almanac: 1, phosphor: 1, broadsheet: 1, risograph: 1, arcade: 1,
+          manuscript: 1, blueprint: 1, tarot: 1, vaporwave: 1, receipt: 1,
+          tabletop: 1, subway: 1, spreadsheet: 1, polaroid: 1, comic: 1,
+          cartographic: 1, herbarium: 1
+        };
+        var pick = DEFAULT;
+        try {
+          var t = localStorage.getItem("n2k.theme");
+          if (t && ok[t]) pick = t;
+        } catch {}
+        document.documentElement.setAttribute("data-theme", pick);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

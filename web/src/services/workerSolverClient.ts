@@ -12,8 +12,19 @@
 import type {
   WorkerRequest,
   WorkerResponse,
+  WireModeId,
 } from "../workers/solver.worker.js";
 import type { Mode, NEquation, BulkSolution } from "@platform/core/types.js";
+
+/**
+ * The worker only knows about built-in modes (it rehydrates them from
+ * an id). Validate at the boundary so unknown ids fail fast on the
+ * main thread instead of crashing the worker.
+ */
+function asWireMode(mode: Mode): WireModeId {
+  if (mode.id === "standard" || mode.id === "aether") return mode.id;
+  throw new Error(`solver worker: unsupported mode '${mode.id}'`);
+}
 
 // Vite-specific: this import returns a Worker constructor at build time
 // and ignores the file at runtime in the worker bundle.
@@ -79,7 +90,7 @@ export class SolverWorkerClient {
     const entries = (await this.send({
       id: this.mintId(),
       kind: "sweep",
-      mode,
+      modeId: asWireMode(mode),
       dice,
     })) as ReadonlyArray<readonly [number, BulkSolution]>;
     return new Map(entries);
@@ -93,7 +104,7 @@ export class SolverWorkerClient {
     const value = (await this.send({
       id: this.mintId(),
       kind: "all",
-      mode,
+      modeId: asWireMode(mode),
       dice,
       total,
     })) as readonly NEquation[];
@@ -108,7 +119,7 @@ export class SolverWorkerClient {
     const value = (await this.send({
       id: this.mintId(),
       kind: "easiest",
-      mode,
+      modeId: asWireMode(mode),
       dice,
       total,
     })) as NEquation | null;
