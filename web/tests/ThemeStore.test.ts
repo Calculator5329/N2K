@@ -1,20 +1,41 @@
 import { describe, expect, it } from "vitest";
 import { autorun } from "mobx";
 import { ThemeStore } from "../src/stores/ThemeStore.js";
+import { ThemeRegistry, type Theme } from "@platform/themes/index.js";
+
+const MINIMAL_THEME: Theme = {
+  meta: { id: "frost-test", displayName: "Frost Test", version: "1.0.0" },
+  tokens: {
+    color: {
+      bg: "#eef",
+      surface: "#fff",
+      ink: "#012",
+      inkMuted: "#345",
+      accent: "#678",
+      rule: "#9ab",
+    },
+    typography: { fontFamilySans: "system-ui" },
+  },
+};
 
 describe("ThemeStore", () => {
-  it("defaults to tabletop and lists built-ins", () => {
+  it("defaults to tabletop and lists bundled editions", () => {
     const s = new ThemeStore();
     expect(s.activeId).toBe("tabletop");
-    expect(s.activeTheme.id).toBe("tabletop");
+    expect(s.activeTheme.meta.id).toBe("tabletop");
     const ids = s.availableThemes.map((t) => t.id).sort();
-    expect(ids).toEqual(["noir", "tabletop"]);
+    expect(ids).toEqual(["ember", "frost", "noir", "tabletop", "verdant"]);
+  });
+
+  it("falls back when initialId is unknown", () => {
+    const s = new ThemeStore("does-not-exist");
+    expect(s.activeId).toBe("tabletop");
   });
 
   it("setActive switches and triggers reactivity", () => {
     const s = new ThemeStore();
     const seen: string[] = [];
-    const dispose = autorun(() => seen.push(s.activeTheme.id));
+    const dispose = autorun(() => seen.push(s.activeTheme.meta.id));
     s.setActive("noir");
     dispose();
     expect(seen).toEqual(["tabletop", "noir"]);
@@ -27,40 +48,43 @@ describe("ThemeStore", () => {
 
   it("register adds new themes that become available + activatable", () => {
     const s = new ThemeStore();
-    s.register({
-      id: "frost",
-      displayName: "Frost",
-      tokens: { "color-bg": "#eef" },
-    });
-    expect(s.availableThemes.find((t) => t.id === "frost")).toBeDefined();
-    s.setActive("frost");
-    expect(s.activeTheme.tokens["color-bg"]).toBe("#eef");
+    s.register(MINIMAL_THEME);
+    expect(s.availableThemes.find((t) => t.id === "frost-test")).toBeDefined();
+    s.setActive("frost-test");
+    expect(s.activeTheme.tokens.color.bg).toBe("#eef");
   });
 
-  it("applyTo writes data-theme attribute and CSS vars", () => {
+  it("applyTo writes data-theme attribute and flat CSS variables", () => {
     const s = new ThemeStore();
     const calls: { name: string; value: string }[] = [];
+    let attrName = "";
+    let attrValue = "";
     const target = {
       style: {
         setProperty(name: string, value: string) {
           calls.push({ name, value });
         },
       },
-      setAttribute(_name: string, _value: string) {
-        /* tracked via attr below */
+      setAttribute(name: string, value: string) {
+        attrName = name;
+        attrValue = value;
       },
-      attr: "" as string,
-    };
-    let attrName = "";
-    let attrValue = "";
-    target.setAttribute = (name: string, value: string) => {
-      attrName = name;
-      attrValue = value;
     };
     s.applyTo(target);
     expect(attrName).toBe("data-theme");
     expect(attrValue).toBe("tabletop");
-    expect(calls.find((c) => c.name === "--color-bg")?.value).toBe("#f4ece0");
+    const bg = calls.find((c) => c.name === "--color-bg");
+    expect(bg?.value).toBe("#f5efe1");
     expect(calls.find((c) => c.name === "--shadow-card")).toBeDefined();
+    expect(calls.find((c) => c.name === "--font-sans")).toBeDefined();
+    expect(calls.find((c) => c.name === "--radius-card")).toBeDefined();
+    expect(calls.find((c) => c.name === "--color-extra-felt-green")).toBeDefined();
+  });
+
+  it("accepts a custom registry instance", () => {
+    const registry = new ThemeRegistry({ themes: [MINIMAL_THEME] });
+    const s = new ThemeStore("frost-test", registry);
+    expect(s.activeTheme.meta.id).toBe("frost-test");
+    expect(s.availableThemes).toHaveLength(1);
   });
 });

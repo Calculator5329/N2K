@@ -82,7 +82,7 @@ const AboutView = observer(function AboutView() {
       <Card title="What works today">
         <ul className="text-sm space-y-1.5" style={{ color: "var(--color-ink-muted)" }}>
           <li>• Lookup — pick mode + dice, see every reachable target with the easiest equation, drill into all solutions</li>
-          <li>• Theme switcher (tabletop / noir) with CSS-variable plumbing</li>
+          <li>• Theme switcher backed by the structured theme registry (5 bundled editions)</li>
           <li>• Three pluggable service seams: ContentBackend / IdentityService / AIService</li>
           <li>• DatasetClient + SolverWorkerService (live solver fallback today, Phase 1 chunks + Web Worker tomorrow)</li>
         </ul>
@@ -90,10 +90,10 @@ const AboutView = observer(function AboutView() {
 
       <Card title="Coming next">
         <ul className="text-sm space-y-1.5" style={{ color: "var(--color-ink-muted)" }}>
-          <li>• N2K Classic Play surface (PLAN-B)</li>
-          <li>• Theme registry as data + custom themes (PLAN-C)</li>
-          <li>• Bulk export pipeline + HttpDatasetClient swap (PLAN-A)</li>
-          <li>• Compose: board generator + visualizer</li>
+          <li>• Play — N2K Classic playable surface against bot personas</li>
+          <li>• Compose — board editor + competition generator + DOCX/PDF export</li>
+          <li>• Compare / Visualize — multi-tuple charts, heatmaps, scatter plots</li>
+          <li>• Gallery — browse the bundled theme editions in a single grid</li>
         </ul>
       </Card>
     </div>
