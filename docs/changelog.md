@@ -69,6 +69,32 @@ order-insensitive keys), `InlineSolverService` (reachability + arity
 guards), and `LookupStore` (initial load, mode-switch dice replacement,
 target reactivity, sorting invariant, dispose).
 
+## 2026-04-18 — Phase 2 CLI REPL (`agent/phase-2-cli`)
+
+**CLI surface (`src/cli/`).** Self-contained command-line REPL plus one-shot dispatcher that wraps the Phase 0 services. Both modes route through the same `COMMANDS` table so behavior never diverges.
+
+- `index.ts` — argv router. `n2k` with no args drops into the REPL; `n2k <verb> [args]` runs one command and exits with the command's exit code. Top-level `--help` works, and per-command `--help` (e.g. `n2k solve --help`) prints the usage block.
+- `repl.ts` — interactive loop on top of Node `readline`. State (active `Mode`, dice tuple, board) lives in a single `CliContext` mutated across turns. Supports `quit` / `exit` / EOF, blank-line + `#` comment skipping, and quoted multi-word arguments. Built-in `completer` for verb completion.
+- `parseArgs.ts` — minimal argv parser (no yargs / commander). Supports `--key value`, `--key=value`, `--flag`, positional args, and `--` end-of-options. Plus typed helpers (`optionalInt`, `optionalIntList`, `flag`, etc.) so commands stay declarative.
+- `parseEquation.ts` — CLI-local equation parser (lives here, not in `services/parsing.ts`, because Phase 0 deliberately deferred user-typed input). Whitespace-flexible grammar, parens for negative bases, validates that the parsed equation actually evaluates to the claimed total. Will be replaced when the canonical parser ships in `services/`.
+- `render.ts` — pure formatters: `renderEquation`, `renderEquationWithDifficulty`, `renderDifficultyBreakdown` (table), `renderBoard` (6×6 grid), `renderNoSolution`, `renderHeading`. Reuses `services/parsing.ts::formatEquation` for equations.
+- `ansi.ts` — 30-line ANSI helper (no `chalk` dep). Every wrapper takes an explicit `enabled` flag, so the CLI passes a single `tty` boolean (`process.stdout.isTTY`) through the codebase and uniformly disables colors when stdout is piped.
+- `commands/` — one file per verb (`mode`, `dice`, `roll`, `board`, `solve`, `solve-all`, `sweep`, `explain`, `export`, `help`). Each command implements `(args, ctx, out) => Promise<{ exitCode }>` so it's trivially testable against a fake `Writable`. The `sweep` command writes per-permutation progress lines via `out.write` (not buffered) so piped consumers see incremental output.
+
+**`export` placeholder.** The `export` command prints a "deferred to Phase 1, run `npm run export` directly" message — no imports from PLAN-A's branch files.
+
+**Tests (`tests/cli/`).** 71 new tests across 6 files, all passing:
+- `parseArgs.test.ts` — argv parsing (positionals, `--key value`, `--key=value`, boolean flags, `--`, repeats) plus typed helper coverage (15 tests).
+- `parseEquation.test.ts` — grammar coverage including exponents, negative bases, whitespace flexibility, and validation that the equation evaluates to the claimed total (13 tests).
+- `render.test.ts` — ANSI on/off behavior, `formatEquation` parity, breakdown table shape, board grid layout (8 tests).
+- `commands.test.ts` — every command exercised programmatically against a captured `Writable`, including error paths (exit code 1, friendly messages) and state mutation (23 tests).
+- `sweep.test.ts` — verifies streaming behavior by counting per-write events during a sweep (2 tests).
+- `repl.test.ts` — end-to-end REPL test: feeds a script of inputs into the loop, asserts state persists across turns, blank lines / comments are skipped, EOF exits cleanly, quoted equation arguments tokenize correctly (10 tests).
+
+**Package wiring.** `package.json` adds `"bin": { "n2k": "src/cli/index.ts" }` plus a `"cli": "tsx src/cli/index.ts"` script. `tsconfig.json` already covered `src/cli/**/*.ts` via `src/**/*.ts`. No new dependencies.
+
+**Foundation untouched.** No edits to `src/core/`, `src/services/`, `src/games/`, `src/themes/`, `web/`, `scripts/`, or `fixtures/`. The CLI is a strict consumer of the public services API.
+
 ## 2026-04-18 — Phase 0 foundation
 
 **Workspace.** `package.json`, `tsconfig.json`, `vitest.config.ts`, `.gitignore`, `README.md`. Standalone npm package — no shared deps with v1. `tsc -p .` and `vitest run` are the only build commands.
