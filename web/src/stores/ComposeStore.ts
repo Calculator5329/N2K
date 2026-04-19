@@ -229,26 +229,37 @@ export class ComposeStore {
 
   async generate(): Promise<void> {
     if (this.isGenerating) return;
-    this.isGenerating = true;
-    this.lastError = null;
+    runInAction(() => {
+      this.isGenerating = true;
+      this.lastError = null;
+    });
+    const config: CompetitionConfig = {
+      modeId: this.modeId,
+      boards: this.boards.map((b) => ({
+        id: b.id,
+        cells: b.cells,
+        rounds: b.rounds,
+      })),
+      pool: this.pool,
+      timeBudgetMs: this.timeBudgetMs,
+      ...(this.seed !== null ? { seed: this.seed } : {}),
+    };
     try {
-      const config: CompetitionConfig = {
-        modeId: this.modeId,
-        boards: this.boards.map((b) => ({
-          id: b.id,
-          cells: b.cells,
-          rounds: b.rounds,
-        })),
-        pool: this.pool,
-        timeBudgetMs: this.timeBudgetMs,
-        ...(this.seed !== null ? { seed: this.seed } : {}),
-      };
+      // The await crosses an action boundary — every observable write
+      // inside the resolution path needs its own runInAction so MobX
+      // strict-mode doesn't complain.
       const plan = await this.competition.generate(config);
-      this.plan = plan;
+      runInAction(() => {
+        this.plan = plan;
+      });
     } catch (err) {
-      this.lastError = err instanceof Error ? err.message : String(err);
+      runInAction(() => {
+        this.lastError = err instanceof Error ? err.message : String(err);
+      });
     } finally {
-      this.isGenerating = false;
+      runInAction(() => {
+        this.isGenerating = false;
+      });
     }
   }
 }

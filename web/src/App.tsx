@@ -140,7 +140,7 @@ const AboutView = observer(function AboutView() {
           <li>• Visualize — atlas heatmap, difficulty histogram, and scatter of solvable count vs. average difficulty</li>
           <li>• Compose — multi-board editor + balanced two-player generator with JSON / CSV / PDF / DOCX export and shareable URLs</li>
           <li>• Gallery — every bundled theme rendered side-by-side with live activation</li>
-          <li>• Theme switcher backed by the structured theme registry (5 bundled editions)</li>
+          <li>• Theme switcher backed by the structured theme registry (10 bundled editions)</li>
         </ul>
       </Card>
 

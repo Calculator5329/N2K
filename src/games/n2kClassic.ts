@@ -10,16 +10,21 @@
  * an optional turn limit is reached, or every player passes their
  * full last round.
  *
- * Score (per player): `Σ (board.cells[i] − difficulty)` over the
- * cells they claimed. Bigger targets reward more, and easier
- * equations subtract less — the same ranking v1 used.
+ * Each player has a per-match `timeBudget` (default 60 seconds).
+ * Claiming a cell costs `difficultyOfEquation(eq, mode)` seconds —
+ * the heuristic doubles as a "seconds to solve" estimate. Claims
+ * whose difficulty exceeds `hardSkipThreshold` (default 10) or the
+ * player's remaining budget are not legal. Score per player is
+ * simply `Σ board.cells[i]` over the cells they claimed — the
+ * difficulty cost was already paid in time. This mirrors v1's
+ * `expectedScore` heuristic but applied as live game rules.
  *
  * All transitions are pure: `applyMove(state, …)` returns a fresh
  * `N2KClassicState`. The kernel's `replay()` reconstructs any
  * intermediate state from `(config, players, log)`.
  */
 import type { Board, Mode, NEquation } from "../core/types.js";
-import { FLOAT_EQ_EPSILON } from "../core/constants.js";
+import { FLOAT_EQ_EPSILON, depowerDice } from "../core/constants.js";
 import { applyOperator, unorderedSubsets } from "../services/arithmetic.js";
 import {
   buildAllBasesCache,
@@ -49,6 +54,27 @@ export interface N2KClassicConfig {
   readonly turnLimit?: number;
   /** Seed for any future per-turn dice re-rolls (multi-roll variants). */
   readonly rngSeed?: number;
+  /** Per-player time budget in "difficulty seconds". Default {@link DEFAULT_TIME_BUDGET}. */
+  readonly timeBudget?: number;
+  /** Difficulty above which a claim is filtered out of `legalMoves`. Default {@link DEFAULT_HARD_SKIP_THRESHOLD}. */
+  readonly hardSkipThreshold?: number;
+}
+
+/** Default per-player time budget, in difficulty units / seconds. */
+export const DEFAULT_TIME_BUDGET = 60;
+
+/**
+ * Default cutoff above which an equation is considered "too hard to attempt"
+ * within any sensible budget. Matches v1's `expectedScore` heuristic.
+ */
+export const DEFAULT_HARD_SKIP_THRESHOLD = 10;
+
+export function effectiveTimeBudget(config: N2KClassicConfig): number {
+  return config.timeBudget ?? DEFAULT_TIME_BUDGET;
+}
+
+export function effectiveHardSkip(config: N2KClassicConfig): number {
+  return config.hardSkipThreshold ?? DEFAULT_HARD_SKIP_THRESHOLD;
 }
 
 export interface ClaimedCell {
@@ -71,6 +97,12 @@ export interface N2KClassicState {
    * seat passes through a full round.
    */
   readonly consecutivePasses: ReadonlyMap<PlayerId, number>;
+  /**
+   * Per-player remaining time budget, in difficulty units / seconds.
+   * Initialized to `effectiveTimeBudget(config)` for every player and
+   * decremented by `claim.difficulty` on each successful claim.
+   */
+  readonly remainingBudget: ReadonlyMap<PlayerId, number>;
 }
 
 export type N2KClassicMove =
@@ -90,6 +122,19 @@ export function evaluateEquation(eq: NEquation): number {
     acc = applyOperator(acc, next, ops[i]!);
   }
   return acc;
+}
+
+/**
+ * Mode-aware view of a dice pool: standard mode depowers compound dice
+ * (4 / 8 / 16 → 2; 9 → 3) before solver / difficulty / subset checks
+ * so equations produced by `allSolutions` (which solves on the
+ * depowered values) line up with the pool the player actually rolled.
+ *
+ * Æther mode is a no-op.
+ */
+function effectivePool(pool: readonly number[], mode: Mode): readonly number[] {
+  if (!mode.depower) return pool;
+  return pool.map(depowerDice);
 }
 
 /** True iff the equation's dice values are a multiset subset of the pool. */
@@ -171,6 +216,7 @@ function advanceTurn(
   state: N2KClassicState,
   nextClaimed: ReadonlyMap<number, ClaimedCell>,
   nextPasses: ReadonlyMap<PlayerId, number>,
+  nextBudget: ReadonlyMap<PlayerId, number>,
 ): N2KClassicState {
   const nextIdx = (state.currentPlayerIdx + 1) % state.playerIds.length;
   return {
@@ -181,6 +227,7 @@ function advanceTurn(
     currentPlayerIdx: nextIdx,
     turn: state.turn + 1,
     consecutivePasses: nextPasses,
+    remainingBudget: nextBudget,
   };
 }
 
@@ -207,7 +254,12 @@ export function buildInitialState(
   }
   const playerIds = players.map((p) => p.id);
   const consecutivePasses = new Map<PlayerId, number>();
-  for (const id of playerIds) consecutivePasses.set(id, 0);
+  const remainingBudget = new Map<PlayerId, number>();
+  const budget = effectiveTimeBudget(config);
+  for (const id of playerIds) {
+    consecutivePasses.set(id, 0);
+    remainingBudget.set(id, budget);
+  }
   return {
     config,
     playerIds,
@@ -216,6 +268,7 @@ export function buildInitialState(
     currentPlayerIdx: 0,
     turn: 0,
     consecutivePasses,
+    remainingBudget,
   };
 }
 
@@ -251,19 +304,34 @@ export const n2kClassicGame: Game<
 
     const moves: N2KClassicMove[] = [{ kind: "pass" }];
     const { board, mode } = state.config;
+    const hardSkip = effectiveHardSkip(state.config);
+    const remaining = state.remainingBudget.get(player) ?? 0;
+    const ceiling = Math.min(hardSkip, remaining);
     // Memoize enumeration per-target — duplicate target values on the
-    // board would otherwise re-run the solver for each cell.
-    const cache = new Map<number, readonly NEquation[]>();
+    // board would otherwise re-run the solver for each cell. The inner
+    // arrays carry pre-computed difficulty so the budget filter is O(1).
+    const cache = new Map<
+      number,
+      ReadonlyArray<{ readonly equation: NEquation; readonly difficulty: number }>
+    >();
     for (let i = 0; i < board.cells.length; i += 1) {
       if (state.claimed.has(i)) continue;
       const target = board.cells[i]!;
-      let eqs = cache.get(target);
-      if (eqs === undefined) {
-        eqs = enumerateClaimEquations(state.dicePool, target, mode);
-        cache.set(target, eqs);
+      let entries = cache.get(target);
+      if (entries === undefined) {
+        const eqs = enumerateClaimEquations(state.dicePool, target, mode);
+        const scored: Array<{ readonly equation: NEquation; readonly difficulty: number }> = [];
+        for (const eq of eqs) {
+          const basesCache = buildAllBasesCache(eq.dice, mode);
+          const d = difficultyOfEquation(eq, mode, basesCache);
+          scored.push({ equation: eq, difficulty: d });
+        }
+        entries = scored;
+        cache.set(target, entries);
       }
-      for (const eq of eqs) {
-        moves.push({ kind: "claim", cellIndex: i, equation: eq });
+      for (const entry of entries) {
+        if (entry.difficulty > ceiling) continue;
+        moves.push({ kind: "claim", cellIndex: i, equation: entry.equation });
       }
     }
     return moves;
@@ -281,7 +349,7 @@ export const n2kClassicGame: Game<
 
     if (move.kind === "pass") {
       nextPasses.set(byPlayer, (nextPasses.get(byPlayer) ?? 0) + 1);
-      return advanceTurn(state, state.claimed, nextPasses);
+      return advanceTurn(state, state.claimed, nextPasses, state.remainingBudget);
     }
 
     if (move.cellIndex < 0 || move.cellIndex >= state.config.board.cells.length) {
@@ -300,9 +368,10 @@ export const n2kClassicGame: Game<
     const eq = move.equation;
     validateEquationShape(eq, mode);
 
-    if (!diceMultisetSubset(eq.dice, state.dicePool)) {
+    const pool = effectivePool(state.dicePool, mode);
+    if (!diceMultisetSubset(eq.dice, pool)) {
       throw new Error(
-        `n2kClassic.applyMove: equation dice ${JSON.stringify(eq.dice)} not a subset of pool ${JSON.stringify(state.dicePool)}`,
+        `n2kClassic.applyMove: equation dice ${JSON.stringify(eq.dice)} not a subset of pool ${JSON.stringify(state.dicePool)} (effective: ${JSON.stringify(pool)})`,
       );
     }
     if (eq.total !== target) {
@@ -320,6 +389,13 @@ export const n2kClassicGame: Game<
     const cache = buildAllBasesCache(eq.dice, mode);
     const difficulty = difficultyOfEquation(eq, mode, cache);
 
+    const remaining = state.remainingBudget.get(byPlayer) ?? 0;
+    if (difficulty > remaining + FLOAT_EQ_EPSILON) {
+      throw new Error(
+        `n2kClassic.applyMove: claim costs ${difficulty.toFixed(2)}s but ${byPlayer} has only ${remaining.toFixed(2)}s remaining`,
+      );
+    }
+
     const nextClaimed = new Map(state.claimed);
     nextClaimed.set(move.cellIndex, {
       byPlayer,
@@ -327,7 +403,9 @@ export const n2kClassicGame: Game<
       difficulty,
     });
     nextPasses.set(byPlayer, 0);
-    return advanceTurn(state, nextClaimed, nextPasses);
+    const nextBudget = new Map(state.remainingBudget);
+    nextBudget.set(byPlayer, Math.max(0, remaining - difficulty));
+    return advanceTurn(state, nextClaimed, nextPasses, nextBudget);
   },
 
   currentPlayer(state) {
@@ -359,7 +437,7 @@ export const n2kClassicGame: Game<
     for (const id of state.playerIds) out[id] = 0;
     for (const [cellIndex, claim] of state.claimed) {
       const target = state.config.board.cells[cellIndex]!;
-      out[claim.byPlayer] = (out[claim.byPlayer] ?? 0) + (target - claim.difficulty);
+      out[claim.byPlayer] = (out[claim.byPlayer] ?? 0) + target;
     }
     return out;
   },

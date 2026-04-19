@@ -72,21 +72,43 @@ describe("WorkerPool — smoke", () => {
 
 describe("WorkerPool — concurrency / queueing", () => {
   it("dispatches up to `concurrency` jobs in parallel", async () => {
-    const pool = newPool(3);
+    // Strategy: measure serial baseline (concurrency=1) and parallel
+    // (concurrency=3) on the same workload, then assert parallel is
+    // meaningfully faster than serial. This avoids a hard wall-clock
+    // threshold that goes flaky under Windows worker_threads startup
+    // jitter (cold worker boot routinely costs 100–200 ms).
+    const DELAY_MS = 200;
+    const JOBS = 6;
+    const payload = { delay: DELAY_MS, value: 0 };
+
+    const serialPool = newPool(1);
+    let serialElapsed: number;
     try {
       const start = Date.now();
-      const delays = [80, 80, 80, 80, 80, 80];
-      const results = await Promise.all(
-        delays.map((delay) => pool.run({ delay, value: 0 })),
-      );
-      const elapsed = Date.now() - start;
-      expect(results.length).toBe(6);
-      // With concurrency=3 and 80ms jobs, total should be ~160ms (2 waves)
-      // — not 480ms (serial). Allow generous slack for CI jitter.
-      expect(elapsed).toBeLessThan(350);
+      await Promise.all(Array.from({ length: JOBS }, () => serialPool.run(payload)));
+      serialElapsed = Date.now() - start;
     } finally {
-      await pool.terminate();
+      await serialPool.terminate();
     }
+
+    const parallelPool = newPool(3);
+    let parallelElapsed: number;
+    let results: readonly number[];
+    try {
+      const start = Date.now();
+      results = await Promise.all(
+        Array.from({ length: JOBS }, () => parallelPool.run(payload)),
+      );
+      parallelElapsed = Date.now() - start;
+    } finally {
+      await parallelPool.terminate();
+    }
+
+    expect(results.length).toBe(JOBS);
+    // Concurrency=3 over 6 jobs of equal length should take roughly
+    // half as long as serial. Allow generous slack: parallel must be
+    // at most 70% of serial.
+    expect(parallelElapsed).toBeLessThan(serialElapsed * 0.7);
   });
 
   it("processes more jobs than workers via the internal queue", async () => {

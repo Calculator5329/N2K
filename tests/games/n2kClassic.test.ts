@@ -333,6 +333,28 @@ describe("n2kClassicGame.applyMove (claim)", () => {
     expect(() => n2kClassicGame.applyMove(init, move, "bob")).toThrow(/it is alice's turn/);
   });
 
+  // Regression: standard mode depowers compound dice (4/8/16 → 2; 9 → 3)
+  // before the solver runs, so equations carry depowered dice. The
+  // applyMove subset check has to compare against the depowered pool
+  // or every equation looks "not a subset of pool" at runtime. (UI bug
+  // reported during smoke-testing: rolled pool [16, 8, 12] could not
+  // claim any cell.)
+  it("accepts equations with depowered dice when pool contains compound dice", () => {
+    // Pool has 16 (depowers to 2) and 8 (depowers to 2) and 12 (no-op).
+    const init = n2kClassicGame.init(
+      standardConfig({ initialDicePool: [16, 8, 12] }),
+      [ALICE],
+    );
+    // 4 + 2 / 1 = 6 — uses depowered dice (2, 2, 12) to hit FIXTURE_TARGETS[1] (6).
+    const move: N2KClassicMove = {
+      kind: "claim",
+      cellIndex: 1,
+      equation: { dice: [2, 2, 12], exps: [2, 1, 0], ops: [OP.ADD, OP.DIV], total: 6 },
+    };
+    const next = n2kClassicGame.applyMove(init, move, "alice");
+    expect(next.claimed.get(1)?.byPlayer).toBe("alice");
+  });
+
   it("throws on equation arity disallowed by mode", () => {
     const init = n2kClassicGame.init(standardConfig(), [ALICE]);
     const badEq: NEquation = {
@@ -430,7 +452,7 @@ describe("n2kClassicGame.score", () => {
     expect(n2kClassicGame.score(state)).toEqual({ alice: 0, bob: 0 });
   });
 
-  it("sums (target - difficulty) per player", () => {
+  it("sums target per player (difficulty was paid in time budget)", () => {
     const init = n2kClassicGame.init(standardConfig(), [ALICE, BOB]);
     const move: N2KClassicMove = {
       kind: "claim",
@@ -439,8 +461,7 @@ describe("n2kClassicGame.score", () => {
     };
     const next = n2kClassicGame.applyMove(init, move, "alice");
     const scores = n2kClassicGame.score(next);
-    const claim = next.claimed.get(CELL_TEN)!;
-    expect(scores.alice).toBeCloseTo(10 - claim.difficulty);
+    expect(scores.alice).toBe(10);
     expect(scores.bob).toBe(0);
   });
 

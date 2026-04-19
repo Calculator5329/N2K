@@ -2,6 +2,10 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-18 — Games: N2K Classic — time-budget scoring model
+
+**Replaced `score = target − difficulty` with v1's expected-score model applied as live game rules.** Each player has a per-match `timeBudget` (default 60s). Claiming a cell costs `difficultyOfEquation(eq, mode)` seconds from that player's remaining budget — the heuristic doubles as a "seconds to solve" estimate, exactly as the v1 `expectedScore` heuristic does. Claims with difficulty above `hardSkipThreshold` (default 10) are filtered out of `legalMoves`; claims that would exceed remaining budget are rejected by `applyMove`. **Score per player is now simply `Σ board.cells[i]` over the cells they claimed** — the difficulty was already paid in time. Matches now produce realistic 60–150 totals on standard boards instead of near-zero "target minus difficulty" deltas. State carries `remainingBudget: ReadonlyMap<PlayerId, number>` and the wire format includes both the new config fields and the per-player remaining budget (back-compat: pre-budget wires re-initialize each player to the default budget on deserialize). Added exports `DEFAULT_TIME_BUDGET`, `DEFAULT_HARD_SKIP_THRESHOLD`, `effectiveTimeBudget(config)`, `effectiveHardSkip(config)`. Existing tests updated; bots and `replay()` continue to work unchanged because the LocalBot's persona-band filter is strictly tighter than the new hard-skip filter.
+
 ## 2026-04-19 — Visualize parity + theme palette expansion
 
 Final batch of v1 → v2 parity work after the share/export/lookup/explore/compose
@@ -214,12 +218,22 @@ the grid and the drill-down agree.
 `web/src/services/<thing>.ts` (interface + bootstrap impl), `stores/<Thing>Store.ts`
 (`Resource<T>`-backed selection state + reactions), `features/<thing>/<Thing>View.tsx`
 (observer components only, no logic), wire in `AppStore` + `createDefaultAppStore`,
-add a tab to `App.tsx`. Compose, Visualize, and Play will all follow it.
+  add a tab to `App.tsx`. Compose, Visualize, and Play will all follow it.
 
 **Tests.** New suites for `LiveSolverDatasetClient` (caching, dedupe,
 order-insensitive keys), `InlineSolverService` (reachability + arity
 guards), and `LookupStore` (initial load, mode-switch dice replacement,
 target reactivity, sorting invariant, dispose).
+
+## 2026-04-18 — Games: N2K Classic
+
+**First concrete game on the kernel.** `n2kClassicGame` implements `Game<N2KClassicConfig, N2KClassicState, N2KClassicMove>` against the Phase 0 kernel without modifying its interface. Files: `src/games/n2kClassic.ts`, `src/games/n2kClassicSerializer.ts`, `src/games/personas.ts`, `src/games/n2kClassicBots.ts`, `src/games/index.ts`.
+
+**Game rules.** `init` builds a fresh state from `(config, players)`. `legalMoves` returns one `pass` plus every distinct equation (across allowed arities) that uses the dice pool to evaluate to each unclaimed cell — memoized per-target so duplicate values don't re-run the solver. `applyMove` validates equation shape, multiset-subset of dice pool, eval against target, and double-claim before recording the claim and advancing turn round-robin. `isTerminal` fires on board-full / turn-limit / all-passed-this-round.
+
+**Bots.** `LocalBot` consumes a `Persona` (id / displayName / difficultyTarget / mistakeRate / passThreshold / thinkMs), filters claims to its difficulty band, occasionally picks a sub-optimal in-band move (mistake rate), passes when the band is empty. Picks are seeded so multiplayer replays of bot games are deterministic. Stretch: `RandomLegalPlayer` picks uniformly from `legal` for fuzz testing.
+
+**Personas.** Four personas — easy / standard / hard / aether — calibrated against v1's tuning intent. `personasForMode(mode)` gates Æther.
 
 ## 2026-04-18 — Phase 2 CLI REPL (`agent/phase-2-cli`)
 
@@ -275,7 +289,6 @@ target reactivity, sorting invariant, dispose).
 - `AppStore` — composition, default wiring, identity ↔ store sync (3 tests)
 
 **Agent plans landed.** `docs/agent-plans/PLAN-A-bulk-export.md` (Phase 1) and `docs/agent-plans/PLAN-B-n2k-classic-game.md` (first concrete `Game<>` implementation + bots) — fully scoped with file boundaries, branch names, and acceptance criteria so they can be executed by parallel agents without merge collisions.
-
 ## 2026-04-18 — Phase 0 foundation
 
 **Workspace.** `package.json`, `tsconfig.json`, `vitest.config.ts`, `.gitignore`, `README.md`. Standalone npm package — no shared deps with v1. `tsc -p .` and `vitest run` are the only build commands.
