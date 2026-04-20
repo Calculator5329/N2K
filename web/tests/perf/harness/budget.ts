@@ -12,5 +12,5 @@ export function medianMs(fn: () => unknown, opts: MedianOptions): number {
     samples.push(performance.now() - t0);
   }
   samples.sort((a, b) => a - b);
-  return samples[Math.floor(samples.length / 2)];
+  return samples[Math.floor(samples.length / 2)]!;
 }

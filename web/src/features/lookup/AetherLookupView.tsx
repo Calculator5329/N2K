@@ -199,7 +199,9 @@ const SolutionPanel = observer(function SolutionPanel({
         <NeighborhoodStrip store={store} />
       </div>
       <p className="mt-6 text-[11px] font-mono text-ink-100">
-        Sweep computed in {sweep.elapsedMs.toFixed(0)} ms · arity {sweep.arity} ·{" "}
+        {sweep.source === "blob"
+          ? `Precomputed · arity ${sweep.arity} · `
+          : `Sweep computed in ${sweep.elapsedMs.toFixed(0)} ms · arity ${sweep.arity} · `}
         {sweep.targetsSorted.length.toLocaleString()} solvable targets
       </p>
     </div>

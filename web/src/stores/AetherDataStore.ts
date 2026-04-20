@@ -35,6 +35,13 @@ export interface AetherTupleSweep {
   readonly cells: ReadonlyMap<number, AetherCell>;
   /** Solvable targets, ascending. Same data as `cells.keys()` but sorted. */
   readonly targetsSorted: readonly number[];
+  /**
+   * Where this sweep came from — `"blob"` when served from the
+   * precomputed per-arity `.n2k` file, `"worker"` when produced
+   * live by `aetherSolverWorker`. Lets the UI flag "instant" vs
+   * "computed live" results without re-deriving the signal.
+   */
+  readonly source: "blob" | "worker";
 }
 
 /**
@@ -120,6 +127,7 @@ function inflate(
     elapsedMs: raw.elapsedMs,
     cells,
     targetsSorted: targets,
+    source: "worker",
   };
 }
 
@@ -318,6 +326,7 @@ export class AetherDataStore {
       elapsedMs: 0,
       cells,
       targetsSorted: targets,
+      source: "blob",
     };
   }
 
