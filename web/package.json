@@ -10,10 +10,10 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:perf": "vitest run -c vitest.perf.config.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "docx": "^9.6.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "mobx": "^6.13.5",

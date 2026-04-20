@@ -14,7 +14,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "happy-dom",
-    include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
-    exclude: ["node_modules/**", "dist/**", "tests/perf/**"],
+    include: ["tests/perf/**/*.test.ts", "tests/perf/**/*.test.tsx"],
+    pool: "forks",
+    poolOptions: { forks: { singleFork: true } },
   },
 });
