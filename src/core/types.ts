@@ -31,6 +31,13 @@ export type OperatorSymbol = "+" | "-" | "*" | "/";
 export type Arity = 3 | 4 | 5;
 
 /**
+ * A 3-tuple of dice values. Back-compat with the v1/v2 web layer's
+ * Standard-mode shape. New code should prefer `readonly number[]`
+ * since it generalises to any arity in the unified mode-aware solver.
+ */
+export type DiceTriple = readonly [number, number, number];
+
+/**
  * A fully-specified N2K equation.
  *
  * Invariants (enforced by the solver, not the type system):
@@ -142,25 +149,16 @@ export interface Mode {
    * `0 .. exponentCap(d)` for each die.
    */
   readonly exponentCap: (dice: number) => number;
+  /**
+   * Optional fine-grained die-value filter, applied **after** the
+   * `diceRange` check. Lets a mode exclude pathological values
+   * inside its declared range (Æther → exclude `0`, since `0^p` is
+   * degenerate and `÷ 0` is unsafe). Standard mode leaves this
+   * undefined — its range starts at 2, so no extra filter needed.
+   */
+  readonly legalDieValue?: (dice: number) => boolean;
   /** Difficulty heuristic calibration. */
   readonly difficulty: DifficultyWeights;
-}
-
-// ---------------------------------------------------------------------------
-//  Solver inputs
-// ---------------------------------------------------------------------------
-
-export interface SolverInput {
-  readonly dice: readonly number[];
-  readonly total: number;
-  readonly mode: Mode;
-}
-
-export interface SweepInput {
-  readonly dice: readonly number[];
-  readonly minTotal: number;
-  readonly maxTotal: number;
-  readonly mode: Mode;
 }
 
 // ---------------------------------------------------------------------------

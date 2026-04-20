@@ -1,4 +1,6 @@
+import { isLegalDiceTuple } from "./legality.js";
 import type {
+  DiceTriple,
   DifficultyWeights,
   Mode,
   Operator,
@@ -30,8 +32,6 @@ export const SYMBOL_TO_OPERATOR: Readonly<Record<OperatorSymbol, Operator>> = {
   "*": 3,
   "/": 4,
 };
-
-export const ALL_OPERATORS: readonly Operator[] = [1, 2, 3, 4];
 
 /**
  * Tolerance used when comparing floating-point equation results to an
@@ -177,6 +177,10 @@ export const AETHER_MODE: Mode = {
   depower: false,
   safeMagnitude: 2 ** 45,
   exponentCap: aetherExponentCap,
+  // Exclude `0` from inside [-10, 32]: `0^p` collapses to either 1
+  // (p=0) or 0 (p≥1) and `÷ 0` blows up evaluation. Cleaner to make
+  // the die illegal than to special-case it everywhere downstream.
+  legalDieValue: (d) => d !== 0,
   difficulty: AETHER_DIFFICULTY,
 };
 
@@ -200,17 +204,37 @@ export const BOARD = {
   size: 36,
 } as const;
 
-/** Difficulty buckets used by the board summary report. */
-export const DIFFICULTY_BUCKETS: ReadonlyArray<readonly [number, number]> = [
-  [0, 10],
-  [10, 20],
-  [20, 30],
-  [30, 40],
-  [40, 50],
-  [50, 65],
-  [65, 80],
-  [80, 100],
-];
+/**
+ * Returns true if a dice triple is legal under N2K's roll rules.
+ *
+ * Thin 3-arity wrapper around the unified `isLegalDiceTuple` so v1
+ * callers (board / candidate generators, web layer) keep working
+ * without needing to import the new module. The rules — at most one
+ * `1`, at most `N − 1` of any value, every die in the mode's range —
+ * are now defined in one place: `core/legality.ts`.
+ */
+export function isLegalDiceTriple(triple: readonly [number, number, number]): boolean {
+  return isLegalDiceTuple(triple, STANDARD_MODE);
+}
+
+/**
+ * Every legal Standard-mode dice triple in canonical sorted order
+ * (a ≤ b ≤ c, with a, b in 2..10 and c in 2..20). Order matches v2's
+ * `DICE_COMBINATIONS` so any consumer relying on iteration order
+ * survives the swap.
+ */
+export const DICE_COMBINATIONS: readonly DiceTriple[] = (() => {
+  const out: DiceTriple[] = [];
+  for (let a = 2; a <= 10; a += 1) {
+    for (let b = a; b <= 10; b += 1) {
+      for (let c = b; c <= 20; c += 1) {
+        const triple: DiceTriple = [a, b, c];
+        if (isLegalDiceTriple(triple)) out.push(triple);
+      }
+    }
+  }
+  return out;
+})();
 
 // ---------------------------------------------------------------------------
 //  Compound-dice depower (standard mode pre-processing)

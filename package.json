@@ -20,6 +20,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "export": "tsx scripts/export.ts",
+    "bake": "tsx scripts/bake-blob.ts",
+    "bench:solver": "tsx scripts/bench-solver.ts",
     "cli": "tsx src/cli/index.ts"
   },
   "devDependencies": {
