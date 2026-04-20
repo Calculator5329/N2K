@@ -2,6 +2,16 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-20 — Partial arity-5 commons blob (50 tuples)
+
+Baked and wired `aether-arity5-commons.n2k` covering the first 50
+canonical-sorted arity-5 commons tuples (`2,2,3,3,4` through
+`2,2,3,8,8`). 250k equations, 2 MB, 23.7 min wall at concurrency 19
+under the new B&B easiestSolution. Arity-5 rolls within this
+neighborhood now serve instantly; outside the subset still falls
+through to the worker. Full 5,005-tuple bake projects to ~21 hr and
+is deferred to an overnight run when appetite arises.
+
 ## 2026-04-20 — Arity-4 commons blob wired; blob-vs-worker source tag
 
 Wired the already-baked `aether-arity4-commons.n2k` (38 MB, 1,651

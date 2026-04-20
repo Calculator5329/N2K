@@ -109,10 +109,12 @@ solved live in a worker. Full plan in
    blob ✅ baked and wired 2026-04-20 as
    `aether-arity4-commons.n2k` (38 MB, 1,651 tuples); served
    instantly via `AetherDataStore.loadFromBlob`. Arity-5 commons
-   remains blocked on solver perf (single-tuple bake > 5 min pre-B&B);
-   revisit after a `bake-blob.ts --arity 5 --limit 1` measurement
-   under the new branch-and-bound easiestSolution. Runtime loader
-   already supports arity-5 URL on drop-in.
+   partial ✅ 2026-04-20 — first 50 canonical tuples
+   (`2,2,3,3,4`..`2,2,3,8,8`, 2 MB) baked under the new B&B
+   easiestSolution and wired at the production URL. Single tuple
+   now ~290s (was >5 min pre-B&B). Full 5,005-tuple bake projects
+   to ~21 hr at concurrency 19 — queue as an overnight job when
+   broader coverage is wanted.
 3. **Mixed-arity rules tiles** — three Æther arity-mix presets in the
    rules row, per-round arity dispatch, per-round resolver routing.
 
