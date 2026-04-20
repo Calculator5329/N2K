@@ -2,6 +2,42 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-20 — Arity-4 commons blob wired; blob-vs-worker source tag
+
+Wired the already-baked `aether-arity4-commons.n2k` (38 MB, 1,651
+tuples, 6.07 M equations) into the Æther lookup so commons-legal
+arity-4 rolls serve instantly from the blob instead of spinning up
+the worker.
+
+**What shipped:**
+- `AetherDataStore.loadFromBlob` already resolved to the arity-4
+  loader via `getAetherLoaderForArity(4)`; the only missing piece
+  was a `source: "blob" | "worker"` tag on `AetherTupleSweep` so
+  the UI can tell precomputed from live results. Added it and
+  populated it in both construction sites (`inflate()` → worker,
+  `loadFromBlob` → blob).
+- `AetherLookupView` footer swaps `"Sweep computed in X ms · …"`
+  for `"Precomputed · …"` when `sweep.source === "blob"`. Same
+  editorial layout, no new badge component.
+- Arity-5 commons is still unbaked; the loader's URL for arity 5
+  (`aether-arity5-commons.n2k`) doesn't exist on disk, so arity-5
+  lookups 404 → `loadFromBlob` catches → worker fallback. This is
+  intentional until Phase 3 solver perf lands.
+
+**Verified:** `npm run typecheck` clean; 72 + 11 + 5 tests green
+(default + perf + n2kBlob); `npm run build` copies all four
+`.n2k` blobs into `dist/data/`.
+
+**Perf harness also shipped in this session** under
+`web/tests/perf/` (Vitest, ~1.3 s): Profiler-based render-count
+baselines for PlayView / Compose / Lookup, MobX cross-slice
+reactivity tests, hot-path microbenches for `easiestSolution` and
+`parseEquation`, median-of-N budget helper. Audit across four
+surfaces found no wasted-render wins on top of what `observer` +
+`memo` + primitive props already give us; harness ships as a
+regression net, not an optimization delta. Baselines recorded in
+`docs/perf-baseline.md`.
+
 ## 2026-04-19 — Lookup-feels-instant follow-ups
 
 Quick polish pass on the canonical-form work to make the **whole**

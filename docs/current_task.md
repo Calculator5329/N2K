@@ -1,7 +1,9 @@
 # Current task — Solver perf + Æther curated blobs + `.n2k` v2++
 
 **Status:** Phase 1 ✅ complete; Phase 2 B1 + B2 + B3 ✅ complete;
-caller-migration cleanup pending; Phase 3 (`.n2k` v2++) up next.
+**arity-4 commons blob baked and wired (2026-04-20)** ✅;
+caller-migration cleanup pending; arity-5 commons blocked on solver
+perf; Phase 3 (`.n2k` v2++) up next.
 
 The full plan lives in `docs/plan-solver-perf-and-n2k-v2.md`. This file
 tracks day-to-day execution and decisions made along the way.

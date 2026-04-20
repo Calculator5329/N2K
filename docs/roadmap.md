@@ -105,10 +105,14 @@ solved live in a worker. Full plan in
 
 1. **Variable-arity plumbing** — refactor Compose's data path off
    `DiceTriple` onto `DiceMultiset`. Pure refactor PR.
-2. **Bake arity-4 / arity-5 curated matrices** — add
-   `aether-arity4-curated.n2k` (~11 MB) and
-   `aether-arity5-curated.n2k` (~5 MB) blobs, lazily loaded on first
-   use. Bake script and runtime loader.
+2. **Bake arity-4 / arity-5 curated matrices** — arity-4 commons
+   blob ✅ baked and wired 2026-04-20 as
+   `aether-arity4-commons.n2k` (38 MB, 1,651 tuples); served
+   instantly via `AetherDataStore.loadFromBlob`. Arity-5 commons
+   remains blocked on solver perf (single-tuple bake > 5 min pre-B&B);
+   revisit after a `bake-blob.ts --arity 5 --limit 1` measurement
+   under the new branch-and-bound easiestSolution. Runtime loader
+   already supports arity-5 URL on drop-in.
 3. **Mixed-arity rules tiles** — three Æther arity-mix presets in the
    rules row, per-round arity dispatch, per-round resolver routing.
 
