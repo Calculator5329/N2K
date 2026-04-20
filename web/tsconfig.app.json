@@ -24,7 +24,7 @@
 
     "paths": {
       "@platform/*": ["../src/*"],
-      "@solver/*":   ["../../src/*"]
+      "@solver/*":   ["../src/*"]
     }
   },
   "include": ["src"]

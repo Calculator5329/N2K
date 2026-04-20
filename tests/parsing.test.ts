@@ -15,8 +15,12 @@ import {
 } from "../src/services/parsing.js";
 
 describe("formatBase", () => {
-  it("renders ^0 as 1", () => {
-    expect(formatBase(7, 0)).toBe("1");
+  it("preserves the die value when exp is 0 (renders 7^0, not 1)", () => {
+    // The canonical form must keep the original die so downstream
+    // surfaces (renderer, parseEquation, difficulty breakdown) all
+    // know which die is in play. Collapsing to "1" was lossy and
+    // produced equations that didn't visibly use the player's dice.
+    expect(formatBase(7, 0)).toBe("7^0");
   });
   it("renders ^1 as the bare base", () => {
     expect(formatBase(7, 1)).toBe("7");

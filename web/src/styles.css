@@ -2300,6 +2300,31 @@
   display: none;
 }
 
+/* --- Compose: rolls-per-round dual layout ---------------------------------
+ *
+ * The rolls section ships two DOM trees — `.rolls-grid` (true tabular
+ * grid, columns aligned for diff/exp scanning) and `.rolls-stack`
+ * (cards that wrap dice + stats onto multiple lines). A container
+ * query on the `.rolls-container` picks whichever fits the actual
+ * column the rolls section was handed.
+ *
+ * Default: tabular grid visible, stack hidden.
+ * Container narrower than 420px: swap.
+ * --------------------------------------------------------------------------*/
+.rolls-stack {
+  display: none;
+}
+
+@container (max-width: 420px) {
+  .rolls-grid {
+    display: none;
+  }
+  .rolls-stack {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
 @media print {
   /* Force a neutral, page-shaped color world regardless of the active
      edition. Themes paint backgrounds, gradient grids, drop shadows —
@@ -2586,10 +2611,6 @@
     max-width: none !important;
   }
 
-  /* --- Lookup: clean single-triple sheet -------------------------------- */
-  .lookup-print-sheet {
-    break-inside: avoid;
-  }
 }
 
 /* =========================================================================
@@ -2751,9 +2772,9 @@
 /* --- Reduced motion ----------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
-  /* Neutralize the Phase 4 / Gallery transitions — fills, strokes,
-     ring transitions on hover. Keep layout transitions (none today)
-     but kill anything that animates a property on its own. */
+  /* Neutralize hover/focus animation — fills, strokes, ring
+     transitions. Keep layout transitions (none today) but kill
+     anything that animates a property on its own. */
   *, *::before, *::after {
     transition-duration: 0.001ms !important;
     transition-delay: 0ms !important;

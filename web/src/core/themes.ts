@@ -16,7 +16,22 @@
  * keyed on `[data-theme="<id>"]`.  See `docs/themes.md` for the recipe to
  * add a new edition.
  */
-import type { ScaleStop, RGB } from "../v1features/visualize/difficultyScale.js";
+/**
+ * RGB triplet in 0..255. Inlined here because the visualize feature
+ * that previously owned these types was removed in v3.1; themes still
+ * carry per-edition heatmap palettes for the Lookup and Compose grids.
+ */
+export interface RGB {
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
+}
+
+/** One stop in a difficulty heatmap gradient: `at` is in 0..100. */
+export interface ScaleStop {
+  readonly at: number;
+  readonly color: RGB;
+}
 
 export type ThemeId =
   | "almanac"

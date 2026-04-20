@@ -2,13 +2,12 @@
  * URL-hash-backed UI state utility.
  *
  * The hash format is a flat `key=value` map separated by `&`, mirroring
- * the URL search string but living in `window.location.hash` so it
- * stays 100% client-side and never reaches the static host.
+ * the URL search string but living in `window.location.hash` so it stays
+ * 100% client-side and never reaches the static host.
  *
  * Each value is opaque to this util — schemas own their own encoding,
- * including their own version prefix. That keeps the format stable
- * when one feature evolves without forcing every other feature to
- * bump.
+ * including their own version prefix. That keeps the format stable when
+ * one feature evolves without forcing every other feature to bump.
  *
  * Unknown keys are preserved on every write so multiple features can
  * share the hash without stomping on each other.
@@ -20,9 +19,9 @@
  */
 export interface HashSchema<T> {
   /**
-   * Encode the value to a hash-safe string. Implementations are free
-   * to embed their own version tag (e.g. `"1:..."`) so they can
-   * evolve independently of this util.
+   * Encode the value to a hash-safe string. Implementations are free to
+   * embed their own version tag (e.g. `"1:..."`) so they can evolve
+   * independently of this util.
    */
   encode(value: T): string;
   /** Decode a raw string back to a value, or return `null` if invalid. */
@@ -62,9 +61,9 @@ function writeAllPairs(pairs: Map<string, string>): void {
   const current = window.location.hash.replace(/^#/, "");
   if (next === current) return;
   // Use replaceState so changing UI state never pollutes the back stack.
-  // hashchange listeners do not fire on programmatic replaceState — we
-  // dispatch a synthetic event so subscribers (cross-store mirrors)
-  // still see the change.
+  // hashchange listeners still fire on programmatic hash assignment but
+  // not on replaceState — we dispatch a synthetic event so subscribers
+  // (e.g. cross-store mirrors) still see the change.
   const url = `${window.location.pathname}${window.location.search}${next.length > 0 ? `#${next}` : ""}`;
   window.history.replaceState(window.history.state, "", url);
 }
@@ -78,7 +77,7 @@ export function readHash<T>(key: string, schema: HashSchema<T>): T | null {
 
 /**
  * Write a single typed value to the hash, leaving every other key
- * untouched. Pass `null` (or use `clearHash`) to remove the key.
+ * untouched. Pass `null` to remove the key.
  */
 export function writeHash<T>(key: string, value: T | null, schema: HashSchema<T>): void {
   const pairs = readAllPairs();
@@ -91,18 +90,11 @@ export function writeHash<T>(key: string, value: T | null, schema: HashSchema<T>
   writeAllPairs(pairs);
 }
 
-/** Remove a single key from the hash without touching the others. */
-export function clearHash(key: string): void {
-  const pairs = readAllPairs();
-  if (!pairs.has(key)) return;
-  pairs.delete(key);
-  writeAllPairs(pairs);
-}
-
 /**
- * Subscribe to hash changes. Fires on the browser's `hashchange`
- * event (back / forward / manual edits) but not on our own
- * `replaceState` writes.
+ * Subscribe to hash changes. Fires on `hashchange` (back/forward, manual
+ * edits) but not on our own `replaceState` writes — that's intentional:
+ * `replaceState` is what the local store just did, so it already has the
+ * latest value.
  *
  * Returns an unsubscribe function.
  */

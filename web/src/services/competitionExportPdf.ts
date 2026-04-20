@@ -5,27 +5,33 @@
  * (~70KB gzipped, plus html2canvas + DOMPurify ~150KB more) don't reach
  * users who never click an export button.
  *
- * Layout:
+ * Layout matches the screen / print stylesheet:
  *   pages 1..N  one board per page: title, 6×6 grid (drawn with
- *               rect+text), `# / Player A / Player B` rolls table
- *   page  N+1+  "Stats summary" — full per-round expected score table,
- *               totals row, Δ deltas line
+ *               rect+text), `# / P1 dice / P2 dice` rolls table
+ *   page  N+1+  "Stats summary" — full per-round difficulty +
+ *               expected score table, totals row, Δ deltas line
  *
  * Page geometry: US Letter portrait, 0.5in margins, all coordinates in
- * points (72 dpi).
+ * points (72 dpi). The grid is centered horizontally and clamped to
+ * 360pt wide so it never overflows on narrower future formats.
  */
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-import type { CompositionExportData, ExportBoard } from "./competitionExport.js";
+import type {
+  CompositionExportData,
+  ExportBoard,
+} from "./competitionExport";
 
 const PDF_PAGE_FORMAT = "letter";
 const PDF_MARGIN = 36;
 const BOARD_COLS = 6;
 const BOARD_ROWS = 6;
 
-export async function generatePdf(data: CompositionExportData): Promise<Blob> {
+export async function generatePdf(
+  data: CompositionExportData,
+): Promise<Blob> {
   const doc = new jsPDF({
     unit: "pt",
     format: PDF_PAGE_FORMAT,
@@ -45,28 +51,46 @@ export async function generatePdf(data: CompositionExportData): Promise<Blob> {
   return doc.output("blob");
 }
 
-function drawBoardPage(doc: jsPDF, board: ExportBoard, data: CompositionExportData): void {
+function drawBoardPage(
+  doc: jsPDF,
+  board: ExportBoard,
+  data: CompositionExportData,
+): void {
   const pageWidth = doc.internal.pageSize.getWidth();
   const innerWidth = pageWidth - PDF_MARGIN * 2;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text(`BOARD ${board.index}`, PDF_MARGIN, PDF_MARGIN + 4);
+  // Phase signifier (v3.2) lives in the eyebrow when present so a
+  // multi-phase deck reads "PHASE 2 — BOARD 1" instead of just
+  // "BOARD 1". Stack eyebrow above the title to avoid overlap with
+  // long phase prefixes.
+  const eyebrowY = PDF_MARGIN + 4;
+  const titleY = PDF_MARGIN + 26;
+  const ruleY = PDF_MARGIN + 36;
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.text(board.title, PDF_MARGIN + 70, PDF_MARGIN + 8);
+  doc.setFontSize(9);
+  doc.setTextColor(120, 120, 120);
+  const eyebrow =
+    board.phaseLabel === undefined
+      ? `BOARD ${board.index}`
+      : `${board.phaseLabel.toUpperCase()} — BOARD ${board.index}`;
+  doc.text(eyebrow, PDF_MARGIN, eyebrowY);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  const roundLabel = `${board.rounds} ROUND${board.rounds === 1 ? "" : "S"}`;
-  const roundWidth = doc.getTextWidth(roundLabel);
-  doc.text(roundLabel, pageWidth - PDF_MARGIN - roundWidth, PDF_MARGIN + 4);
+  doc.setFontSize(9);
+  const boutLabel = `${board.rounds} BOUT${board.rounds === 1 ? "" : "S"}`;
+  const boutWidth = doc.getTextWidth(boutLabel);
+  doc.text(boutLabel, pageWidth - PDF_MARGIN - boutWidth, eyebrowY);
+  doc.setTextColor(0, 0, 0);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text(board.title, PDF_MARGIN, titleY);
 
   doc.setLineWidth(0.75);
-  doc.line(PDF_MARGIN, PDF_MARGIN + 18, pageWidth - PDF_MARGIN, PDF_MARGIN + 18);
+  doc.line(PDF_MARGIN, ruleY, pageWidth - PDF_MARGIN, ruleY);
 
-  const gridTop = PDF_MARGIN + 36;
+  const gridTop = ruleY + 18;
   const gridSize = Math.min(innerWidth, 360);
   const cellSize = gridSize / BOARD_COLS;
   const gridLeft = PDF_MARGIN + (innerWidth - gridSize) / 2;
@@ -84,13 +108,19 @@ function drawBoardPage(doc: jsPDF, board: ExportBoard, data: CompositionExportDa
       doc.rect(x, y, cellSize, cellSize, "S");
 
       const value = board.cells[slot];
-      if (value !== undefined) {
-        const isPinned = board.pinned.includes(slot);
+      if (value !== null && value !== undefined) {
+        const isPinned = board.overrideSlots.includes(slot);
         doc.setFont("helvetica", isPinned ? "bold" : "normal");
         doc.setFontSize(14);
         const text = String(value);
         const textWidth = doc.getTextWidth(text);
-        doc.text(text, x + (cellSize - textWidth) / 2, y + cellSize / 2 + 5);
+        // jsPDF text baseline sits at the y position; nudge so the
+        // glyph centers vertically inside the cell.
+        doc.text(
+          text,
+          x + (cellSize - textWidth) / 2,
+          y + cellSize / 2 + 5,
+        );
       }
     }
   }
@@ -98,13 +128,17 @@ function drawBoardPage(doc: jsPDF, board: ExportBoard, data: CompositionExportDa
   const tableTop = gridTop + gridSize + 28;
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.text("ROLLS PER ROUND", PDF_MARGIN, tableTop - 6);
+  doc.text("ROLLS PER BOUT", PDF_MARGIN, tableTop - 6);
 
   autoTable(doc, {
     startY: tableTop,
     margin: { left: PDF_MARGIN, right: PDF_MARGIN },
-    head: [["#", "Player A dice", "Player B dice"]],
-    body: board.rolls.map((r) => [String(r.index), diceText(r.playerA), diceText(r.playerB)]),
+    head: [["#", "P1 dice", "P2 dice"]],
+    body: board.rolls.map((r) => [
+      String(r.index),
+      diceText(r.p1),
+      diceText(r.p2),
+    ]),
     styles: {
       font: "helvetica",
       fontSize: 12,
@@ -129,7 +163,10 @@ function drawBoardPage(doc: jsPDF, board: ExportBoard, data: CompositionExportDa
   drawFooter(doc, data);
 }
 
-function drawStatsSummary(doc: jsPDF, data: CompositionExportData): void {
+function drawStatsSummary(
+  doc: jsPDF,
+  data: CompositionExportData,
+): void {
   const pageWidth = doc.internal.pageSize.getWidth();
 
   doc.setFont("helvetica", "bold");
@@ -140,46 +177,61 @@ function drawStatsSummary(doc: jsPDF, data: CompositionExportData): void {
   doc.setFontSize(9);
   doc.setTextColor(80, 80, 80);
   doc.text(
-    "Per-round expected score for each player, with totals and Δ for each board.",
+    "Per-bout difficulty + expected score, with totals and Δ for each board.",
     PDF_MARGIN,
     PDF_MARGIN + 24,
   );
   doc.setTextColor(0, 0, 0);
 
   doc.setLineWidth(0.75);
-  doc.line(PDF_MARGIN, PDF_MARGIN + 32, pageWidth - PDF_MARGIN, PDF_MARGIN + 32);
+  doc.line(
+    PDF_MARGIN,
+    PDF_MARGIN + 32,
+    pageWidth - PDF_MARGIN,
+    PDF_MARGIN + 32,
+  );
 
   let cursorY = PDF_MARGIN + 50;
 
   data.boards.forEach((board) => {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text(`BOARD ${board.index}`, PDF_MARGIN, cursorY);
-    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    const eyebrow =
+      board.phaseLabel === undefined
+        ? `BOARD ${board.index}`
+        : `${board.phaseLabel.toUpperCase()} — BOARD ${board.index}`;
+    doc.text(eyebrow, PDF_MARGIN, cursorY);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
-    doc.text(board.title, PDF_MARGIN + 60, cursorY);
-    cursorY += 6;
+    doc.text(board.title, PDF_MARGIN, cursorY + 14);
+    cursorY += 20;
 
     autoTable(doc, {
       startY: cursorY,
       margin: { left: PDF_MARGIN, right: PDF_MARGIN },
-      head: [["#", "A dice", "A score", "B dice", "B score", "Δ"]],
+      head: [
+        ["#", "P1 dice", "P1 diff", "P1 exp.", "P2 dice", "P2 diff", "P2 exp."],
+      ],
       body: [
         ...board.rolls.map((r) => [
           String(r.index),
-          diceText(r.playerA),
-          r.playerAScore.toFixed(2),
-          diceText(r.playerB),
-          r.playerBScore.toFixed(2),
-          r.delta.toFixed(3),
+          diceText(r.p1),
+          r.p1Difficulty.toFixed(2),
+          r.p1ExpectedScore.toFixed(1),
+          diceText(r.p2),
+          r.p2Difficulty.toFixed(2),
+          r.p2ExpectedScore.toFixed(1),
         ]),
         [
           "Σ",
           "—",
-          board.totals.playerA.toFixed(2),
+          board.totals.p1Difficulty.toFixed(2),
+          board.totals.p1ExpectedScore.toFixed(1),
           "—",
-          board.totals.playerB.toFixed(2),
-          board.totals.delta.toFixed(3),
+          board.totals.p2Difficulty.toFixed(2),
+          board.totals.p2ExpectedScore.toFixed(1),
         ],
       ],
       styles: {
@@ -205,19 +257,30 @@ function drawStatsSummary(doc: jsPDF, data: CompositionExportData): void {
       theme: "grid",
     });
 
-    // jspdf-autotable stashes next-Y on `lastAutoTable.finalY`; the type
-    // isn't exposed on the jsPDF interface so we read it loosely.
+    // jspdf-autotable stashes the next-Y on `lastAutoTable.finalY`; the
+    // type isn't exposed on the jsPDF interface so we read it loosely.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const finalY = (doc as any).lastAutoTable?.finalY ?? cursorY + 60;
     cursorY = finalY + 14;
 
     const higher =
-      board.totals.delta > 0 ? "A" : board.totals.delta < 0 ? "B" : "—";
+      board.totals.expectedScoreDelta > 0
+        ? "P1"
+        : board.totals.expectedScoreDelta < 0
+        ? "P2"
+        : "—";
+    const harder =
+      board.totals.difficultyDelta > 0
+        ? "P1"
+        : board.totals.difficultyDelta < 0
+        ? "P2"
+        : "—";
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.text(
-      `Δ totals: ${Math.abs(board.totals.delta).toFixed(2)} (player ${higher} ahead)`,
+      `Δ expected score: ${Math.abs(board.totals.expectedScoreDelta).toFixed(1)} (${higher} higher)    ` +
+        `Δ difficulty: ${Math.abs(board.totals.difficultyDelta).toFixed(2)} (${harder} harder)`,
       PDF_MARGIN,
       cursorY,
     );
@@ -242,13 +305,21 @@ function drawFooter(doc: jsPDF, data: CompositionExportData): void {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 120);
-  doc.text(`N2K · Compose · ${date}`, PDF_MARGIN, pageHeight - PDF_MARGIN / 2);
+  doc.text(
+    `N2K Almanac · Compose · ${date}`,
+    PDF_MARGIN,
+    pageHeight - PDF_MARGIN / 2,
+  );
   const pageLabel = `Page ${pageNum}`;
   const pageLabelWidth = doc.getTextWidth(pageLabel);
-  doc.text(pageLabel, pageWidth - PDF_MARGIN - pageLabelWidth, pageHeight - PDF_MARGIN / 2);
+  doc.text(
+    pageLabel,
+    pageWidth - PDF_MARGIN - pageLabelWidth,
+    pageHeight - PDF_MARGIN / 2,
+  );
   doc.setTextColor(0, 0, 0);
 }
 
-function diceText(dice: readonly number[]): string {
-  return dice.join("  ");
+function diceText(dice: readonly [number, number, number]): string {
+  return `${dice[0]}  ${dice[1]}  ${dice[2]}`;
 }

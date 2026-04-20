@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AETHER_MODE, BOARD, STANDARD_MODE } from "../src/core/constants.js";
 import {
+  generateBoard,
   generatePatternBoard,
   generateRandomBoard,
   generateRandomDice,
@@ -54,6 +55,29 @@ describe("generateRandomBoard", () => {
         range: { min: 1, max: 10 },
       }),
     ).toThrow();
+  });
+});
+
+describe("generateBoard with overrides", () => {
+  it("pins stay at their slots and the remaining fill cells are sorted ascending", () => {
+    const cells = generateBoard(
+      {
+        kind: "random",
+        range: { min: 1, max: 999 },
+        overrides: [
+          { slot: 0, value: 69 },
+          { slot: 35, value: 420 },
+        ],
+      },
+      seededRng(1234),
+    );
+    expect(cells).toHaveLength(BOARD.size);
+    expect(cells[0]).toBe(69);
+    expect(cells[35]).toBe(420);
+    const fill = cells.filter((_, i) => i !== 0 && i !== 35);
+    for (let i = 1; i < fill.length; i += 1) {
+      expect(fill[i]).toBeGreaterThan(fill[i - 1]!);
+    }
   });
 });
 

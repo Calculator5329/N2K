@@ -1,15 +1,15 @@
 /**
  * Async codec for shareable URL-hash payloads.
  *
- * Used by the Compose feature to round-trip an entire competition plan
- * (boards + config + overrides) through `window.location.hash` so a
- * fully-static deploy can still produce shareable links. The payload
- * is `JSON → DEFLATE-RAW → base64url`, which gives ~4× shrinkage over
+ * Used by the Compose feature (#17) to round-trip the entire competition
+ * plan (boards + config + overrides) through the URL hash so a fully
+ * static deploy can still produce shareable links. The payload is JSON
+ * → DEFLATE-RAW → base64url, giving us ~4× size reduction over plain
  * `encodeURIComponent(JSON.stringify(...))` for the kinds of payloads
  * the plan store produces.
  *
- * Returns plain primitives (string for encode, `T | null` for decode)
- * so call sites can layer their own validation and versioning on top.
+ * Returns plain primitives (string for encode, T | null for decode) so
+ * call sites can layer their own validation and versioning on top.
  */
 
 const VERSION = 1;
@@ -63,6 +63,8 @@ async function streamToBytes(stream: ReadableStream<Uint8Array>): Promise<Uint8A
 async function compress(bytes: Uint8Array): Promise<Uint8Array> {
   const cs = new CompressionStream("deflate-raw");
   const writer = cs.writable.getWriter();
+  // Cast through BufferSource: tsc 5.7+ narrows Uint8Array's buffer to
+  // ArrayBufferLike, which the WritableStreamDefaultWriter typings reject.
   void writer.write(bytes as unknown as BufferSource);
   void writer.close();
   return streamToBytes(cs.readable);
@@ -82,7 +84,8 @@ async function decompress(bytes: Uint8Array): Promise<Uint8Array | null> {
 
 /**
  * Encode a JSON-serializable value to a hash-safe `v{N}.{base64url}`
- * string.
+ * string. Resolved value is empty string when input serializes to empty
+ * (callers should treat that as "skip").
  */
 export async function encodeShareable<T>(value: T): Promise<string> {
   const json = JSON.stringify(value);
@@ -92,9 +95,9 @@ export async function encodeShareable<T>(value: T): Promise<string> {
 }
 
 /**
- * Decode a `v{N}.{base64url}` payload. Returns `null` when any step
- * (prefix, base64, decompression, JSON) fails — callers should treat
- * that as "no payload" rather than surface an error.
+ * Decode a `v{N}.{base64url}` payload. Returns `null` when the prefix,
+ * base64, decompression, or JSON step fails — callers should treat that
+ * as "no payload" rather than surface an error.
  */
 export async function decodeShareable<T>(raw: string): Promise<T | null> {
   const dot = raw.indexOf(".");

@@ -1,95 +1,121 @@
-/**
- * `FavoritesStore` — persistent set of "starred" dice tuples per mode.
- *
- * Tuples are persisted to `localStorage` under a single key per mode so the
- * data outlives a refresh without depending on the (eventual) cloud
- * backend. The shape is intentionally trivial (sorted-tuple → boolean) so
- * the entire payload is cheap to serialize on every mutation.
- */
-import { action, makeObservable, observable } from "mobx";
+import { makeAutoObservable, observable } from "mobx";
+import type { DiceTriple } from "../core/types";
 
 const STORAGE_KEY = "n2k.favorites.v1";
 
-interface PersistedShape {
-  /** Map from `${modeId}|sortedDiceCsv` to true. */
-  readonly entries: Readonly<Record<string, true>>;
+/** Canonicalize a triple to its sorted "a-b-c" string form. */
+function key(dice: DiceTriple): string {
+  const sorted = [dice[0], dice[1], dice[2]].sort((a, b) => a - b);
+  return `${sorted[0]}-${sorted[1]}-${sorted[2]}`;
 }
 
-function tupleKey(modeId: string, dice: readonly number[]): string {
-  const sorted = [...dice].sort((a, b) => a - b);
-  return `${modeId}|${sorted.join(",")}`;
+function parseKey(raw: string): DiceTriple | null {
+  const parts = raw.split("-").map((s) => Number(s));
+  if (parts.length !== 3) return null;
+  if (!parts.every((n) => Number.isFinite(n) && n >= 1 && n <= 20)) return null;
+  parts.sort((a, b) => a - b);
+  return [parts[0]!, parts[1]!, parts[2]!];
 }
 
-function parseStored(): PersistedShape {
-  if (typeof localStorage === "undefined") return { entries: {} };
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw === null) return { entries: {} };
+function readPersisted(): Set<string> {
+  if (typeof localStorage === "undefined") return new Set();
   try {
-    const parsed = JSON.parse(raw) as Partial<PersistedShape>;
-    return { entries: parsed.entries ?? {} };
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw === null) return new Set();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return new Set();
+    const out = new Set<string>();
+    for (const k of parsed) {
+      if (typeof k !== "string") continue;
+      // Round-trip through parseKey so corrupt entries get dropped.
+      const triple = parseKey(k);
+      if (triple !== null) out.add(key(triple));
+    }
+    return out;
   } catch {
-    return { entries: {} };
+    return new Set();
   }
 }
 
-function persist(entries: ReadonlyMap<string, true>): void {
+function persist(set: ReadonlySet<string>): void {
   if (typeof localStorage === "undefined") return;
-  const obj: Record<string, true> = {};
-  for (const [k] of entries) obj[k] = true;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries: obj }));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...set].sort()));
+  } catch {
+    /* ignore quota / privacy errors */
+  }
 }
 
+/**
+ * Persisted set of starred dice triples. Triple-level only — cell-level
+ * favorites are explicitly out of scope (see `docs/current_task.md`
+ * Phase 0).
+ *
+ * Mirrors the defensive read/persist pattern used by `ThemeStore`:
+ * corrupt storage boots empty, write failures (privacy mode, quota) are
+ * swallowed so the in-memory state always stays usable.
+ */
 export class FavoritesStore {
-  private readonly entries = observable.map<string, true>();
+  // `observable.set` is its own self-contained reactive structure;
+  // tell `makeAutoObservable` not to wrap it again, otherwise observers
+  // end up tracking a stale wrapper instead of the live set and the UI
+  // never re-renders on `add` / `remove`.
+  private readonly triples = observable.set<string>(readPersisted());
 
   constructor() {
-    const initial = parseStored();
-    for (const k of Object.keys(initial.entries)) {
-      this.entries.set(k, true);
-    }
-
-    makeObservable(this, {
-      isFavorite: false,
-      forMode: false,
-      toggle: action,
-      clearAll: action,
-    });
+    makeAutoObservable<FavoritesStore, "triples">(
+      this,
+      { triples: false },
+      { autoBind: true },
+    );
   }
 
-  /** All starred tuples for a mode, returned as sorted tuples. */
-  forMode(modeId: string): readonly (readonly number[])[] {
-    const prefix = `${modeId}|`;
-    const out: number[][] = [];
-    for (const k of this.entries.keys()) {
-      if (!k.startsWith(prefix)) continue;
-      const csv = k.slice(prefix.length);
-      out.push(csv.split(",").map((s) => Number.parseInt(s, 10)));
+  has(dice: DiceTriple): boolean {
+    return this.triples.has(key(dice));
+  }
+
+  add(dice: DiceTriple): void {
+    const k = key(dice);
+    if (this.triples.has(k)) return;
+    this.triples.add(k);
+    persist(this.triples);
+  }
+
+  remove(dice: DiceTriple): void {
+    const k = key(dice);
+    if (!this.triples.has(k)) return;
+    this.triples.delete(k);
+    persist(this.triples);
+  }
+
+  toggle(dice: DiceTriple): void {
+    if (this.has(dice)) this.remove(dice);
+    else this.add(dice);
+  }
+
+  clear(): void {
+    if (this.triples.size === 0) return;
+    this.triples.clear();
+    persist(this.triples);
+  }
+
+  /** Sorted snapshot of starred triples. */
+  list(): DiceTriple[] {
+    const out: DiceTriple[] = [];
+    for (const k of this.triples) {
+      const triple = parseKey(k);
+      if (triple !== null) out.push(triple);
     }
-    return out.sort((a, b) => {
-      const len = Math.min(a.length, b.length);
-      for (let i = 0; i < len; i += 1) {
-        if (a[i] !== b[i]) return (a[i] ?? 0) - (b[i] ?? 0);
+    out.sort((a, b) => {
+      for (let i = 0; i < 3; i += 1) {
+        if (a[i] !== b[i]) return a[i]! - b[i]!;
       }
-      return a.length - b.length;
+      return 0;
     });
+    return out;
   }
 
-  isFavorite(modeId: string, dice: readonly number[]): boolean {
-    return this.entries.has(tupleKey(modeId, dice));
-  }
-
-  toggle(modeId: string, dice: readonly number[]): void {
-    const key = tupleKey(modeId, dice);
-    if (this.entries.has(key)) {
-      this.entries.delete(key);
-    } else {
-      this.entries.set(key, true);
-    }
-    persist(this.entries);
-  }
-
-  clearAll(): void {
-    this.entries.clear();
-    persist(this.entries);
+  get size(): number {
+    return this.triples.size;
   }
 }

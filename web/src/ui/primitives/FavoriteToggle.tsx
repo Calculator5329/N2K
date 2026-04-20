@@ -1,55 +1,59 @@
-/**
- * FavoriteToggle — star button wired to FavoritesStore.
- */
 import { observer } from "mobx-react-lite";
-import { useAppStore } from "../../stores/AppStoreContext.js";
+import { useStore } from "../../stores/AppStoreContext.js";
+import type { DiceTriple } from "../../core/types";
 
-export interface FavoriteToggleProps {
-  readonly modeId: string;
-  readonly dice: readonly number[];
-  readonly size?: "sm" | "md";
-  readonly className?: string;
-}
-
+/**
+ * Star toggle that adds/removes a dice triple from the persisted
+ * favorites set. Theme-token-driven (ink for outline, oxblood for fill)
+ * so it inherits the active edition's palette without per-theme
+ * overrides.
+ *
+ * Stops propagation on click so it can be safely embedded inside row
+ * click handlers.
+ */
 export const FavoriteToggle = observer(function FavoriteToggle({
-  modeId,
   dice,
   size = "md",
   className,
-}: FavoriteToggleProps) {
-  const { favorites } = useAppStore();
-  const active = favorites.isFavorite(modeId, dice);
-  const onToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    favorites.toggle(modeId, dice);
-  };
-  const dim = size === "sm" ? 14 : 18;
+}: {
+  dice: DiceTriple;
+  size?: "sm" | "md";
+  className?: string;
+}) {
+  const { favorites } = useStore();
+  const starred = favorites.has(dice);
+
+  const dim = size === "sm" ? "w-4 h-4" : "w-5 h-5";
+
   return (
     <button
       type="button"
-      onClick={onToggle}
-      aria-pressed={active}
-      aria-label={active ? "Unfavorite" : "Favorite"}
-      title={active ? "Unfavorite" : "Favorite"}
-      className={className}
-      style={{
-        background: "transparent",
-        border: "none",
-        cursor: "pointer",
-        padding: 2,
-        color: active ? "var(--color-accent)" : "var(--color-ink-muted)",
-        transition: "color 120ms ease",
-        lineHeight: 1,
+      onClick={(e) => {
+        e.stopPropagation();
+        favorites.toggle(dice);
       }}
+      aria-pressed={starred}
+      aria-label={starred ? "Unstar this dice triple" : "Star this dice triple"}
+      title={starred ? "Starred — click to unstar" : "Click to star"}
+      className={[
+        "inline-flex items-center justify-center transition-colors",
+        starred
+          ? "text-oxblood-500 hover:text-oxblood-500/80"
+          : "text-ink-100/40 hover:text-ink-300",
+        className ?? "",
+      ].join(" ")}
     >
-      <svg width={dim} height={dim} viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M12 2.5l2.95 6.16 6.8.99-4.92 4.79 1.16 6.77L12 17.95l-6.07 3.26 1.16-6.77L2.25 9.65l6.8-.99L12 2.5z"
-          fill={active ? "currentColor" : "none"}
-          stroke="currentColor"
-          strokeWidth={1.6}
-          strokeLinejoin="round"
-        />
+      <svg
+        viewBox="0 0 24 24"
+        className={dim}
+        aria-hidden="true"
+        fill={starred ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth={1.6}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      >
+        <path d="M12 3.5l2.6 5.27 5.82.85-4.21 4.1.99 5.78L12 16.77l-5.2 2.73.99-5.78-4.21-4.1 5.82-.85L12 3.5z" />
       </svg>
     </button>
   );

@@ -16,6 +16,184 @@ import { BOARD } from "../core/constants.js";
 import type { Mode } from "../core/types.js";
 
 // ---------------------------------------------------------------------------
+//  BoardSpec — declarative board generation with per-cell overrides
+//
+//  Ported from N2K-v2/src/services/generators.ts so the Compose feature
+//  in the web layer can keep its existing `generateBoard(spec)` call
+//  shape after the @solver alias swap. v3's mode-aware
+//  `generateRandomBoard(mode, options)` above remains the canonical
+//  primitive — `generateBoard` is a v1-shaped wrapper around it that
+//  also supports per-slot overrides.
+// ---------------------------------------------------------------------------
+
+/** A pinned board cell: at the given linear slot index, force this value. */
+export interface BoardOverride {
+  readonly slot: number;
+  readonly value: number;
+}
+
+/** Random board spec: `BOARD.size` unique random ints in `[min, max]`. */
+export interface RandomBoardSpec {
+  readonly kind: "random";
+  readonly range: { readonly min: number; readonly max: number };
+  readonly overrides?: readonly BoardOverride[];
+}
+
+/** Pattern board spec: arithmetic progression with 1, 2, or 3 multiples. */
+export interface PatternBoardSpec {
+  readonly kind: "pattern";
+  readonly multiples: readonly number[];
+  readonly start: number;
+  readonly overrides?: readonly BoardOverride[];
+}
+
+export type BoardSpec = RandomBoardSpec | PatternBoardSpec;
+
+/**
+ * Build a board from a {@link BoardSpec}, applying any per-slot overrides.
+ *
+ * No-overrides path returns the canonical sorted board (back-compat with
+ * v2's `generateRandomBoard` / `generatePatternBoard`). With overrides,
+ * the board is *positional* — pinned cells stay at the exact slot the
+ * user clicked — but the remaining "fill" cells are sorted ascending
+ * and dropped into the unpinned slots in row-major order. This keeps
+ * the grid scannable (the user sees a near-monotonic ramp) while still
+ * honoring pinned positions, which can interrupt the sequence.
+ */
+export function generateBoard(
+  spec: BoardSpec,
+  rng: () => number = Math.random,
+): number[] {
+  const overrides = spec.overrides ?? [];
+  validateBoardOverrides(overrides);
+
+  if (overrides.length === 0) {
+    if (spec.kind === "random") {
+      return generateRandomBoardLegacy(spec.range, rng);
+    }
+    return generatePatternBoard(spec.multiples, spec.start);
+  }
+
+  const overrideBySlot = new Map(overrides.map((o) => [o.slot, o.value] as const));
+  const overrideValues = new Set(overrides.map((o) => o.value));
+  const slotsToFill = BOARD.size - overrides.length;
+
+  let fillValues: number[];
+  if (spec.kind === "random") {
+    fillValues = fillRandomAroundOverrides(
+      spec.range.min,
+      spec.range.max,
+      slotsToFill,
+      overrideValues,
+      rng,
+    );
+  } else {
+    const pattern = generatePatternBoard(spec.multiples, spec.start);
+    fillValues = [];
+    for (let slot = 0; slot < BOARD.size; slot += 1) {
+      if (overrideBySlot.has(slot)) continue;
+      const v = pattern[slot]!;
+      if (overrideValues.has(v)) {
+        throw new RangeError(
+          `Override value ${v} collides with the natural pattern value at ` +
+            `slot ${pattern.indexOf(v)}; pick a different override or pattern`,
+        );
+      }
+      fillValues.push(v);
+    }
+  }
+
+  // Sort the fill values ascending so the rendered grid reads
+  // left-to-right, top-to-bottom in numeric order around the pins.
+  // Pinned cells stay exactly where the user placed them and may
+  // interrupt the monotonic ramp — that's intentional.
+  const sortedFill = [...fillValues].sort((a, b) => a - b);
+
+  const merged: number[] = new Array<number>(BOARD.size);
+  let cursor = 0;
+  for (let slot = 0; slot < BOARD.size; slot += 1) {
+    const pinned = overrideBySlot.get(slot);
+    if (pinned !== undefined) {
+      merged[slot] = pinned;
+    } else {
+      merged[slot] = sortedFill[cursor]!;
+      cursor += 1;
+    }
+  }
+
+  if (new Set(merged).size !== merged.length) {
+    throw new RangeError(
+      `Board contains duplicate values after applying overrides; ` +
+        `pick override values that don't collide with the generated cells`,
+    );
+  }
+
+  return merged;
+}
+
+function generateRandomBoardLegacy(
+  range: { readonly min: number; readonly max: number },
+  rng: () => number,
+): number[] {
+  if (range.max < range.min) {
+    throw new RangeError(`max (${range.max}) must be >= min (${range.min})`);
+  }
+  if (range.max - range.min + 1 < BOARD.size) {
+    throw new RangeError(
+      `range [${range.min}, ${range.max}] has fewer than ${BOARD.size} integers; cannot fit a unique board`,
+    );
+  }
+  const seen = new Set<number>();
+  while (seen.size < BOARD.size) {
+    seen.add(randomInt(range.min, range.max, rng));
+  }
+  return [...seen].sort((a, b) => a - b);
+}
+
+function validateBoardOverrides(overrides: readonly BoardOverride[]): void {
+  const slots = new Set<number>();
+  const values = new Set<number>();
+  for (const o of overrides) {
+    if (!Number.isInteger(o.slot) || o.slot < 0 || o.slot >= BOARD.size) {
+      throw new RangeError(
+        `Override slot ${o.slot} out of range [0, ${BOARD.size})`,
+      );
+    }
+    if (slots.has(o.slot)) {
+      throw new RangeError(`Duplicate override for slot ${o.slot}`);
+    }
+    if (values.has(o.value)) {
+      throw new RangeError(`Duplicate override value ${o.value}`);
+    }
+    slots.add(o.slot);
+    values.add(o.value);
+  }
+}
+
+function fillRandomAroundOverrides(
+  min: number,
+  max: number,
+  count: number,
+  reserved: ReadonlySet<number>,
+  rng: () => number,
+): number[] {
+  const available = max - min + 1 - reserved.size;
+  if (available < count) {
+    throw new RangeError(
+      `range [${min}, ${max}] (minus ${reserved.size} reserved values) ` +
+        `has ${available} integers; need ${count} more cells`,
+    );
+  }
+  const seen = new Set<number>();
+  while (seen.size < count) {
+    const v = randomInt(min, max, rng);
+    if (reserved.has(v)) continue;
+    seen.add(v);
+  }
+  return [...seen];
+}
+
+// ---------------------------------------------------------------------------
 //  Random helpers
 // ---------------------------------------------------------------------------
 

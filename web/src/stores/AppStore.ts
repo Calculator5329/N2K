@@ -1,97 +1,119 @@
 /**
- * `AppStore` — the root composition object.
+ * `AppStore` — the single root store for the entire app.
  *
- * Wires together the platform services with the cross-cutting stores
- * (identity, theme, favorites) and the feature stores (lookup, explore,
- * compare, visualize, compose, play). Adding a new feature = add a service
- * to `PlatformServices` if it needs one, then instantiate the feature
- * store in the constructor.
+ * Holds every piece of cross-cutting and feature state behind one
+ * dependency that components reach through {@link useAppStore}:
+ *
+ *   - `data`        — bundled standard dataset (lazy JSON chunks)
+ *   - `aetherData`  — Æther sweeps (worker-pool, on-demand)
+ *   - `theme`       — active edition (mirrored to `<html data-theme>`)
+ *   - `favorites`   — starred dice triples
+ *   - `secret`      — Konami unlock + Æther mode latch
+ *   - `play`        — live state for the Knockout race surface
+ *   - `composition` — editable Competition document (Compose tab)
+ *   - `library`     — index of locally-saved competitions (Library tab)
+ *   - `match`       — orchestrator for the in-flight competition match
+ *                     (null when no match is being played)
+ *   - `view`        — currently routed top-level surface
+ *
+ * Construction is side-effect free aside from the store-internal
+ * initialisers (theme reads from localStorage, etc.). The window
+ * keydown listener for Konami is attached from `App.tsx` so SSR/test
+ * environments without a `window` can construct the store cleanly.
  */
-import type { AIService } from "../services/aiService.js";
-import {
-  ContentBackendBoardLibrary,
-  type BoardLibraryService,
-} from "../services/boardLibrary.js";
-import type { CompetitionService } from "../services/competitionService.js";
-import type { ContentBackend } from "../services/contentBackend.js";
-import type { DatasetClient } from "../services/datasetClient.js";
-import type { IdentityService } from "../services/identityService.js";
-import type { SolverWorkerService } from "../services/solverWorkerService.js";
-import type { TupleIndexService } from "../services/tupleIndexService.js";
-import { disposeSharedSolverWorkerClient } from "../services/workerSolverClient.js";
-import { BoardLibraryStore } from "./BoardLibraryStore.js";
-import { CompareStore } from "./CompareStore.js";
-import { ComposeStore } from "./ComposeStore.js";
-import { ExploreStore } from "./ExploreStore.js";
-import { FavoritesStore } from "./FavoritesStore.js";
-import { IdentityStore } from "./IdentityStore.js";
-import { LookupStore } from "./LookupStore.js";
-import { PlayStore } from "./PlayStore.js";
-import { ThemeStore } from "./ThemeStore.js";
-import { VisualizeStore } from "./VisualizeStore.js";
+import { makeAutoObservable } from "mobx";
 
-export interface PlatformServices {
-  readonly content: ContentBackend;
-  readonly identity: IdentityService;
-  readonly ai: AIService;
-  readonly dataset: DatasetClient;
-  readonly solverWorker: SolverWorkerService;
-  readonly tupleIndex: TupleIndexService;
-  readonly competition: CompetitionService;
-  /** Optional override; defaults to a {@link ContentBackendBoardLibrary} over `content`. */
-  readonly boardLibrary?: BoardLibraryService;
+import { AetherDataStore } from "./AetherDataStore.js";
+import { DataStore } from "./DataStore.js";
+import { FavoritesStore } from "./FavoritesStore.js";
+import { PlayStore } from "./PlayStore.js";
+import { SecretStore } from "./SecretStore.js";
+import { ThemeStore } from "./ThemeStore.js";
+import { CompositionStore } from "../features/compose/CompositionStore.js";
+import { LibraryStore } from "../features/library/LibraryStore.js";
+import type { MatchStore } from "../features/match/MatchStore.js";
+import type { View } from "./types.js";
+
+/**
+ * Pasted Competition share links carry a `plan=` entry in the URL
+ * hash (see `CompositionStore.buildShareUrl` / `loadFromUrl`). When
+ * present we boot straight into the Competition tab rather than the
+ * default Lookup, so the recipient lands on the surface that will
+ * actually rehydrate from their link.
+ */
+function initialViewFromHash(): View {
+  if (typeof window === "undefined") return "lookup";
+  const raw = window.location.hash.replace(/^#/, "");
+  if (raw.length === 0) return "lookup";
+  for (const part of raw.split("&")) {
+    const eq = part.indexOf("=");
+    const key = eq < 0 ? part : part.slice(0, eq);
+    if (decodeURIComponent(key) === "plan") return "compose";
+  }
+  return "lookup";
 }
 
+export type { View };
+
 export class AppStore {
-  readonly services: PlatformServices;
-  readonly identity: IdentityStore;
+  readonly data: DataStore;
+  readonly aetherData: AetherDataStore;
   readonly theme: ThemeStore;
   readonly favorites: FavoritesStore;
-  readonly lookup: LookupStore;
-  readonly explore: ExploreStore;
-  readonly compare: CompareStore;
-  readonly visualize: VisualizeStore;
-  readonly compose: ComposeStore;
+  readonly secret: SecretStore;
   readonly play: PlayStore;
-  readonly boardLibrary: BoardLibraryStore;
+  readonly composition: CompositionStore;
+  readonly library: LibraryStore;
+  /**
+   * The active competition match, or `null` when the Play tab is in
+   * its standalone Quick Race fallback. Set by `LibraryStore.startMatch`
+   * (or a reload restore), cleared by `MatchStore.discard()`.
+   *
+   * Typed as a union so the field can be observed without dragging
+   * the MatchStore module into the AppStore's import graph (see
+   * dynamic import in `loadMatchModule`); MobX still tracks it.
+   */
+  match: MatchStore | null = null;
+  view: View = initialViewFromHash();
 
-  constructor(services: PlatformServices) {
-    this.services = services;
-    this.identity = new IdentityStore(services.identity);
-    this.theme = new ThemeStore("tabletop");
+  constructor() {
+    this.data = new DataStore();
+    this.aetherData = new AetherDataStore();
+    this.theme = new ThemeStore();
     this.favorites = new FavoritesStore();
-    this.lookup = new LookupStore({
-      dataset: services.dataset,
-      solverWorker: services.solverWorker,
-    });
-    this.explore = new ExploreStore({
-      tupleIndex: services.tupleIndex,
-      favorites: this.favorites,
-    });
-    this.compare = new CompareStore({ dataset: services.dataset });
-    this.visualize = new VisualizeStore({ explore: this.explore, dataset: services.dataset });
-    this.compose = new ComposeStore({ competition: services.competition });
+    this.secret = new SecretStore();
     this.play = new PlayStore();
-    this.boardLibrary = new BoardLibraryStore({
-      service: services.boardLibrary ?? new ContentBackendBoardLibrary(services.content),
-      // IdentityStore always has a non-null user (even anonymous), so
-      // ownership is straightforward: use the active user id. Anonymous
-      // users get their own bucket per browser, which is exactly what
-      // we want until sign-in lands.
-      currentOwnerId: () => this.identity.user.id,
+    this.composition = new CompositionStore(this.data);
+    this.library = new LibraryStore();
+    makeAutoObservable(this, {
+      data: false,
+      aetherData: false,
+      theme: false,
+      favorites: false,
+      secret: false,
+      play: false,
+      composition: false,
+      library: false,
     });
   }
 
+  setView(view: View): void {
+    this.view = view;
+    // Auto-pause any in-flight match when the user navigates away from
+    // the Play tab. The match is preserved (and the Play tab still
+    // shows a paused-takeover when the user returns) — only the
+    // race timer is frozen.
+    if (view !== "play" && this.match !== null) {
+      this.match.autoPause();
+    }
+  }
+
+  setMatch(match: MatchStore | null): void {
+    this.match = match;
+  }
+
   dispose(): void {
-    this.identity.dispose();
-    this.lookup.dispose();
-    this.explore.dispose();
-    this.compare.dispose();
-    this.boardLibrary.dispose();
-    this.services.solverWorker.dispose();
-    // The solver worker is shared between dataset + solver service, so
-    // we dispose it exactly once here regardless of which factory wired
-    // up the AppStore.
-    disposeSharedSolverWorkerClient();
+    this.play.dispose();
+    this.match?.dispose();
   }
 }

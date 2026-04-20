@@ -13,13 +13,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@platform": path.resolve(__dirname, "../src"),
-      // Back-compat alias for files ported from v1. The v1 web layer was
-      // written against the v1 platform (`<repo>/src`) which has the full
-      // legacy surface (advancedSolver, competition, generators.generateBoard,
-      // etc.). v2's reduced platform (`<repo>/v2-merged/src`) is what the
-      // new code uses. Pointing `@solver` at the legacy root keeps the
-      // ported v1 features compiling without modification.
-      "@solver": path.resolve(__dirname, "../../src"),
+      // The web layer's "solver" tier — points at v3's unified, mode-aware
+      // solver (`N2K-v3/src/`). All of the surfaces that were ported from
+      // v1's web layer (Compose, Lookup, etc.) reach into the solver via
+      // this alias, so flipping it here repoints every consumer at once.
+      // The v3.1 trim ported v2's competition.ts / boardAnalysis.ts /
+      // BoardSpec generators / parseEquation / DICE_COMBINATIONS into v3
+      // so the consumers' import paths stay shaped like v2 spelt them.
+      "@solver": path.resolve(__dirname, "../src"),
     },
   },
   server: {

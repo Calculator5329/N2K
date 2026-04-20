@@ -21,7 +21,7 @@
  *   "2 + 2 = 5"               → throws (asserted total mismatches)
  */
 import { OP, OPERATOR_TO_SYMBOL, FLOAT_EQ_EPSILON } from "../core/constants.js";
-import type { NEquation, Operator, OperatorSymbol } from "../core/types.js";
+import type { NEquation, Operator } from "../core/types.js";
 import { applyOperator } from "../services/arithmetic.js";
 
 export class ParseError extends Error {
@@ -210,7 +210,3 @@ function evaluateLeftToRight(
   }
   return acc;
 }
-
-/** Re-export for callers that want to look up an operator's printed glyph. */
-export const operatorSymbol = (op: Operator): OperatorSymbol =>
-  OPERATOR_TO_SYMBOL[op];
