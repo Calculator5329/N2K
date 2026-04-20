@@ -71,9 +71,13 @@ ctx.addEventListener("message", (event: MessageEvent<SolverWorkerRequest>) => {
     const canonical = canonicalizeSolutions(raw, (eq) =>
       difficultyOfEquation(eq, STANDARD_MODE),
     );
+    // Reuse the difficulty that `canonicalizeSolutions` already
+    // computed (it had to score every group during sort) — calling
+    // `difficultyOfEquation` a second time per row was wasted work
+    // and shows up in the worker's response time at high arity.
     const solutions: SolverWorkerSolution[] = canonical.map((c) => ({
       equation: formatEquation(c.equation),
-      difficulty: difficultyOfEquation(c.equation, STANDARD_MODE),
+      difficulty: c.difficulty,
       multiplicity: c.multiplicity,
     }));
     const response: SolverWorkerResponse = { id, kind: "ok", solutions };

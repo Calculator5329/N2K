@@ -85,6 +85,14 @@ export interface CanonicalSolution {
   readonly equation: NEquation;
   /** How many distinct (perm, exps, ops) inputs collapsed into it. */
   readonly multiplicity: number;
+  /**
+   * Difficulty of the canonical representative, scored by the
+   * `scoreFn` passed to `canonicalizeSolutions`. Stored so callers
+   * (worker, exporter) don't have to re-score each result —
+   * `difficultyOfEquation` over the full solution set isn't free at
+   * arity 4/5.
+   */
+  readonly difficulty: number;
 }
 
 /** True iff `op` belongs to the additive precedence class (`{+, -}`). */
@@ -342,11 +350,15 @@ export function canonicalizeSolutions(
       });
     }
   }
-  const out = Array.from(groups.values());
+  const out: CanonicalSolution[] = Array.from(groups.values()).map((g) => ({
+    equation: g.equation,
+    multiplicity: g.multiplicity,
+    difficulty: g.difficulty,
+  }));
   out.sort((a, b) => {
     if (a.difficulty !== b.difficulty) return a.difficulty - b.difficulty;
     // Tie-break: lexicographic on canonical key — fully deterministic.
     return canonicalKey(a.equation).localeCompare(canonicalKey(b.equation));
   });
-  return out.map(({ equation, multiplicity }) => ({ equation, multiplicity }));
+  return out;
 }

@@ -75,4 +75,24 @@ export function solveAllEquations(
   });
 }
 
+/**
+ * Spin up the worker (and parse its bundle) without sending any work.
+ * No-op if the worker is already alive.
+ *
+ * Why: the first `solveAllEquations` call pays a one-time cost
+ * (~30–80 ms on a cold tab) for Vite to fetch the worker bundle,
+ * spawn the thread, and JIT the solver. That cost lands at the
+ * worst possible moment — right when the user clicks "All
+ * equations" — and shows up as a visible delay before the panel
+ * starts rendering. Calling this from `LookupView`'s mount effect
+ * inside `requestIdleCallback` shifts the cost to *before* the user
+ * needs the result, so opening the panel feels instant on warm
+ * cells (where the solver itself runs in a few ms).
+ *
+ * Safe to call multiple times; calls after the first are free.
+ */
+export function prewarmSolverWorker(): void {
+  ensureWorker();
+}
+
 export type { SolverWorkerSolution };

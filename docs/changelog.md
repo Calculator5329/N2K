@@ -2,6 +2,50 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-19 — Lookup-feels-instant follow-ups
+
+Quick polish pass on the canonical-form work to make the **whole**
+"All equations" panel interaction feel instant on Standard mode, not
+just the post-solve render.
+
+**Worker prewarm (`web/src/services/solverWorkerService.ts`,
+`web/src/features/lookup/LookupView.tsx`):**
+- New `prewarmSolverWorker()` instantiates the solver Worker without
+  sending it any work. Spending the ~30–80 ms one-time bundle-fetch
+  + thread-spawn cost up front means opening the "All equations"
+  panel later only pays for the actual solve, which is single-digit
+  ms on Standard cells.
+- `LookupView` calls it from a mount effect inside
+  `requestIdleCallback` (with a `setTimeout` fallback for Safari).
+  Idle-scheduled so it can't fight the initial paint; Lookup is the
+  only feature that uses this worker, so mount-time is a perfect fit.
+
+**Cost-of-canonicalization spot-check (`scripts/canonical-cost.ts`,
+throwaway):** measured the canonical pass alone vs the
+`allSolutions` it depends on. Confirms the dedup is essentially
+free relative to the solve:
+- aether `[2,3,5,7]→47`: 651 ms solve + **3.7 ms canonical** (0.6%)
+- aether `[2,2,5,7]→175`: 542 ms solve + **4.0 ms canonical** (0.7%)
+- std `[2,3,5]→17`: 1.3 ms solve + **0.5 ms canonical** (26%, but
+  still <2 ms total — invisible)
+
+**Drop redundant difficulty re-score in the worker
+(`web/src/services/solverWorker.ts`,
+`src/services/canonicalForm.ts`):**
+- `CanonicalSolution` now carries the `difficulty` it was scored
+  with during sort; the worker reuses it instead of calling
+  `difficultyOfEquation` a second time per row. Saved one full
+  difficulty pass over every result row.
+
+**Worst-case watchlist (`docs/bench-baseline.md`):** added a
+PRE/MID/NOW comparison section anchored on **p95 max time per
+tier** (the metric the user actually feels), with thresholds set
+~30% above current numbers as a regression alarm. Captures the
+two real takeaways: arity-5 worst-case `easiestSolution` 1411 →
+1117 ms (−21%), arity-4 worst-case `allSolutions` 490 → 374 ms
+(−24%), plus the canonical-form 4.5× row-count reduction that
+multiplies the felt improvement at the React layer.
+
 ## 2026-04-19 — Phase 2 B2: canonical-form post-processor
 
 Collapses the flood of perm-equivalent equations from `allSolutions`

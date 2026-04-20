@@ -44,3 +44,96 @@ Use this file as the regression check after each Phase 2 change. Re-run the benc
 | high target | `[3, 5, 7, 11, 13]` | 4998 | 541ms / 614ms | _skipped_ | — |
 | with 1 | `[1, 2, 3, 5, 7]` | 420 | 9.43ms / 12.43ms | _skipped_ | — |
 | dup pair | `[2, 2, 5, 7, 11]` | 1234 | 12.22ms / 12.57ms | _skipped_ | — |
+
+---
+
+# Worst-case watchlist
+
+Median times across the bench are dominated by easy cells and are
+mostly invisible to a user. **Max time** (the slowest cell in each
+tier, p95 across 3 repeats) is what the user actually feels — a
+1.4-second freeze on arity-5 `easiest` is a UX killer no matter how
+fast the rest of the cells are.
+
+This section is a **regression alarm**. Re-run `npm run bench:solver`
+after any solver-touching change and diff the worst-case rows below.
+If a tier's worst-case p95 jumps the threshold, treat it as a P0
+unless you have a deliberate trade-off to defend.
+
+## Reference table — PRE → MID → NOW
+
+Three measured snapshots of the same bench, same machine, same
+script. PRE = `0f794f0` (Phase 0 unified solver, no B&B), MID =
+`4fc6c76` (Phase 2 B1+B3 — B&B on, but the LB had a silent
+`mode.exponentCap` bug), NOW = `cab85c9` (Phase 2 B2 + LB fix).
+
+`easiestSolution` p95, worst cell per tier:
+
+| tier    | case                       | PRE     | MID     | NOW     | PRE → NOW |
+|---------|----------------------------|--------:|--------:|--------:|----------:|
+| arity-5 | `[2,3,5,7,11]→3614`        | 1411 ms | 1565 ms | 1117 ms | **−21%** |
+| arity-5 | `[3,5,7,11,13]→4998`       |  572 ms |  614 ms |  437 ms | **−24%** |
+| arity-4 | `[3,7,11,13]→858`          |  103 ms |  104 ms | 77.6 ms | **−25%** |
+| arity-4 | `[2,3,5,7]→144`            | 7.79 ms | 6.90 ms | 6.52 ms | −16% |
+| arity-3 | `[2,3,5]→17`               | 1.71 ms | 1.35 ms | 1.34 ms | −22% |
+
+`allSolutions` p95, worst cell per tier:
+
+| tier    | case                       | PRE     | MID     | NOW     | PRE → NOW |
+|---------|----------------------------|--------:|--------:|--------:|----------:|
+| arity-4 | `[2,3,5,7]→47`             |  490 ms |  337 ms |  374 ms | **−24%** |
+| arity-4 | `[2,3,5,7]→144`            |  459 ms |  338 ms |  335 ms | **−27%** |
+| arity-4 | `[2,3,5,11]→4321`          |  354 ms |  758 ms |  334 ms | −6%  |
+| arity-4 | `[1,2,3,5]→60`             | 93.5 ms | 68.4 ms | 72.3 ms | **−23%** |
+
+## Render-side win (canonical-form collapse)
+
+Solver max time is half the story; the React render of N rows is the
+other half. Canonical-form collapse (Phase 2 B2,
+`src/services/canonicalForm.ts`) reduces the row count handed to the
+UI, with measured ratios from `scripts/canonical-stats.ts`:
+
+| case                     | raw rows | canonical | ratio |
+|--------------------------|---------:|----------:|------:|
+| std `[2,3,5]→17`         |       57 |        34 | 1.7×  |
+| aether `[2,3,5,7]→144`   |      714 |       251 | 2.8×  |
+| aether `[2,3,5,7]→47`    |     1246 |       278 | **4.5×** |
+| aether `[1,2,3,5]→60`    |      964 |       360 | 2.7×  |
+| aether `[2,2,5,7]→175`   |     1013 |       228 | **4.4×** |
+
+So even when raw `allSolutions` time is unchanged, the user-perceived
+"All equations" panel renders ~4× faster on a worst-case arity-4 cell
+because we hand the React list ~4× fewer items. Today this only
+applies to Standard-mode `AllEquationsList` (the only feature that
+calls `allSolutions` at the UI layer). Æther's lookup view shows just
+the easiest equation — adding an Æther "All equations" panel would
+multiply the render savings further but is its own feature.
+
+## Watchlist thresholds (current snapshot)
+
+If a future change pushes any of these past their threshold, stop and
+investigate before merging:
+
+| metric                                       | threshold | current (NOW) |
+|----------------------------------------------|----------:|--------------:|
+| arity-5 `easiestSolution` worst-case p95     |   1500 ms |       1117 ms |
+| arity-4 `easiestSolution` worst-case p95     |    100 ms |       77.6 ms |
+| arity-3 `easiestSolution` worst-case p95     |   3.00 ms |       1.34 ms |
+| arity-4 `allSolutions` worst-case p95        |    500 ms |        374 ms |
+| arity-3 `allSolutions` worst-case p95        |   10.0 ms |       5.36 ms |
+
+Thresholds are set ~30% above current measured values — enough slack
+to absorb run-to-run variance on a Windows laptop, tight enough to
+catch real regressions.
+
+## Caveats
+
+- Numbers above are micro-bench, 3 repeats per case. Sub-ms cells
+  swing ±100 μs run-to-run; ignore deltas <10% on small cases.
+- **No "JSON-era" baseline exists** in this repo — the current solver
+  replaced a per-mode v1/v2 pipeline at commit `0f794f0` (Phase 0).
+  PRE here is the *unified* solver before B&B, not anything older.
+- The `[2,3,5,11]→4321` `allSolutions` cell got **2× slower at MID**
+  (354 → 758 ms) before recovering at NOW. Lesson: a half-finished
+  solver-perf change can regress real cells. Don't ship MID-style
+  solver changes without re-running this bench.
