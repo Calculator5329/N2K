@@ -1,113 +1,78 @@
 /**
- * Solver service abstraction for the web layer.
+ * Main-thread façade over the solver Web Worker.
  *
- * The dataset client serves the bulk-cached "easiest known solution per
- * target" answers. This service handles the *interactive* solve queries:
- * "for this dice + this exact total, what are ALL the solutions?" or
- * "find me the easiest one if the dataset has nothing".
+ * Owns a single long-lived `Worker` instance and turns the postMessage
+ * dance into a typed Promise API. A monotonic request id keeps concurrent
+ * requests disambiguated; an internal `Map<id, {resolve, reject}>` routes
+ * each reply back to the originating caller.
  *
- * Two implementations:
- *
- *   - `InlineSolverService` — runs the solver on the current task. Yields
- *     to the event loop with `await Promise.resolve()` so a chain of
- *     small solves doesn't starve the renderer. Used in tests and as
- *     the universal fallback.
- *   - `WorkerSolverService` (TODO when the first heavy use case arrives)
- *     — wraps a `Worker` so big arity-5 sweeps don't block the main
- *     thread. Same interface, drop-in swap from `createDefaultAppStore`.
- *
- * Why not start with a real Worker?
- *   - The Lookup feature's queries are sub-100ms in standard mode; the
- *     UI-thread cost is invisible.
- *   - Web Worker setup needs Vite-specific config + a separate worker
- *     bundle; adding it in advance bloats the initial commit and
- *     complicates tests.
- *   - The seam is here so the swap is mechanical when warranted.
+ * Module-level singleton: only one worker per page, lazily created on
+ * first use, never torn down (kept warm for repeat lookups).
  */
-import type { Mode, NEquation } from "@platform/core/types.js";
-import { allSolutions, easiestSolution } from "@platform/services/solver.js";
-import {
-  getSharedSolverWorkerClient,
-  type SolverWorkerClient,
-} from "./workerSolverClient.js";
+import type { DiceTriple } from "../core/types";
+import SolverWorker from "./solverWorker?worker";
+import type {
+  SolverWorkerRequest,
+  SolverWorkerResponse,
+  SolverWorkerSolution,
+} from "./solverWorker";
 
-export interface SolveRequest {
-  readonly mode: Mode;
-  readonly dice: readonly number[];
-  readonly total: number;
+interface PendingRequest {
+  resolve: (value: readonly SolverWorkerSolution[]) => void;
+  reject: (error: Error) => void;
 }
 
-export interface SolverWorkerService {
-  /** Every distinct equation matching `(dice, total)` under `mode`. */
-  allSolutions(req: SolveRequest): Promise<readonly NEquation[]>;
+let worker: Worker | null = null;
+let nextId = 1;
+const pending = new Map<number, PendingRequest>();
 
-  /** The easiest solution under the mode's auto-arity rules, or `null`. */
-  easiestSolution(req: SolveRequest): Promise<NEquation | null>;
-
-  /** Tear down any worker resources. No-op for the inline impl. */
-  dispose(): void;
-}
-
-// ---------------------------------------------------------------------------
-//  Inline implementation
-// ---------------------------------------------------------------------------
-
-export class InlineSolverService implements SolverWorkerService {
-  async allSolutions(req: SolveRequest): Promise<readonly NEquation[]> {
-    await Promise.resolve();
-    if (!req.mode.arities.includes(req.dice.length as 3 | 4 | 5)) {
-      return [];
+function ensureWorker(): Worker {
+  if (worker !== null) return worker;
+  const created = new SolverWorker();
+  created.addEventListener("message", (event: MessageEvent<SolverWorkerResponse>) => {
+    const response = event.data;
+    const handlers = pending.get(response.id);
+    if (handlers === undefined) return;
+    pending.delete(response.id);
+    if (response.kind === "ok") {
+      handlers.resolve(response.solutions);
+    } else {
+      handlers.reject(new Error(response.message));
     }
-    return allSolutions(req.dice, req.total, req.mode);
-  }
-
-  async easiestSolution(req: SolveRequest): Promise<NEquation | null> {
-    await Promise.resolve();
-    const minArity = Math.min(...req.mode.arities);
-    if (req.dice.length < minArity) return null;
-    return easiestSolution(req.dice, req.total, req.mode);
-  }
-
-  dispose(): void {
-    /* nothing to clean up */
-  }
+  });
+  created.addEventListener("error", (event: ErrorEvent) => {
+    // Worker-level fatal — reject every in-flight request and reset so the
+    // next call spins a fresh worker. Avoids permanently broken state.
+    const err = new Error(event.message || "Solver worker crashed");
+    for (const handlers of pending.values()) {
+      handlers.reject(err);
+    }
+    pending.clear();
+    created.terminate();
+    if (worker === created) worker = null;
+  });
+  worker = created;
+  return created;
 }
-
-// ---------------------------------------------------------------------------
-//  Worker-backed implementation
-// ---------------------------------------------------------------------------
 
 /**
- * Routes every solve query through a shared `Worker`. Used in the
- * browser so arity-4/5 Æther solves don't freeze the React render
- * loop. The shared worker is created lazily on the first request,
- * shared with `WorkerDatasetClient` (so we don't double up on threads),
- * and disposed via `disposeSharedSolverWorkerClient()` from
- * `AppStore.dispose`.
+ * Compute every valid equation for `(dice, total)`, sorted by difficulty
+ * ascending. Resolves with an empty array for unsolvable cells.
+ *
+ * Safe to call concurrently — each request gets a unique id so replies
+ * can't cross wires.
  */
-export class WorkerSolverService implements SolverWorkerService {
-  private readonly client: SolverWorkerClient;
-
-  constructor(client: SolverWorkerClient = getSharedSolverWorkerClient()) {
-    this.client = client;
-  }
-
-  async allSolutions(req: SolveRequest): Promise<readonly NEquation[]> {
-    if (!req.mode.arities.includes(req.dice.length as 3 | 4 | 5)) {
-      return [];
-    }
-    return this.client.allSolutions(req.mode, req.dice, req.total);
-  }
-
-  async easiestSolution(req: SolveRequest): Promise<NEquation | null> {
-    const minArity = Math.min(...req.mode.arities);
-    if (req.dice.length < minArity) return null;
-    return this.client.easiestSolution(req.mode, req.dice, req.total);
-  }
-
-  dispose(): void {
-    // Don't terminate here — the worker is shared with the dataset
-    // client. AppStore.dispose calls `disposeSharedSolverWorkerClient()`
-    // exactly once.
-  }
+export function solveAllEquations(
+  dice: DiceTriple,
+  total: number,
+): Promise<readonly SolverWorkerSolution[]> {
+  const w = ensureWorker();
+  const id = nextId++;
+  const request: SolverWorkerRequest = { id, dice, total };
+  return new Promise<readonly SolverWorkerSolution[]>((resolve, reject) => {
+    pending.set(id, { resolve, reject });
+    w.postMessage(request);
+  });
 }
+
+export type { SolverWorkerSolution };

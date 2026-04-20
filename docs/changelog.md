@@ -2,6 +2,75 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-04-19 — Phase 2 B2: canonical-form post-processor
+
+Collapses the flood of perm-equivalent equations from `allSolutions`
+into one canonical representative per equivalence class, with a
+multiplicity count. Resolves the user's complaint that the "All
+equations" panel at arity 4/5 showed 1000+ near-duplicates that all
+read the same.
+
+**Solver layer (`src/services/canonicalForm.ts`):**
+- `canonicalizeEquation(eq)` rebuilds an equation by sorting operands
+  inside each maximal same-precedence-class run (`{+,-}` for additive,
+  `{*,/}` for multiplicative), preserving N2K's strict left-to-right
+  semantics — operands across run boundaries are *not* swapped.
+  Sort key: `(base asc, exp asc, weight desc)`. The boundary op
+  between two runs is regenerated from the new run-leader's weight,
+  not preserved verbatim — in left-to-right evaluation the boundary
+  op applies directly to whichever operand starts the new run.
+- A leading-negative-weight operand is swapped with the leftmost
+  positive-weight operand in its run, so the canonical form is always
+  representable in the wire format (which has no leading-minus slot).
+- Defensive: every canonical equation is re-evaluated against its
+  declared total before return; mismatch throws loud rather than
+  shipping wrong UI. (Caught one real bug during dev — preserving the
+  boundary op turned `2 * 3^5 - 7^3 + 5^0 = 144` into `… - 5^0 + 7^3
+  = 828`.)
+- `canonicalizeSolutions(equations, scoreFn)` deduplicates by
+  canonical key and returns sorted-asc-by-difficulty
+  `{equation, multiplicity}[]`. `scoreFn` is injected so the module
+  stays decoupled from the difficulty heuristic.
+
+**Web layer (`web/src/services/solverWorker.ts`,
+`web/src/features/lookup/AllEquationsList.tsx`):**
+- Standard-mode worker now collapses the raw `allSolutions` output
+  through `canonicalizeSolutions` before posting back. Response shape
+  gains a `multiplicity: number` field.
+- `AllEquationsList` renders an `×N orderings` badge next to any
+  collapsed row and shows a parenthetical raw-orderings count next
+  to the headline equation count when collapsing actually happened.
+
+**Measured reductions** (`scripts/canonical-stats.ts`, throwaway):
+- standard `[2,3,5]→17`: 57 → 34 (1.7×)
+- aether `[2,3,5,7]→144`: 714 → 251 (2.8×)
+- aether `[2,3,5,7]→47`: **1246 → 278 (4.5×)**
+- aether `[1,2,3,5]→60`: 964 → 360 (2.7×)
+- aether `[2,2,5,7]→175`: **1013 → 228 (4.4×)**
+
+**Bug found and fixed in `difficultyLowerBound`:**
+- The `??` fallback `mode.exponentCap ?? 1` was unsound — that field
+  is a function `(die) => number`, not a number. The expression
+  silently returned `NaN` from `Math.pow(maxBase, fn)`, so the
+  free-dice tightening branch was never taken. Calling the function
+  correctly tightened the LB enough that it overshot
+  `actualDifficulty ≈ 0` cells (heuristic clamps saturate
+  non-linearly). The branch was deleted entirely; LB now uses the
+  trivially-sound assumption `maxFreeDice = N`.
+- Net bench impact: small wins or stable across the board, with
+  larger wins on hard cases (æther arity-4 `high target` 576ms →
+  307ms, æther arity-5 `primes` 1438ms → 1102ms). Soundness reverified
+  by the LB-soundness parity tests.
+
+**Tests:** 9 cases in `tests/canonicalForm.test.ts` cover
+hand-crafted equivalence classes (additive run, mixed-class chain,
+leading-negative-weight edge, tie-break determinism) + property
+checks against real `allSolutions` outputs (multiplicity sums,
+difficulty-ascending ordering, no duplicate keys, ≥2× reduction at
+arity 4). All four `solver-bnb-parity.test.ts` cases still pass after
+the LB fix, including LB-≤-actual soundness on standard arity-3 and
+æther arity-4 samples.
+
 ## 2026-04-19 — Phase 1 + Phase 2 (B1, B3) of solver perf plan
 
 Shipped the foundations and the solver-side wins of the multi-phase

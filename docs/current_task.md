@@ -1,7 +1,7 @@
 # Current task — Solver perf + Æther curated blobs + `.n2k` v2++
 
-**Status:** Phase 1 ✅ complete; Phase 2 B1 + B3 ✅ complete; B2
-canonical-form solver in progress.
+**Status:** Phase 1 ✅ complete; Phase 2 B1 + B2 + B3 ✅ complete;
+caller-migration cleanup pending; Phase 3 (`.n2k` v2++) up next.
 
 The full plan lives in `docs/plan-solver-perf-and-n2k-v2.md`. This file
 tracks day-to-day execution and decisions made along the way.
@@ -61,12 +61,23 @@ While we're rewriting the hot path, also:
 - [x] **Parity test** — `tests/solver-bnb-parity.test.ts` proves B&B
   result matches brute-force `sweepOneTuple` on standard arity-3
   exhaustively + Æther arity-4 probe targets
-- [ ] **B2 canonical-form solver** — collapse perm-equivalent
-  results from `allSolutions` into a `(canonical, multiplicity)`
-  list. Needed so the "All equations" list at arity 4/5 stops
-  flooding with 1000+ near-duplicates.
-- [ ] **Migrate callers** to canonical/B&B paths; retire old paths
-  where safe.
+- [x] **B2 canonical-form post-processor** —
+  `src/services/canonicalForm.ts` collapses perm-equivalent
+  results from `allSolutions` into a sorted
+  `CanonicalSolution[]` (`equation` + `multiplicity`).
+  Run-aware: respects N2K's strict left-to-right evaluation by
+  reordering operands only inside maximal same-precedence-class
+  runs (`{+,-}` and `{*,/}`). Self-checks every result by
+  re-evaluating the canonical equation and throwing if it ≠
+  original total. Web `solverWorker.ts` + `AllEquationsList.tsx`
+  now route through it and render an `×N orderings` badge plus a
+  parenthetical raw count. Real measured reductions on a sample:
+  std `[2,3,5]→17` 57→34 (1.7×), æther `[2,3,5,7]→47`
+  1246→278 (4.5×), æther `[2,2,5,7]→175` 1013→228 (4.4×).
+- [ ] **Migrate remaining callers** to canonical/B&B paths;
+  retire old paths where safe (e.g. exporter could collapse
+  before serialization, but that changes the wire format and
+  belongs in Phase 3).
 
 ## Subsequent phases (overview, see plan for detail)
 
@@ -96,3 +107,30 @@ While we're rewriting the hot path, also:
   prod(maxBaseRemaining)`. Sound (every multiply scales by ≤
   per-level max base; every additive op contributes ≤ per-level
   max base, summed ≤ product when ≥2 bases ≥2). Tight in practice.
+- **`difficultyLowerBound` `mode.exponentCap` bug fixed**
+  (B2 cleanup pass): the `??` fallback assumed
+  `mode.exponentCap` was a number, but it's a function
+  `(die) => number`. The original code computed
+  `Math.pow(maxBase, fn) → NaN`, silently skipping the
+  free-dice tightening branch. Tightening it correctly broke
+  soundness on standard arity-3 cells where `actualDiff ≈ 0`,
+  so the branch was deleted entirely. Net: LB is now provably
+  sound and a tiny bit more conservative than the silently-
+  broken version was. The `findEasiestForTuple` per-step
+  prunes carry the speedup load; benches still beat baseline
+  (e.g. arity-4 `high target` 576ms → 307ms, arity-5 `primes`
+  1438ms → 1102ms).
+- **Canonical-form run model:** N2K is left-to-right with no
+  precedence, so `2 + 3 * 5 = 25` (not 17). A "run" is a maximal
+  span of operands joined by ops of the same class (`{+,-}` vs
+  `{*,/}`). Inside a run the operand multiset is commutative;
+  reordering them changes the wire form but not the value, **as
+  long as** the new run-leader has weight `+1` (a swap-up
+  promotion handles the case where the sort places a `−1`-weight
+  operand at position 0). The boundary op between two runs is
+  *not* preserved verbatim — it's regenerated from the new
+  leader's weight, since in left-to-right evaluation the
+  boundary op applies directly to the first operand of the new
+  run. (We initially preserved it and got `2 * 3^5 - 7^3 + 5^0 =
+  144` collapsing to `2 * 3^5 - 5^0 + 7^3 = 828`. Test caught
+  it.)

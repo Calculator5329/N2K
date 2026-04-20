@@ -97,44 +97,21 @@ export function difficultyLowerBound(
 
   // Max possible bonus from "free" exponents (^0 or ^1). Per die,
   // bonus ≤ max(zeroBonus, oneBonus) — a single die can be ^0 OR
-  // ^1 but not both, so taking the max is sound.
-  //
-  // The trick: how many dice can simultaneously be "free" while the
-  // equation still hits `total`? A die at ^0 contributes 1; at ^1
-  // contributes its raw value. If `K` dice are free, the remaining
-  // `N - K` dice must combine (with ops including `*`) to roughly
-  // `|total|`. The tightest sound bound on `K` is anchored by
-  // information theory: the non-free dice produce numbers at most
-  // `maxBase^maxExp` each, and chains of `*` combine them
-  // multiplicatively. So `(N - K)` non-free dice can produce up to
-  // `(maxBase ^ maxExp) ^ (N - K)`; we need this to be ≥ |total|.
-  //
-  // Solving: `N - K ≥ ceil(log_{maxBase^maxExp}(|total|))` →
-  //          `K ≤ N - ceil(log_{maxBase^maxExp}(|total|))`.
-  //
-  // For |total| ≤ 1 the formula gives `K ≤ N` (everyone can be
-  // free — `1^anything = 1`, sum of N ones is N, easily covers
-  // small targets).
+  // ^1 but not both, so taking the max is sound. We assume every
+  // die can simultaneously be "free" (the maximally generous case
+  // for the equation builder); a tighter `maxFreeDice < N` was
+  // attempted via an information-theoretic argument on `|total|`,
+  // but the heuristic's downstream `tenFlag`/`max(0, …)` clamps
+  // saturate non-linearly and the tighter estimate violated
+  // soundness for cells where `actualDifficulty ≈ 0`. Soundness
+  // matters more than tightness here — the LB only has to be a
+  // valid floor; the per-step magnitude and reach-based prunes
+  // inside `findEasiestForTuple` carry most of the speedup load.
   const perDieBonus = Math.max(
     w.zeroExponentPenaltyPerCount,
     w.oneExponentPenaltyPerCount,
   );
-  let maxFreeDice = N;
-  const absTotal = Math.abs(total);
-  if (absTotal > 1) {
-    // Use the largest legal die value as the base of the log; if
-    // the mode has an exponent cap, raise to it for an even
-    // larger ceiling (since a single non-free die at ^maxExp can
-    // contribute `maxBase^maxExp`).
-    const maxBase = Math.max(2, mode.diceRange.max);
-    const maxExp = mode.exponentCap ?? 1;
-    const maxPerDie = Math.pow(maxBase, maxExp);
-    if (maxPerDie > 1) {
-      const required = Math.ceil(Math.log(absTotal) / Math.log(maxPerDie));
-      maxFreeDice = Math.max(0, N - required);
-    }
-  }
-  const maxBonus = maxFreeDice * perDieBonus;
+  const maxBonus = N * perDieBonus;
   let raw = totalMagnitude + arityTerm + negTerm - maxBonus;
 
   // (2) tenFlag: if it could fire, assume it does. (Sound: tenFlag
