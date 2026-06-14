@@ -2,7 +2,7 @@
   "name": "n2k-platform",
   "version": "0.1.0",
   "private": true,
-  "description": "N2K platform — clean-slate rebuild with unified domain, themes-as-data, game kernel, and pluggable backends.",
+  "description": "N2K platform - solver, CLI, competition builder, bot matches, themed Almanac web app, and binary dataset pipeline.",
   "type": "module",
   "engines": {
     "node": ">=20"
