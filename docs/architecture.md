@@ -1,5 +1,36 @@
 # N2K Platform — Architecture
 
+## What this is (handoff summary)
+
+N2K-v3 ("N2K Platform", package `n2k-platform`) is a mental-math /
+dice-equation training and game site. Players pick dice and a target
+and find equations of the form `d1^p1 op1 d2^p2 op2 d3^p3 = total`
+(evaluated strictly left-to-right); the site can look up the easiest
+equation for any roll, build and export multi-board competitions, and
+run 60-second knockout races against bot personas. It is a static
+React SPA backed by precomputed bit-packed `.n2k` datasets — there is
+**no server**; all persistence is local-first (localStorage).
+
+This repo is the **sole survivor of ~11 historical N2K repos**. Legacy
+siblings (`N2K-v2`, `n2k-ui`, `N2K-almanac`, `N2K-ComprehensiveSolver`,
+`backups/`) sit in the parent folder `..\` and are frozen — some have
+broken `.git` dirs. Do not develop in them. Background on the v2→v3
+rewrite lives in `..\v2-vs-v3-context.md` (note: that file predates
+the v3.1 prune, so its surface inventory is stale; this repo's docs
+are authoritative).
+
+**Deployment identity:** Firebase Hosting, project `ethan-488900`,
+hosting target `almanac`, live at
+[n2k-almanac-v3.web.app](https://n2k-almanac-v3.web.app). Portfolio
+notes refer to the product as **mentalmath.site** — that domain does
+not appear anywhere in this repo; if it is live it is a custom domain
+mapped in the Firebase console. Verify there before relying on it.
+
+**What does NOT exist yet (despite portfolio shorthand):** no global
+leaderboards, no user profiles, no accounts, no analytics. Identity
+and persistence seams (`ContentBackend`) exist so these can be added
+without rearchitecting — see `docs/ROADMAP.md` and `docs/IDEAS.md`.
+
 ## Layered model
 
 ```
@@ -234,3 +265,100 @@ URL has a `#plan=…`, that wins over the local autosave.
 - AI-generated themes (no AI service wired).
 - Cloud Run backend (`packages/n2k-core` reserved for the eventual hoist).
 - IndexedDB-backed `ContentBackend` (LocalStorage is enough until plans exceed ~5MB).
+
+## Directory map (top level)
+
+```
+N2K-v3/
+  src/            # Node solver workspace: core/ services/ games/ cli/
+  scripts/        # bake-blob.ts, export.ts, bench-solver.ts (tsx)
+  tests/          # root Vitest suites (solver, CLI, games, binary)
+  web/            # Vite/React SPA — its own package.json + node_modules
+    public/data/  # .n2k dataset blobs (standard, aether-arity3/4/5)
+    src/          # core/ services/ stores/ features/ ui/ workers/
+    tests/        # web unit tests + tests/perf/ harness
+    e2e/          # Playwright responsive suite
+  docs/           # this file, ROADMAP, IDEAS, changelog, plans/
+  bake-logs/      # bake run logs (generated)
+  tmp-bake/       # scratch bake output (generated, untracked)
+  firebase.json   # hosting config (root-level; deploy from repo root)
+  .firebaserc     # project ethan-488900, target almanac
+```
+
+## Exact commands
+
+Two npm roots — the repo root and `web/` each need their own
+`npm install`.
+
+Root (solver workspace):
+
+```bash
+npm install
+npm test              # Vitest — solver/CLI/games/binary suites
+npm run typecheck     # tsc -p tsconfig.check.json
+npm run cli           # terminal REPL (mode/dice/roll/solve/sweep/...)
+npm run bake -- --mode standard        # rebuild a .n2k blob
+npm run bench:solver  # solver microbenchmark
+```
+
+Web app:
+
+```bash
+cd web
+npm install
+npm run dev           # Vite dev server
+npm test              # Vitest unit/integration (perf excluded)
+npm run test:perf     # perf harness (render counts, fanout, microbench)
+npm run test:e2e      # Playwright responsive sweep (needs browsers installed)
+npm run build         # tsc -b && vite build → web/dist (copies .n2k blobs)
+```
+
+Deploy (from the **repo root** — `firebase.json` lives there, even
+though the README says `cd web`):
+
+```bash
+cd web && npm run build && cd ..
+firebase deploy --only hosting:almanac
+```
+
+`.n2k` blobs and `assets/**` are served with 1-year immutable cache
+headers (see `firebase.json`), so dataset changes require new
+filenames or a hard refresh to observe.
+
+## Perf harness notes
+
+The repo carries a deliberate performance-regression harness
+(`web/tests/perf/`, run via `npm run test:perf`, ~1.3s wall):
+
+- **Render-count baselines** per surface via a React Profiler wrapper.
+- **MobX fanout assertions** — unrelated store slices must not
+  re-fire each other's reactions.
+- **Hot-path microbenches** — `easiestSolution`, `parseEquation`;
+  budgets are 3× observed median, floored at 5ms.
+- Baselines and open optimization targets: `docs/perf-baseline.md`.
+- **Rule: tighten caps after wins; never loosen caps to silence a
+  flaky test** — a flake means the harness is wrong, not the budget.
+
+Solver-side perf work (branch-and-bound `easiestSolution`,
+interleaved enumeration, worker prewarm) is recorded in the git
+history and `docs/plan-solver-perf-and-n2k-v2.md`.
+
+## Known limitations
+
+- **No analytics** — zero visibility into real usage of the live site.
+- **No accounts / leaderboards / profiles** — all state is per-browser
+  localStorage; clearing site data loses saved competitions and stats.
+- **localStorage ~5 MB quota** — large competition libraries will
+  eventually need the IndexedDB backend (seam exists, impl doesn't).
+- **Æther arity-5 coverage is partial** — only the first 50 canonical
+  commons tuples are baked (`aether-arity5-commons.n2k`, 2 MB); the
+  rest fall back to a live worker sweep (~seconds). Full bake ≈ 21 h.
+- **Large blobs in git** — `aether-arity3.n2k` (~31 MB) and
+  `aether-arity4-commons.n2k` (~38 MB) are tracked in git; clones are
+  heavy. Under GitHub's 100 MB/file limit, but mind future bakes.
+- **Deploy config untracked** — `firebase.json` / `.firebaserc` were
+  untracked as of 2026-07-05 (see ROADMAP "Now").
+- **No ESLint / no CI** — verification is manual (see root CLAUDE.md).
+- **Google Fonts at runtime** — `web/index.html` loads ~25 font
+  families from fonts.googleapis.com; offline/PWA work must bundle or
+  subset them.

@@ -8,6 +8,96 @@ Everything later than v3.2 is queued.
 
 ---
 
+## Handoff plan — Now / Next / Later (added 2026-07-05)
+
+Strategic goal from the portfolio review: **ship this as a product,
+not a repo** — add analytics, post to communities, get 50 real users,
+and consolidate the N2K repo family down to this one. Each task below
+is sized for a single working session and has acceptance criteria.
+
+**Git health: GOOD.** `.git` is healthy — branch `main`, tracked tree
+clean, remote `origin` → `https://github.com/Calculator5329/N2K.git`,
+up to date as of 2026-07-05. No re-init needed. (If history questions
+ever arise, `Desktop\_FROM_ONEDRIVE` may hold older N2K twins — parked
+for Ethan, not a task.)
+
+### Now
+
+- [ ] **Track the deploy config.** Commit `firebase.json` and
+      `.firebaserc`; add `.firebase/` and `tmp-bake/` to `.gitignore`;
+      decide whether `web/public/data/aether-arity5-commons-smoke5.n2k`
+      and the `tmp-bake/*.n2k` smoke files are keepers or deletable.
+      *Accept:* `git status` is clean; a fresh clone can deploy.
+- [ ] **Add analytics.** Pick a privacy-friendly, script-light option
+      (Plausible / GoatCounter / Firebase-native GA4 — user's call on
+      cost). Wire page view + surface-switch (`AppStore.view`) + race
+      completed events. No PII, no cookie banner requirement if
+      cookieless. *Accept:* events visible in the dashboard from the
+      live site after a deploy; page-load cost < 5 KB script.
+- [ ] **Resolve the product domain.** Portfolio notes say
+      `mentalmath.site`; the repo only knows `n2k-almanac-v3.web.app`.
+      Check the Firebase console (project `ethan-488900`) for a custom
+      domain mapping; if absent, connect one. Then update README badge
+      + `web/index.html` meta/OG tags (title, description, social
+      card) to the product identity. *Accept:* canonical URL decided,
+      documented in README, link unfurls with a card.
+- [ ] **First-run onboarding pass.** A stranger landing on the site
+      should understand the game and start a Quick Race in ≤ 2 clicks.
+      Add a short "how to play" affordance on Lookup/Play. *Accept:*
+      one uninitiated tester reaches a finished race unaided.
+
+### Next
+
+- [ ] **Product push — communities + 50 users.** Write a short pitch
+      + GIF; post to 3–5 fitting communities (e.g. HN Show, r/math,
+      r/mentalmath, r/webgames, a teachers' forum — Compose's printable
+      competition sheets are a teacher hook). *Accept:* posted in ≥ 3
+      places; analytics shows ≥ 50 unique visitors; feedback captured
+      as GitHub issues.
+- [ ] **N2K-family consolidation — USER APPROVAL REQUIRED.** Touches
+      repos outside this one: archive the siblings in `..\`
+      (`N2K-v2`, `n2k-ui`, `N2K-almanac`, `N2K-ComprehensiveSolver`,
+      `backups`) into a single `_archive/` folder or zips, and drop a
+      one-line pointer README in each ("superseded — active repo is
+      N2K-v3 / github.com/Calculator5329/N2K"). Some siblings have
+      broken `.git` dirs — archive as-is, do not repair. *Accept:*
+      Ethan approves the list first; every sibling has a pointer;
+      nothing deleted, only archived.
+- [ ] **Daily challenge (local).** Date-seeded board, same for every
+      visitor, result + streak stored via `ContentBackend`. No server
+      needed; this is the retention feature and the on-ramp to a real
+      leaderboard later. *Accept:* same UTC date ⇒ same board; streak
+      survives reload; shareable result string (emoji-grid style).
+- [ ] **Shareable race results.** Reuse the compressed-hash codec
+      (`compressedHashCodec.ts`) to encode a finished race into a URL.
+      *Accept:* opening the link replays the race via the existing
+      replay scrubber.
+
+### Later
+
+- [ ] **Accounts + global leaderboard.** Firebase Auth +
+      `FirestoreContentBackend` behind the existing `ContentBackend` /
+      identity seams; daily-challenge leaderboard first. *Accept:*
+      anonymous → named upgrade keeps local data; leaderboard writes
+      validated by security rules (no client-trusted scores without
+      at least plausibility checks — document the anti-cheat stance).
+- [ ] **Full arity-5 commons bake.** Overnight job (~21 h at
+      concurrency 19, see changelog 2026-04-20). *Accept:* all 5,005
+      tuples served from blob; bundle-size budget re-approved by Ethan
+      (~50 MB Æther download question is an open decision checkpoint).
+- [ ] **Æther mixed-arity Compose (v3.3).** Existing plan:
+      `docs/plan-aether-arity-mixes.md` — variable-arity plumbing,
+      then mixed-arity rules tiles.
+- [ ] **Multiplayer.** `RemotePlayer` over Firestore; the game kernel
+      was designed for this (serializable state, pure `applyMove`).
+- [ ] **PWA / offline.** Static SPA + immutable blobs cache well;
+      fonts must be self-hosted first (see architecture.md
+      limitations).
+
+Ranked expansion ideas with impact/effort live in `docs/IDEAS.md`.
+
+---
+
 ## v3.2 — Library + Match play (shipped)
 
 - **Library tab** (`features/library/`) — 4th surface, lists every saved
