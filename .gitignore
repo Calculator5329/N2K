@@ -23,3 +23,5 @@ web/public/data/*-smoke*.n2k
 .idea/
 .vscode/
 *.swp
+# agent-orchestrator local state
+.orc/
