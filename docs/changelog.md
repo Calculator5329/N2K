@@ -2,6 +2,15 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-07-10 — Roadmap truth pass (MASTER_TODO feed)
+
+Verified unchecked roadmap items against the codebase. Checked off
+**Saved competitions** (Library + `CompetitionDoc` shipped v3.2).
+Refreshed **Track the deploy config** and **Folio numerals** with
+current evidence (`firebase.json`/`.firebaserc` untracked; Play vs
+Library page-header folios swapped vs `nav.ts`). Collapsed the stale
+"Active stream — v3.2" section to "Shipped". No code changes.
+
 ## 2026-04-20 — Partial arity-5 commons blob (50 tuples)
 
 Baked and wired `aether-arity5-commons.n2k` covering the first 50

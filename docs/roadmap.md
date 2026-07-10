@@ -23,10 +23,12 @@ for Ethan, not a task.)
 
 ### Now
 
-- [ ] **Track the deploy config.** Commit `firebase.json` and
-      `.firebaserc`; add `.firebase/` and `tmp-bake/` to `.gitignore`;
-      decide whether `web/public/data/aether-arity5-commons-smoke5.n2k`
-      and the `tmp-bake/*.n2k` smoke files are keepers or deletable.
+- [ ] **Track the deploy config.** `firebase.json` and `.firebaserc`
+      exist locally but are **untracked** (2026-07-10 truth pass);
+      add `.firebase/` and `tmp-bake/` to `.gitignore` (neither is
+      ignored today); `tmp-bake/*.n2k` smoke files are currently
+      **tracked** — decide keep vs delete. Production blobs under
+      `web/public/data/` are tracked and wired.
       *Accept:* `git status` is clean; a fresh clone can deploy.
 - [ ] **Add analytics.** Pick a privacy-friendly, script-light option
       (Plausible / GoatCounter / Firebase-native GA4 — user's call on
@@ -212,29 +214,20 @@ Decision checkpoints (in the plan doc) are open and need user sign-off
 on the arity-4/5 subset definitions and the total ~50 MB Æther
 download budget before Phase B starts.
 
-## Active stream — Competition Library + Match play (v3.2)
+## Shipped — Competition Library + Match play (v3.2)
 
-See `docs/current_task.md` for the full plan. Summary:
-
-- **Library tab** (4th public surface) browsing locally-saved
-  competitions stored via the existing `LocalStorageContentBackend`.
-- **`MatchStore`** orchestrating the race chain — each saved
-  competition's `(board, p1Dice, p2Dice)` tuples become a sequence of
-  60-second knockout races with cumulative scoring.
-- Two playable formats per competition: **vs bot** (you P1, bot P2)
-  and **hot-seat** (you race both seats round-by-round).
-- No backend, no DB, no kernel-level changes — orchestration sits
-  above `PlayStore`.
-
-Phased delivery: Library + persistence → vs-bot match → hot-seat → polish.
+Delivered end-to-end. See the v3.2 section above and
+`features/library/` + `features/match/`. Ongoing solver/Æther work
+lives in `docs/current_task.md` (canonical/B&B migration, v2++ blobs).
 
 ## Open follow-ups (queued)
 
 ### Polish
 
-- [ ] **Folio numerals** — v1-era nav files used different folio orderings
-      than the v3 nav (`II` vs `VI` for Competition). One source of
-      truth.
+- [ ] **Folio numerals** — `nav.ts` is the source of truth
+      (Lookup I · Competition II · Library III · Play IV), but
+      `PlayView` hardcodes folio `"III"` and `LibraryView` hardcodes
+      `"IV"` — swapped vs nav. Align page headers with `nav.ts`.
 - [ ] **Æther 4d/5d candidate scoring** — runs serially per candidate.
       For pools with hundreds of tuples this is slow (each candidate is
       a 1-3s worker sweep). Largely obsoleted once
@@ -253,8 +246,9 @@ Phased delivery: Library + persistence → vs-bot match → hot-seat → polish.
 
 - [x] **Saved boards** survive reload via `LocalStorageContentBackend`
       (Compose autosave wired).
-- [ ] **Saved competitions** as named `CompetitionDoc` content entities
-      (Library tab; v3.2 active stream).
+- [x] **Saved competitions** as named `CompetitionDoc` content entities
+      (Library tab + `competitionLibrary.ts` / `LocalStorageContentBackend`;
+      shipped v3.2).
 - [ ] **Saved custom themes** as a `ThemeDoc` content entity.
 - [ ] **IndexedDB backend** for boards / competitions that exceed
       localStorage's ~5 MB quota.
