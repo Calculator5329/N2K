@@ -224,10 +224,11 @@ lives in `docs/current_task.md` (canonical/B&B migration, v2++ blobs).
 
 ### Polish
 
-- [ ] **Folio numerals** — `nav.ts` is the source of truth
-      (Lookup I · Competition II · Library III · Play IV), but
-      `PlayView` hardcodes folio `"III"` and `LibraryView` hardcodes
-      `"IV"` — swapped vs nav. Align page headers with `nav.ts`.
+- [x] **Folio numerals** (done 2026-07-10, burndown w2) — `nav.ts` is
+      the source of truth (Lookup I · Competition II · Library III ·
+      Play IV), but `PlayView` hardcoded folio `"III"` and `LibraryView`
+      `"IV"` — swapped vs nav. Both now resolve via a new `folioFor(id)`
+      helper in `nav.ts`, so headers can't drift again.
 - [ ] **Æther 4d/5d candidate scoring** — runs serially per candidate.
       For pools with hundreds of tuples this is slow (each candidate is
       a 1-3s worker sweep). Largely obsoleted once
@@ -235,9 +236,12 @@ lives in `docs/current_task.md` (canonical/B&B migration, v2++ blobs).
       replace the live worker for Compose. Keep this entry for
       `Lookup` which still solves arbitrary user-typed tuples on
       demand.
-- [ ] **Mode-aware DicePicker validation** — the typed entry validates
-      against the standard range even in Æther mode (the steppers are
-      mode-aware).
+- [x] **Mode-aware DicePicker validation** (done 2026-07-10, burndown w2)
+      — the Æther Lookup picker now validates typed dice entry against
+      `AETHER_MODE` (−10..32) via `AetherLookupStore`, and also honours
+      the mode's one legality rule: 0 is rejected (`d^p` collapses,
+      `÷0` blows up). Steppers hop over 0; typed 0s are rejected; the
+      URL hash refuses illegal dice. Guarded by `AetherLookupStore.test.ts`.
 - [ ] **Lookup print sheet** — cosmetic styles for printable lookup
       results were retired during v3.1; revisit if printable lookup
       becomes a real ask.

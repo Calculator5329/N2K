@@ -1,5 +1,5 @@
 /**
- * `LibraryView` — Section IV: locally-saved competitions.
+ * `LibraryView` — Section III: locally-saved competitions.
  *
  * Lists every entry persisted under `compose:saved:{id}`, sorted by
  * "last played" by default (with toggles for "Updated" + "Name"). Each
@@ -18,6 +18,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useStore } from "../../stores/AppStoreContext.js";
 import { PageHeader } from "../../ui/primitives/PageHeader.js";
+import { folioFor } from "../../ui/chrome/nav.js";
 import {
   BOT_PERSONAS,
   MatchStore,
@@ -42,7 +43,7 @@ export const LibraryView = observer(function LibraryView() {
     <article>
       <div className="no-print">
         <PageHeader
-          folio="IV"
+          folio={folioFor("library")}
           eyebrow="Library"
           title={
             <>

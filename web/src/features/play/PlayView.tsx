@@ -29,6 +29,7 @@ import {
 import { formatEquationAgainstPool } from "@platform/services/parsing.js";
 import type { NEquation } from "@platform/core/types.js";
 import { PageHeader } from "../../ui/primitives/PageHeader.js";
+import { folioFor } from "../../ui/chrome/nav.js";
 
 // ---------------------------------------------------------------------------
 //  Top-level switcher
@@ -63,7 +64,7 @@ const SetupScreen = observer(function SetupScreen() {
   return (
     <article>
       <PageHeader
-        folio="III"
+        folio={folioFor("play")}
         eyebrow="Play"
         title={
           <>
@@ -656,7 +657,7 @@ const ResultsScreen = observer(function ResultsScreen() {
   return (
     <article>
       <PageHeader
-        folio="III"
+        folio={folioFor("play")}
         eyebrow="Race complete"
         title={headline}
         dek={
