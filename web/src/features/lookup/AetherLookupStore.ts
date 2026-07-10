@@ -40,9 +40,7 @@ const HASH_SCHEMA: HashSchema<AetherLookupState> = {
     const dice = m[2]!.split(",").map((s) => Number(s));
     if (dice.length !== arity) return null;
     if (dice.some((d) => !Number.isFinite(d))) return null;
-    if (dice.some((d) => d < ADV_DICE_RANGE.min || d > ADV_DICE_RANGE.max)) {
-      return null;
-    }
+    if (dice.some((d) => !isLegalAetherDie(d))) return null;
     const total = Number(m[3]);
     if (
       !Number.isFinite(total) ||
@@ -54,6 +52,15 @@ const HASH_SCHEMA: HashSchema<AetherLookupState> = {
     return { arity, dice, total };
   },
 };
+
+/** True when `d` is a value the Æther mode admits (its range, minus 0). */
+function isLegalAetherDie(d: number): boolean {
+  return (
+    d >= ADV_DICE_RANGE.min &&
+    d <= ADV_DICE_RANGE.max &&
+    (AETHER_MODE.legalDieValue?.(d) ?? true)
+  );
+}
 
 function clampDie(value: number): number | null {
   if (!Number.isFinite(value)) return null;
@@ -119,7 +126,20 @@ export class AetherLookupStore {
     if (index < 0 || index >= this.dice.length) return;
     const clamped = clampDie(value);
     if (clamped === null) return;
-    this.dice[index] = clamped;
+    let next = clamped;
+    if (!isLegalAetherDie(next)) {
+      // Æther forbids 0 (`d^p` collapses, `÷0` blows up). The steppers
+      // hand us `current ± 1`; a single step that lands on 0 should hop
+      // over it in the same direction so ▲/▼ stay usable. A typed jump
+      // straight onto an illegal value is rejected instead — keep the
+      // prior die rather than teleport somewhere the user didn't intend.
+      const prev = this.dice[index]!;
+      if (Math.abs(next - prev) !== 1) return;
+      const skipped = clampDie(next + Math.sign(next - prev));
+      if (skipped === null || !isLegalAetherDie(skipped)) return;
+      next = skipped;
+    }
+    this.dice[index] = next;
   }
 
   setTotal(value: number): void {

@@ -2,6 +2,27 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-07-10 — Folio numerals + mode-aware Æther dice validation (burndown w2)
+
+Two roadmap polish items.
+
+**Folio numerals.** `PlayView` rendered folio `"III"` and `LibraryView`
+`"IV"` — swapped vs the `nav.ts` order (Library III · Play IV). Added
+`folioFor(id)` to `nav.ts` and pointed both page headers at it, so the
+numbering is single-sourced and can't drift again. Fixed the stale
+"Section IV" note in `LibraryView`'s docstring. Guard: `nav.test.ts`
+(co-located next to `nav.ts`).
+
+**Mode-aware DicePicker validation.** The Æther Lookup picker already
+routes through its own `AetherLookupStore` (typed dice clamp to
+`AETHER_MODE`'s −10..32, not the standard 2..20), but nothing enforced
+the mode's one legality rule — 0 is illegal in Æther (`d^p` collapses,
+`÷0` blows up) yet a stepper could walk a die onto it. `setDie` now
+skips a single step past 0 in its direction of travel, rejects a typed
+jump straight onto 0, and the URL-hash decoder refuses illegal dice.
+Guard: `AetherLookupStore.test.ts` (co-located next to the store). No
+persisted-schema or `.n2k` changes.
+
 ## 2026-07-10 — Roadmap truth pass (MASTER_TODO feed)
 
 Verified unchecked roadmap items against the codebase. Checked off

@@ -41,6 +41,19 @@ export function useNavItems(): readonly NavItem[] {
   return BASE_NAV_ITEMS;
 }
 
+/**
+ * Folio numeral for a surface, read straight from {@link BASE_NAV_ITEMS}.
+ *
+ * `nav.ts` is the single source of truth for the I/II/III/IV numbering;
+ * page headers (`LibraryView`, `PlayView`) resolve their folio through
+ * this helper instead of hardcoding a numeral, so a header can never
+ * drift out of sync with the nav order again. Returns `""` for a view
+ * not present in the nav table (defensive; every current `View` is).
+ */
+export function folioFor(id: View): string {
+  return BASE_NAV_ITEMS.find((item) => item.id === id)?.folio ?? "";
+}
+
 /** Footer colophon byline, varies per edition. Keep keys in sync with `ThemeId`. */
 export const FOOTER_COLOPHON: Record<string, string> = {
   almanac:    "Set in Fraunces, Source Serif 4, & JetBrains Mono",
