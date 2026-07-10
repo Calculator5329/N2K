@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "ethan-488900"
+  },
+  "targets": {
+    "ethan-488900": {
+      "hosting": {
+        "almanac": [
+          "n2k-almanac-v3"
+        ]
+      }
+    }
+  }
+}

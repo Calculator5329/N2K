@@ -11,6 +11,14 @@ data-out/
 *.ndjson
 *.manifest.json
 
+# Firebase deploy cache
+.firebase/
+
+# Bake scratch output; untracked smoke blobs stay local
+# (keep-or-delete decision pending — see roadmap "Track the deploy config")
+tmp-bake/
+web/public/data/*-smoke*.n2k
+
 # Editor
 .idea/
 .vscode/
