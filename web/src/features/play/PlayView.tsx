@@ -20,7 +20,7 @@
  * lives in `PlayStore`; this file is presentation only.
  */
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "../../stores/AppStoreContext.js";
 import {
   BOT_DIFFICULTY_LABEL,
@@ -40,6 +40,18 @@ export const PlayView = observer(function PlayView() {
 
   // Tear down the race timer if the user navigates away mid-race.
   useEffect(() => () => play.dispose(), [play]);
+
+  // Rehydrate a shared race from a `#race=…` permalink on first mount.
+  // Decoding is async (DecompressionStream); the store lands on the
+  // finished results screen (scrubber available) and clears the hash so
+  // it's a one-shot restore. Guarded so a later "New race" isn't
+  // clobbered if this component re-renders.
+  const attemptedShareLoad = useRef(false);
+  useEffect(() => {
+    if (attemptedShareLoad.current) return;
+    attemptedShareLoad.current = true;
+    void play.loadRaceFromUrl();
+  }, [play]);
 
   if (play.status === "setup") return <SetupScreen />;
   if (play.status === "racing") return <RaceScreen />;
@@ -726,6 +738,8 @@ const ResultsScreen = observer(function ResultsScreen() {
         </section>
       )}
 
+      <ShareRaceBar />
+
       <ReplayBar />
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
@@ -765,6 +779,67 @@ function formatDailyDate(dateKey: string): string {
 //  the final state. ←/→/Space keyboard shortcuts are wired in
 //  `ResultsScreen` above; this component renders the visual controls.
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+//  Share race result
+//
+//  Encodes the finished race into the URL hash via the same versioned
+//  `compressedHashCodec` the Compose plan links use, then copies the
+//  resulting permalink. Opening it elsewhere rehydrates the race onto this
+//  results screen (with the replay scrubber available).
+// ---------------------------------------------------------------------------
+
+const ShareRaceBar = observer(function ShareRaceBar() {
+  const { play } = useAppStore();
+  const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
+
+  async function handleClick() {
+    try {
+      const url = await play.buildRaceShareUrl();
+      if (url === "") {
+        setStatus("failed");
+      } else {
+        try {
+          await navigator.clipboard.writeText(url);
+          setStatus("copied");
+        } catch {
+          // The hash is already updated, so the link is in the address
+          // bar even when the clipboard API is blocked.
+          setStatus("failed");
+        }
+      }
+    } catch {
+      setStatus("failed");
+    }
+    window.setTimeout(() => setStatus("idle"), 2400);
+  }
+
+  const label =
+    status === "copied"
+      ? "✓ Link copied"
+      : status === "failed"
+      ? "Link in URL — copy failed"
+      : "↗ Share result";
+
+  return (
+    <div className="my-6 flex items-center gap-3 no-print">
+      <button
+        type="button"
+        onClick={() => void handleClick()}
+        className="px-3 py-1.5 font-mono uppercase tracking-wide-caps text-[11px] text-ink-300 border border-ink-100/40 hover:border-oxblood-500 hover:text-oxblood-500 transition-colors"
+        style={{ borderRadius: "2px" }}
+        title="Copy a shareable link that replays this race"
+        aria-label="Share this race result as a URL"
+        aria-live="polite"
+      >
+        {label}
+      </button>
+      <span className="text-[11px] italic text-ink-200">
+        Sends a link that reopens this race in the replay scrubber.
+      </span>
+    </div>
+  );
+});
 
 const ReplayBar = observer(function ReplayBar() {
   const { play } = useAppStore();

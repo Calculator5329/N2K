@@ -37,21 +37,26 @@ import type { MatchStore } from "../features/match/MatchStore.js";
 import type { View } from "./types.js";
 
 /**
- * Pasted Competition share links carry a `plan=` entry in the URL
- * hash (see `CompositionStore.buildShareUrl` / `loadFromUrl`). When
- * present we boot straight into the Competition tab rather than the
- * default Lookup, so the recipient lands on the surface that will
- * actually rehydrate from their link.
+ * Pasted share links carry a feature key in the URL hash: `plan=` for a
+ * Competition plan (see `CompositionStore.buildShareUrl` / `loadFromUrl`)
+ * or `race=` for a finished race result (see `PlayStore.buildRaceShareUrl`
+ * / `loadRaceFromUrl`). When present we boot straight into the matching
+ * tab rather than the default Lookup, so the recipient lands on the
+ * surface that will actually rehydrate from their link. `race` wins over
+ * `plan` on the (pathological) chance both are present.
  */
 function initialViewFromHash(): View {
   if (typeof window === "undefined") return "lookup";
   const raw = window.location.hash.replace(/^#/, "");
   if (raw.length === 0) return "lookup";
+  const keys = new Set<string>();
   for (const part of raw.split("&")) {
     const eq = part.indexOf("=");
     const key = eq < 0 ? part : part.slice(0, eq);
-    if (decodeURIComponent(key) === "plan") return "compose";
+    keys.add(decodeURIComponent(key));
   }
+  if (keys.has("race")) return "play";
+  if (keys.has("plan")) return "compose";
   return "lookup";
 }
 

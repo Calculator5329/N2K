@@ -74,10 +74,10 @@ for Ethan, not a task.)
       needed; this is the retention feature and the on-ramp to a real
       leaderboard later. *Accept:* same UTC date ⇒ same board; streak
       survives reload; shareable result string (emoji-grid style).
-- [ ] **Shareable race results.** Reuse the compressed-hash codec
-      (`compressedHashCodec.ts`) to encode a finished race into a URL.
-      *Accept:* opening the link replays the race via the existing
-      replay scrubber.
+- [x] **Shareable race results.** *(done 2026-07-11)* Reuse the
+      compressed-hash codec (`compressedHashCodec.ts`) to encode a
+      finished race into a URL. *Accept:* opening the link replays the
+      race via the existing replay scrubber.
 
 ### Later
 
