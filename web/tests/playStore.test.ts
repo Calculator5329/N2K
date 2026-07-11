@@ -9,8 +9,30 @@
 import { describe, expect, it } from "vitest";
 import { PlayStore } from "../src/stores/PlayStore";
 import { STANDARD_MODE, AETHER_MODE } from "../../src/core/constants";
+import { DailyChallengeStore } from "../src/stores/DailyChallengeStore";
 
 describe("PlayStore", () => {
+  it("launches today's deterministic daily board and persists its result", () => {
+    const values = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+    };
+    const daily = new DailyChallengeStore(storage, new Date(2026, 6, 10, 12));
+    const p = new PlayStore();
+
+    daily.launch(p);
+    expect(p.boardCells).toEqual(daily.challenge.board.cells);
+    expect(p.dice).toEqual(daily.challenge.dice);
+    for (let i = 0; i < p.boardCells.length; i += 1) p.knockCell(i);
+
+    expect(daily.completion?.result.dateKey).toBe("2026-07-10");
+    expect(daily.completion?.best.score).toBe(p.playerScore);
+    expect(daily.completion?.comeBackTomorrow).toBe(true);
+    expect(values.size).toBe(1);
+    p.dispose();
+  });
+
   it("defaults to standard rules + standard mode", () => {
     const p = new PlayStore();
     expect(p.setup.rules).toBe("standard");

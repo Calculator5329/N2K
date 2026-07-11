@@ -59,7 +59,7 @@ const DIFFICULTIES: readonly BotDifficulty[] = [
 ];
 
 const SetupScreen = observer(function SetupScreen() {
-  const { play, secret } = useAppStore();
+  const { play, secret, daily } = useAppStore();
 
   return (
     <article>
@@ -82,6 +82,22 @@ const SetupScreen = observer(function SetupScreen() {
 
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
         <div className="lg:col-span-7 min-w-0">
+          <div className="label-caps mb-4">Race mode</div>
+          <div className="grid grid-cols-2 border border-ink-100/30 divide-x divide-ink-100/30 bg-paper-100 mb-10">
+            <RulesTile
+              active
+              label="Quick race"
+              caption="Fresh board · any time"
+              onClick={() => play.start()}
+            />
+            <RulesTile
+              active={false}
+              label="Daily"
+              caption={formatDailyDate(daily.challenge.dateKey)}
+              onClick={() => daily.launch(play)}
+            />
+          </div>
+
           <div className="label-caps mb-4">Bot difficulty</div>
           <div
             // 5-up strip on tablets/desktops (the canonical layout),
@@ -599,8 +615,9 @@ const RaceFooter = observer(function RaceFooter() {
 // ---------------------------------------------------------------------------
 
 const ResultsScreen = observer(function ResultsScreen() {
-  const { play } = useAppStore();
+  const { play, daily } = useAppStore();
   const winner = play.winner;
+  const dailyCompletion = daily.active ? daily.completion : null;
 
   // Wire ←/→ to step events, space to play/pause, Esc to exit. Only
   // active on the results screen so it can't fight the in-race UI.
@@ -630,7 +647,14 @@ const ResultsScreen = observer(function ResultsScreen() {
     return () => window.removeEventListener("keydown", onKey);
   }, [play]);
 
-  const headline =
+  const headline = dailyCompletion ? (
+    <>
+      Daily challenge{" "}
+      <span className="italic text-oxblood-500" style={WONK_STYLE}>
+        complete.
+      </span>
+    </>
+  ) :
     winner === "tie" ? (
       <>
         A draw —{" "}
@@ -661,7 +685,9 @@ const ResultsScreen = observer(function ResultsScreen() {
         eyebrow="Race complete"
         title={headline}
         dek={
-          winner === "tie"
+          dailyCompletion
+            ? `${formatDailyDate(dailyCompletion.result.dateKey)} — ${dailyCompletion.result.score} points from ${dailyCompletion.result.cellsCleared} cells. Your best for today is ${dailyCompletion.best.score}. Come back tomorrow for a new board.`
+            : winner === "tie"
             ? "A perfect tie. Same dice, same numbers, identical scores. Roll again?"
             : winner === "player"
               ? "You knocked more value off the board than the bot. The almanac approves."
@@ -670,16 +696,35 @@ const ResultsScreen = observer(function ResultsScreen() {
         right={
           <button
             type="button"
-            onClick={() => play.restart()}
+            onClick={() => {
+              if (daily.active) daily.leave();
+              play.restart();
+            }}
             className="px-4 py-2 font-mono uppercase tracking-wide-caps text-[11px] text-paper-50 bg-oxblood-500 hover:bg-oxblood-500/90 transition-colors"
             style={{ borderRadius: "2px" }}
           >
-            New race
+            {dailyCompletion ? "Back to modes" : "New race"}
           </button>
         }
       />
 
       <DiceStrip />
+
+      {dailyCompletion && (
+        <section className="my-6 grid grid-cols-2 border border-ink-100/30 divide-x divide-ink-100/30 bg-paper-100">
+          <div className="p-4 text-center">
+            <div className="label-caps text-ink-200">Today's result</div>
+            <div className="mt-1 font-display text-[28px] tabular text-oxblood-500">{dailyCompletion.result.score}</div>
+          </div>
+          <div className="p-4 text-center">
+            <div className="label-caps text-ink-200">Best today</div>
+            <div className="mt-1 font-display text-[28px] tabular text-ink-500">{dailyCompletion.best.score}</div>
+            <div className="mt-1 font-mono uppercase tracking-wide-caps text-[9px] text-oxblood-500">
+              {dailyCompletion.isNewBest ? "New best · come back tomorrow" : "Come back tomorrow"}
+            </div>
+          </div>
+        </section>
+      )}
 
       <ReplayBar />
 
@@ -702,6 +747,15 @@ const ResultsScreen = observer(function ResultsScreen() {
     </article>
   );
 });
+
+function formatDailyDate(dateKey: string): string {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(year!, month! - 1, day!));
+}
 
 // ---------------------------------------------------------------------------
 //  Replay scrubber (#C — post-race timeline review)

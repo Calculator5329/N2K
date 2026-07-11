@@ -29,6 +29,7 @@ import { FavoritesStore } from "./FavoritesStore.js";
 import { PlayStore } from "./PlayStore.js";
 import { SecretStore } from "./SecretStore.js";
 import { ThemeStore } from "./ThemeStore.js";
+import { DailyChallengeStore } from "./DailyChallengeStore.js";
 import { CompositionStore } from "../features/compose/CompositionStore.js";
 import { LibraryStore } from "../features/library/LibraryStore.js";
 import type { MatchStore } from "../features/match/MatchStore.js";
@@ -62,6 +63,7 @@ export class AppStore {
   readonly favorites: FavoritesStore;
   readonly secret: SecretStore;
   readonly play: PlayStore;
+  readonly daily: DailyChallengeStore;
   readonly composition: CompositionStore;
   readonly library: LibraryStore;
   /**
@@ -83,6 +85,7 @@ export class AppStore {
     this.favorites = new FavoritesStore();
     this.secret = new SecretStore();
     this.play = new PlayStore();
+    this.daily = new DailyChallengeStore();
     this.composition = new CompositionStore(this.data);
     this.library = new LibraryStore();
     makeAutoObservable(this, {
@@ -92,6 +95,7 @@ export class AppStore {
       favorites: false,
       secret: false,
       play: false,
+      daily: false,
       composition: false,
       library: false,
     });
