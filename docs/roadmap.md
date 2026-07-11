@@ -65,7 +65,7 @@ for Ethan, not a task.)
       broken `.git` dirs — archive as-is, do not repair. *Accept:*
       Ethan approves the list first; every sibling has a pointer;
       nothing deleted, only archived.
-- [ ] **Daily challenge (local).** Date-seeded board, same for every
+- [ ] **Daily challenge (local).** *(service layer done 2026-07-10 — deterministic date-seeded boards + per-date best persistence in src/services/dailyChallenge.ts; web/ UI entry point still pending)* Date-seeded board, same for every
       visitor, result + streak stored via `ContentBackend`. No server
       needed; this is the retention feature and the on-ramp to a real
       leaderboard later. *Accept:* same UTC date ⇒ same board; streak
