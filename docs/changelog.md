@@ -2,6 +2,32 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-07-11 — PWA / offline (burndown)
+
+Closes the roadmap "PWA / offline" item. The site is now an installable
+PWA with an offline-capable service worker, via `vite-plugin-pwa`
+(`registerType: 'autoUpdate'`, dev mode untouched).
+
+- **Manifest** — `web/vite.config.ts` generates `manifest.webmanifest`
+  (standalone display, `#161310` theme/background, name/short_name/desc)
+  with 192/512 `any` icons + a 512 `maskable` icon rendered from the
+  `§` glyph (`web/public/icons/`). iOS `apple-touch-icon` /
+  `apple-mobile-web-app-*` + `theme-color` meta added to `index.html`.
+- **Service worker (Workbox generateSW)** — precaches the SPA shell +
+  hashed JS/CSS/small assets (~1.4 MB, 18 entries) with an
+  `index.html` navigation fallback so deep links work offline.
+- **Caching strategy** — the large `.n2k` dataset blobs are explicitly
+  NOT precached (would force a ~70 MB install); they are runtime-cached
+  `CacheFirst` (`n2k-datasets`, immutable, 1-yr) on first fetch. Google
+  Fonts are runtime-cached (`StaleWhileRevalidate` for CSS, `CacheFirst`
+  for webfonts) as an interim until fonts are self-hosted.
+- **Stale-build safety** — `autoUpdate` + Workbox's content-hashed
+  precache manifest + `cleanupOutdatedCaches` means a new build's assets
+  are picked up on the next visit; users are never stranded on an old
+  bundle.
+- Verify: web typecheck / test (85) / build / perf (11) all green; build
+  emits `sw.js`, `workbox-*.js`, `manifest.webmanifest`, `registerSW.js`.
+
 ## 2026-07-11 — Shareable race results (burndown)
 
 Closes the roadmap "Shareable race results" item. A finished Knockout

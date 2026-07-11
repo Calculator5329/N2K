@@ -96,9 +96,15 @@ for Ethan, not a task.)
       then mixed-arity rules tiles.
 - [ ] **Multiplayer.** `RemotePlayer` over Firestore; the game kernel
       was designed for this (serializable state, pure `applyMove`).
-- [ ] **PWA / offline.** Static SPA + immutable blobs cache well;
+- [x] **PWA / offline.** Static SPA + immutable blobs cache well;
       fonts must be self-hosted first (see architecture.md
-      limitations).
+      limitations). *Shipped 2026-07-11:* `vite-plugin-pwa`
+      (`autoUpdate`) — web app manifest + generated service worker.
+      Workbox precaches the SPA shell/assets (content-hashed, so no
+      stale-build lock-in) with an `index.html` navigation fallback;
+      `.n2k` dataset blobs are runtime-cached CacheFirst (never
+      precached — no multi-tens-of-MB install), Google Fonts are
+      runtime-cached as an interim until self-hosting lands.
 
 Ranked expansion ideas with impact/effort live in `docs/IDEAS.md`.
 
