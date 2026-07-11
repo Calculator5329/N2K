@@ -43,10 +43,14 @@ for Ethan, not a task.)
       + `web/index.html` meta/OG tags (title, description, social
       card) to the product identity. *Accept:* canonical URL decided,
       documented in README, link unfurls with a card.
-- [ ] **First-run onboarding pass.** A stranger landing on the site
-      should understand the game and start a Quick Race in ≤ 2 clicks.
-      Add a short "how to play" affordance on Lookup/Play. *Accept:*
-      one uninitiated tester reaches a finished race unaided.
+- [x] **First-run onboarding pass.** *(done 2026-07-11)* One-time
+      welcome overlay (`ui/chrome/WelcomeOverlay.tsx`, gated by
+      `OnboardingStore` on `n2k.onboarded.v1`) explains the game in a
+      sentence + a 3-step how-to and offers a single-click **Play a
+      Quick Race** CTA (routes to Play, `play.start()`), so a cold
+      visitor reaches a running race in one click / finished in ≤ 2.
+      Dismissible ("Explore first" / Escape), shown once, never nags
+      returning players. Guard: `tests/onboardingStore.test.ts`.
 
 ### Next
 

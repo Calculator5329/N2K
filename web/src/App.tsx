@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 import { useAppStore } from "./stores/AppStoreContext.js";
 import { PageShell } from "./ui/chrome/PageShell.js";
 import { SecretBadge } from "./ui/chrome/SecretBadge.js";
+import { WelcomeOverlay } from "./ui/chrome/WelcomeOverlay.js";
 
 import { ComposeView } from "./features/compose/ComposeView.js";
 import { LookupView } from "./features/lookup/LookupView.js";
@@ -60,6 +61,8 @@ export const App = observer(function App() {
   return (
     <>
       <PageShell>{renderView(store.view)}</PageShell>
+
+      <WelcomeOverlay />
 
       <MatchResumeGate />
 
