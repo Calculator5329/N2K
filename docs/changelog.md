@@ -2,6 +2,35 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-07-11 — Shareable race results (burndown)
+
+Closes the roadmap "Shareable race results" item. A finished Knockout
+race can now be shared as a permalink and reopened on the recipient's
+side, replaying via the existing scrubber. Reuses the versioned
+`compressedHashCodec` (JSON → deflate-raw → base64url) verbatim — the
+same codec the Compose plan links use — behind a new `race=` URL-hash
+key, mirroring `CompositionStore.buildShareUrl` / `loadFromUrl`.
+
+- `PlayStore` gains a versioned `SharedRace` snapshot (`v: 1`) plus
+  `raceSnapshot()` / `applyRaceSnapshot()` (state) and
+  `buildRaceShareUrl()` / `loadRaceFromUrl()` (URL plumbing). Restoring
+  a link rebuilds the exact knock log (cells + timestamps + bot
+  equations), lands on the finished results screen, and clears the hash
+  so it's a one-shot restore that won't clobber a later "New race".
+  A `validateSharedRace` guard makes malformed / forward-versioned
+  payloads degrade to "no shared race" instead of throwing.
+- `PlayView` results screen gets a "↗ Share result" copy-link affordance
+  (same clipboard pattern as Compose's Share button) and rehydrates from
+  a `#race=…` permalink on first mount.
+- `AppStore.initialViewFromHash` routes a `race=` link straight to the
+  Play tab (like `plan=` → Compose).
+- Tests: `web/tests/playStoreShare.test.ts` — snapshot/apply round-trip,
+  real codec encode→decode round-trip, `buildRaceShareUrl` →
+  `loadRaceFromUrl` through `window.location`, malformed-payload
+  rejection, and garbage-hash handling. Full web verify green
+  (typecheck / 85 tests / build / perf). No persisted-schema changes;
+  existing hashes untouched (new `race` key is additive).
+
 ## 2026-07-11 — Lookup print sheet (burndown)
 
 Closes the roadmap "Lookup print sheet" item. Restored cosmetic

@@ -39,6 +39,11 @@ import {
 } from "@platform/games/knockoutBot.js";
 import { easiestSolution } from "@platform/services/solver.js";
 import type { Mode, NEquation } from "@platform/core/types.js";
+import {
+  decodeShareable,
+  encodeShareable,
+} from "../services/compressedHashCodec.js";
+import { writeHash, readHash } from "../services/urlHashState.js";
 
 /**
  * The two playable rule sets for a knockout race. `"standard"` is the
@@ -116,6 +121,43 @@ export interface KnockedCell {
   /** `null` for the human side until they hover the equation hint. */
   readonly equation: NEquation | null;
   readonly atMs: number;
+}
+
+/**
+ * One knock, in the compact wire shape used by the shareable-race codec.
+ * `i` = cell index, `v` = cell value, `t` = ms into the race, `e` =
+ * justifying equation (bot side only; omitted/undefined for the player).
+ */
+interface SharedKnock {
+  readonly i: number;
+  readonly v: number;
+  readonly t: number;
+  readonly e?: NEquation | null;
+}
+
+/**
+ * A finished race, serialized for a share link. Reuses the versioned
+ * `compressedHashCodec` (JSON → deflate-raw → base64url) exactly like the
+ * Compose plan links do, so a fully-static deploy can round-trip a race
+ * result through the URL hash.
+ *
+ * `v` is the payload version — bump it (and branch in
+ * {@link PlayStore.applyRaceSnapshot}) if the shape ever changes, so old
+ * links never silently mis-decode. This is independent of the codec's own
+ * `v1.` envelope tag.
+ */
+export interface SharedRace {
+  readonly v: 1;
+  readonly board: readonly number[];
+  readonly dice: readonly number[];
+  readonly botDice: readonly number[];
+  readonly durationMs: number;
+  readonly botName: string;
+  readonly difficulty: BotDifficulty;
+  readonly rules: RaceRules;
+  readonly botReachable: number;
+  readonly player: readonly SharedKnock[];
+  readonly bot: readonly SharedKnock[];
 }
 
 // ---------------------------------------------------------------------------
@@ -310,6 +352,7 @@ export class PlayStore {
       setReplayMs: action,
       togglePlayReplay: action,
       stepReplay: action,
+      applyRaceSnapshot: action,
     });
   }
 
@@ -644,6 +687,129 @@ export class PlayStore {
   }
 
   // ---------------------------------------------------------------------
+  //  Shareable race results (#, roadmap: reuse compressedHashCodec)
+  // ---------------------------------------------------------------------
+  //
+  // A finished race can be encoded into the URL hash with the same
+  // versioned `compressedHashCodec` the Compose plan links use, then
+  // decoded on the recipient's side to replay it via the existing
+  // scrubber. The race isn't re-simulated — we restore the exact knock
+  // log (cells + timestamps) so `currentPlayerKnocked` / `replayTimeline`
+  // behave identically to a race the recipient played themselves.
+
+  /**
+   * Serialize the current finished race to the shareable wire shape, or
+   * `null` when there's nothing meaningful to share (no finished race).
+   */
+  raceSnapshot(): SharedRace | null {
+    if (!this.isFinished) return null;
+    return {
+      v: 1,
+      board: [...this.boardCells],
+      dice: [...this.dice],
+      botDice: [...this.botDice],
+      durationMs: this.raceDurationMs,
+      botName: this.setup.botName,
+      difficulty: this.setup.difficulty,
+      rules: this.setup.rules,
+      botReachable: this.botReachableCount,
+      player: this.playerKnocked.map((c) => ({
+        i: c.cellIndex,
+        v: c.cellValue,
+        t: c.atMs,
+      })),
+      bot: this.botKnocked.map((c) => ({
+        i: c.cellIndex,
+        v: c.cellValue,
+        t: c.atMs,
+        e: c.equation,
+      })),
+    };
+  }
+
+  /**
+   * Restore a race from a decoded {@link SharedRace} snapshot, landing on
+   * the finished results screen with the replay scrubber available.
+   * Returns `false` (leaving the store untouched) when the payload is
+   * malformed or from an unknown version, so callers can treat a bad link
+   * as "no shared race" rather than crashing.
+   */
+  applyRaceSnapshot(snap: unknown): boolean {
+    const race = validateSharedRace(snap);
+    if (race === null) return false;
+    // Tear down any live race/replay timers first — the recipient may be
+    // mid-race when a link is opened.
+    this.stopTimer();
+    this.stopReplayTimer();
+    this.bot = null;
+    this.onFinished = null;
+    this.silentFinish = false;
+    this.pausedAccumMs = 0;
+    this.pausedAt = 0;
+    this.playerHints = new Map();
+
+    this.setup = {
+      difficulty: race.difficulty,
+      botName: race.botName,
+      rules: race.rules,
+    };
+    this.boardCells = race.board;
+    this.dice = race.dice;
+    this.botDice = race.botDice;
+    this.raceDurationMs = race.durationMs;
+    this.botReachableCount = race.botReachable;
+    this.elapsedMs = race.durationMs;
+    this.playerKnocked = race.player.map((k) => ({
+      cellIndex: k.i,
+      cellValue: k.v,
+      equation: null,
+      atMs: k.t,
+    }));
+    this.botKnocked = race.bot.map((k) => ({
+      cellIndex: k.i,
+      cellValue: k.v,
+      equation: k.e ?? null,
+      atMs: k.t,
+    }));
+    this.replayMs = null;
+    this.replayPlaying = false;
+    this.status = "finished";
+    return true;
+  }
+
+  /**
+   * Encode the finished race into `window.location.hash` (key `race`) and
+   * return the resulting shareable URL. Resolves to `""` when there's no
+   * finished race to share.
+   */
+  async buildRaceShareUrl(): Promise<string> {
+    const snap = this.raceSnapshot();
+    if (snap === null) return "";
+    const encoded = await encodeShareable(snap);
+    if (typeof window === "undefined") return encoded;
+    writeHash("race", encoded, RACE_SHARE_SCHEMA);
+    return window.location.href;
+  }
+
+  /**
+   * Try to rehydrate a shared race from the URL hash. Returns `true` when
+   * a valid `race=` payload was found and applied. The hash entry is
+   * cleared on a successful load so it's a one-shot restore — a later
+   * "New race" (which resets to `setup`) won't get clobbered on remount.
+   */
+  async loadRaceFromUrl(): Promise<boolean> {
+    const raw = readHash("race", RACE_SHARE_SCHEMA);
+    if (raw === null) return false;
+    const decoded = await decodeShareable<unknown>(raw);
+    if (decoded === null) return false;
+    const applied = this.applyRaceSnapshot(decoded);
+    if (applied && typeof window !== "undefined") {
+      writeHash("race", null, RACE_SHARE_SCHEMA);
+    }
+    return applied;
+  }
+
+  // ---------------------------------------------------------------------
   //  Replay actions
   // ---------------------------------------------------------------------
 
@@ -810,6 +976,102 @@ function playEndOfRaceDing(): void {
   } catch {
     // Ignore — audio is a "nice to have", not a correctness concern.
   }
+}
+
+/**
+ * Trivial pass-through schema for the URL-hash util. The compressed
+ * payload is already URL-safe (`v1.{base64url}`), so we store it verbatim
+ * — same contract the Compose plan link uses.
+ */
+const RACE_SHARE_SCHEMA = {
+  encode(value: string): string {
+    return value;
+  },
+  decode(raw: string): string | null {
+    return raw.length === 0 ? null : raw;
+  },
+};
+
+const BOARD_SIZE = 36;
+const VALID_DIFFICULTIES: ReadonlySet<string> = new Set([
+  "easy",
+  "standard",
+  "hard",
+  "expert",
+  "master",
+]);
+
+function isFiniteNumberArray(x: unknown): x is number[] {
+  return Array.isArray(x) && x.every((n) => typeof n === "number" && Number.isFinite(n));
+}
+
+function validateKnocks(x: unknown, boardLen: number): SharedKnock[] | null {
+  if (!Array.isArray(x)) return null;
+  const out: SharedKnock[] = [];
+  const seen = new Set<number>();
+  for (const raw of x) {
+    if (typeof raw !== "object" || raw === null) return null;
+    const k = raw as Record<string, unknown>;
+    const i = k.i;
+    const v = k.v;
+    const t = k.t;
+    if (
+      typeof i !== "number" ||
+      !Number.isInteger(i) ||
+      i < 0 ||
+      i >= boardLen ||
+      seen.has(i) ||
+      typeof v !== "number" ||
+      !Number.isFinite(v) ||
+      typeof t !== "number" ||
+      !Number.isFinite(t)
+    ) {
+      return null;
+    }
+    seen.add(i);
+    // Equation is opaque here — the results view only formats it, so we
+    // accept whatever object (or null/undefined) rode along.
+    const e = k.e as NEquation | null | undefined;
+    out.push(e === undefined ? { i, v, t } : { i, v, t, e });
+  }
+  return out;
+}
+
+/**
+ * Validate a decoded shareable-race payload. Returns a well-formed
+ * {@link SharedRace} or `null` — never throws — so a corrupt or
+ * forward-versioned link degrades to "no shared race".
+ */
+function validateSharedRace(snap: unknown): SharedRace | null {
+  if (typeof snap !== "object" || snap === null) return null;
+  const s = snap as Record<string, unknown>;
+  if (s.v !== 1) return null;
+  if (!isFiniteNumberArray(s.board) || s.board.length !== BOARD_SIZE) return null;
+  if (!isFiniteNumberArray(s.dice)) return null;
+  if (!isFiniteNumberArray(s.botDice)) return null;
+  if (typeof s.durationMs !== "number" || !Number.isFinite(s.durationMs) || s.durationMs <= 0) {
+    return null;
+  }
+  if (typeof s.botName !== "string") return null;
+  if (typeof s.difficulty !== "string" || !VALID_DIFFICULTIES.has(s.difficulty)) return null;
+  if (s.rules !== "standard" && s.rules !== "aether") return null;
+  if (typeof s.botReachable !== "number" || !Number.isFinite(s.botReachable)) return null;
+  const player = validateKnocks(s.player, s.board.length);
+  const bot = validateKnocks(s.bot, s.board.length);
+  if (player === null || bot === null) return null;
+  return {
+    v: 1,
+    board: s.board,
+    dice: s.dice,
+    botDice: s.botDice,
+    durationMs: s.durationMs,
+    botName: s.botName,
+    difficulty: s.difficulty as BotDifficulty,
+    rules: s.rules,
+    botReachable: s.botReachable,
+    player,
+    bot,
+  };
 }
 
 function claimToKnocked(claim: BotClaim, atMs: number): KnockedCell {
