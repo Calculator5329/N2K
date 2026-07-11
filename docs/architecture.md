@@ -360,5 +360,8 @@ history and `docs/plan-solver-perf-and-n2k-v2.md`.
   untracked as of 2026-07-05 (see ROADMAP "Now").
 - **No ESLint / no CI** — verification is manual (see root CLAUDE.md).
 - **Google Fonts at runtime** — `web/index.html` loads ~25 font
-  families from fonts.googleapis.com; offline/PWA work must bundle or
-  subset them.
+  families from fonts.googleapis.com; these are not self-hosted. The
+  PWA service worker runtime-caches them (StaleWhileRevalidate for the
+  stylesheet, CacheFirst for the webfont files) so a font seen online
+  keeps working offline — but a font never visited online won't be
+  available offline until it is bundled/subset & self-hosted.
