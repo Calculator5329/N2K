@@ -2,6 +2,29 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-07-11 — First-run onboarding pass (burndown)
+
+Closes the roadmap "First-run onboarding pass" item. A stranger landed
+on the default Lookup surface with no idea N2K is a game. Added a
+one-time **welcome overlay** (`ui/chrome/WelcomeOverlay.tsx`) that says
+what the site is in a sentence, shows a three-step "how to play", and
+offers a single-click **Play a Quick Race** CTA — it dismisses, routes
+to the Play tab, and calls `play.start()` (the same path the existing
+Quick Race tile uses), so a cold visitor reaches a running race in one
+click and a finished race in ≤ 2. "Explore first" / Escape dismiss it
+without launching. Focus lands on the primary CTA (Enter starts a race).
+
+Shown-once is gated by a new `OnboardingStore` (`stores/OnboardingStore.ts`,
+wired into `AppStore`) on the standalone localStorage key
+`n2k.onboarded.v1` — first visit opens it, dismissing persists the flag,
+returning players never see it again. Storage is injected + wrapped in
+try/catch so private-mode / blocked storage shows the overlay once
+rather than crashing boot. Standalone key, no schema, nothing to
+migrate. The overlay stands down when a match-resume prompt is pending
+so the two modals never stack. Styling reuses the `MatchResumeGate`
+paper-card / oxblood vocabulary. Guard: `tests/onboardingStore.test.ts`
+(5 cases). No `.n2k` or persisted-plan changes.
+
 ## 2026-07-10 — Folio numerals + mode-aware Æther dice validation (burndown w2)
 
 Two roadmap polish items.
