@@ -138,7 +138,7 @@ const SolutionPanel = observer(function SolutionPanel({
       </div>
       <Equation equation={solution.equation} size="display" />
       <DifficultyBreakdown equation={solution.equation} />
-      <div className="no-print">
+      <div className="lookup-equations">
         <AllEquationsList dice={dice} total={lookup.total} />
       </div>
       <div className="mt-10 no-print">
@@ -375,7 +375,7 @@ const StandardLookupView = observer(function StandardLookupView() {
   }, [lookup]);
 
   return (
-    <article>
+    <article className="lookup-sheet">
       <PageHeader
         folio="I"
         eyebrow="Lookup"
