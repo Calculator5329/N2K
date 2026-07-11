@@ -2,6 +2,23 @@
 
 Running log of what landed each session. Newest first.
 
+## 2026-07-11 — Lookup print sheet (burndown)
+
+Closes the roadmap "Lookup print sheet" item. Restored cosmetic
+`@media print` styling for the Lookup view so a `(dice, target)`
+result prints as a clean single-column reference slip. Both variants
+(`LookupView` and `AetherLookupView`) carry a `.lookup-sheet` hook on
+their root `<article>`; the print block hides every interactive button
+in the sheet (dice steppers, favourite toggle, disclosure carets,
+"Show N more" pager), renders the dice/target `<input>`s as bare
+numerals (no box, no spinners), and — when the "All equations for this
+cell" disclosure is open — prints the ranked equation table in B/W with
+`break-inside: avoid` on each row so no equation straddles a page. The
+`AllEquationsList` wrapper moved from `.no-print` to `.lookup-equations`
+so it can print; screen behaviour is unchanged. CSS-only plus the two
+class hooks — no logic. Chrome/nav stripping, neutral colour world, and
+`@page` margins are inherited from the existing shared print block.
+
 ## 2026-07-11 — First-run onboarding pass (burndown)
 
 Closes the roadmap "First-run onboarding pass" item. A stranger landed

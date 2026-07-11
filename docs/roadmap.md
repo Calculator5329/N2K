@@ -246,9 +246,12 @@ lives in `docs/current_task.md` (canonical/B&B migration, v2++ blobs).
       the mode's one legality rule: 0 is rejected (`d^p` collapses,
       `÷0` blows up). Steppers hop over 0; typed 0s are rejected; the
       URL hash refuses illegal dice. Guarded by `AetherLookupStore.test.ts`.
-- [ ] **Lookup print sheet** — cosmetic styles for printable lookup
-      results were retired during v3.1; revisit if printable lookup
-      becomes a real ask.
+- [x] **Lookup print sheet** — cosmetic `@media print` styles restored
+      for the Lookup view (`.lookup-sheet` on `LookupView` /
+      `AetherLookupView`): interactive buttons stripped, dice/target
+      inputs print as bare numerals, and the "All equations for this
+      cell" ranked table prints in B/W with per-row page-break
+      avoidance. CSS-only; no logic changes.
 
 ### Persistence
 

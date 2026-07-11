@@ -520,7 +520,7 @@ export const AetherLookupView = observer(function AetherLookupView() {
   }, [lookup]);
 
   return (
-    <article>
+    <article className="lookup-sheet">
       <PageHeader
         folio="Æ"
         eyebrow="The Æther Atlas"

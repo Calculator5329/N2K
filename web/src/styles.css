@@ -2611,6 +2611,55 @@
     max-width: none !important;
   }
 
+  /* --- Lookup: printable results sheet --------------------------------- *
+   *
+   * The Lookup view (`LookupView` / `AetherLookupView`, both tagged
+   * `.lookup-sheet`) becomes a clean single-column reference slip on
+   * paper: the folio header, the chosen dice, the target, the easiest
+   * equation, and — when the "All equations for this cell" disclosure
+   * is open — the full ranked equation table.
+   *
+   * Everything interactive is stripped. Every button inside the sheet
+   * (dice steppers, the favourite toggle, the disclosure carets, the
+   * "Show N more" pager, the neighbourhood bars) is an on-screen
+   * affordance with no meaning on paper, so all of them are hidden;
+   * the dice/target `<input>`s stay because they carry the values.
+   * ------------------------------------------------------------------- */
+  .lookup-sheet button {
+    display: none !important;
+  }
+
+  /* Dice + target inputs print as bare values, not editable fields —
+     drop the box so they read as typeset numerals on the slip. */
+  .lookup-sheet input {
+    border: none !important;
+    background: transparent !important;
+    color: #000 !important;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  .lookup-sheet input::-webkit-outer-spin-button,
+  .lookup-sheet input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* The "All equations for this cell" ranked table. Its wrapper is no
+     longer `.no-print`, so when the disclosure is open the list prints.
+     Keep each equation on a single page — a row must never straddle a
+     page break — and hairline the dividers so the table reads in B/W. */
+  .lookup-sheet .lookup-equations [role="status"] {
+    display: none !important;
+  }
+  .lookup-sheet .lookup-equations ol {
+    border-color: #000 !important;
+  }
+  .lookup-sheet .lookup-equations ol > li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border-color: #999 !important;
+  }
+
 }
 
 /* =========================================================================
