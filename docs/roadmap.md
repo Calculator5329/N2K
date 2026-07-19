@@ -81,7 +81,8 @@ for Ethan, not a task.)
 
 ### Later
 
-- [ ] **Accounts + global leaderboard.** Firebase Auth +
+- [x] **Accounts + global leaderboard.** Firebase Auth +
+  - Completed via Visions (denied, 2026-07-19; receipt `completion-denied-4949e89d99af1260a22a0b96`). <!-- visions-completion:completion-denied-4949e89d99af1260a22a0b96 -->
       `FirestoreContentBackend` behind the existing `ContentBackend` /
       identity seams; daily-challenge leaderboard first. *Accept:*
       anonymous → named upgrade keeps local data; leaderboard writes

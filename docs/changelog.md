@@ -1,5 +1,9 @@
 # N2K Platform — Changelog
 
+## 2026-07-19
+
+- Denied `**Accounts + global leaderboard.** Firebase Auth +` through Visions receipt `completion-denied-4949e89d99af1260a22a0b96`. <!-- visions-completion:completion-denied-4949e89d99af1260a22a0b96 -->
+
 Running log of what landed each session. Newest first.
 
 ## 2026-07-11 — PWA / offline (burndown)
