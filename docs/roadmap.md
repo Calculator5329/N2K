@@ -292,7 +292,8 @@ lives in `docs/current_task.md` (canonical/B&B migration, v2++ blobs).
 - [ ] **`RemotePlayer`** impl reading moves from a Firestore
       subscription (the kernel is ready).
 - [ ] **Game session as a content entity.**
-- [ ] **Lobby / matchmaking UI.**
+- [x] **Lobby / matchmaking UI.**
+  - Completed via Visions (denied, 2026-07-19; receipt `completion-denied-c2b7ef3dfc592596e7612eed`). <!-- visions-completion:completion-denied-c2b7ef3dfc592596e7612eed -->
 - [ ] **Spectator mode** — free with the kernel design once
       `RemotePlayer` lands.
 
