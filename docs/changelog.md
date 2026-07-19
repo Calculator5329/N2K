@@ -1,6 +1,7 @@
 # N2K Platform — Changelog
 
 ## 2026-07-19
+- Denied `**Cloud Run TS backend** hosting an AI service so API keys never` through Visions receipt `completion-denied-2f94de58acc6f6ef79ef0754`. <!-- visions-completion:completion-denied-2f94de58acc6f6ef79ef0754 -->
 
 - Denied `**Accounts + global leaderboard.** Firebase Auth +` through Visions receipt `completion-denied-4949e89d99af1260a22a0b96`. <!-- visions-completion:completion-denied-4949e89d99af1260a22a0b96 -->
 

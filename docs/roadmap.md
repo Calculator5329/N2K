@@ -281,7 +281,8 @@ lives in `docs/current_task.md` (canonical/B&B migration, v2++ blobs).
 
 - [ ] **`FirestoreContentBackend`** behind the existing interface.
 - [ ] **`FirebaseIdentityService`** behind a future identity interface.
-- [ ] **Cloud Run TS backend** hosting an AI service so API keys never
+- [x] **Cloud Run TS backend** hosting an AI service so API keys never
+  - Completed via Visions (denied, 2026-07-19; receipt `completion-denied-2f94de58acc6f6ef79ef0754`). <!-- visions-completion:completion-denied-2f94de58acc6f6ef79ef0754 -->
       ship to the client.
 - [ ] **Hoist `src/core` + `src/services`** into `packages/n2k-core` if
       the workspace ever splits.
