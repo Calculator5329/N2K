@@ -1,5 +1,7 @@
 # N2K Platform
 
+![N2K screenshot](docs/screenshots/app.png)
+
 [![Live Almanac](https://img.shields.io/badge/live-N2K%20Almanac-2563eb?style=flat-square)](https://n2k-almanac-v3.web.app)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-20232a?style=flat-square&logo=react)](https://react.dev/)
