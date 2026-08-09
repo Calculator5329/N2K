@@ -119,13 +119,13 @@ describe("enumerateLegalTuples", () => {
     let prev: readonly number[] | null = null;
     for (const t of enumerateLegalTuples(3, STANDARD_MODE)) {
       // a ≤ b ≤ c invariant
-      expect(t[0]).toBeLessThanOrEqual(t[1]);
-      expect(t[1]).toBeLessThanOrEqual(t[2]);
+      expect(t[0]!).toBeLessThanOrEqual(t[1]!);
+      expect(t[1]!).toBeLessThanOrEqual(t[2]!);
       if (prev !== null) {
         // strictly increasing under lex order
         const lex = (x: readonly number[], y: readonly number[]) => {
           for (let i = 0; i < x.length; i += 1) {
-            if (x[i] !== y[i]) return x[i] - y[i];
+            if (x[i] !== y[i]) return x[i]! - y[i]!;
           }
           return 0;
         };
@@ -140,7 +140,7 @@ describe("enumerateLegalTuples", () => {
     // historical reasons, while enumerateLegalTuples enumerates the
     // full mode range. Filter to compare.
     const enumerated = Array.from(
-      enumerateLegalTuples(3, STANDARD_MODE, (t) => t[0] <= 10 && t[1] <= 10),
+      enumerateLegalTuples(3, STANDARD_MODE, (t) => t[0]! <= 10 && t[1]! <= 10),
     );
     expect(enumerated.length).toBe(DICE_COMBINATIONS.length);
     for (let i = 0; i < enumerated.length; i += 1) {

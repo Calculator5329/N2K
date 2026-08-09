@@ -1,5 +1,11 @@
 # N2K Platform — Changelog
 
+## 2026-08-08 — Restore strict root typecheck
+
+- Narrowed fixed-arity legality-test tuple indexes explicitly so
+  `noUncheckedIndexedAccess` no longer makes the repository's required root
+  typecheck fail. Runtime behavior and coverage are unchanged.
+
 ## 2026-07-19
 - Denied `**Lobby / matchmaking UI.**` through Visions receipt `completion-denied-c2b7ef3dfc592596e7612eed`. <!-- visions-completion:completion-denied-c2b7ef3dfc592596e7612eed -->
 - Denied `**Cloud Run TS backend** hosting an AI service so API keys never` through Visions receipt `completion-denied-2f94de58acc6f6ef79ef0754`. <!-- visions-completion:completion-denied-2f94de58acc6f6ef79ef0754 -->
