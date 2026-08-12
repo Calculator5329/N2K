@@ -95,7 +95,7 @@ for Ethan, not a task.)
 - [ ] <!-- workspace:id=work:1447b9ac-d77b-5850-94c5-f3441b784c59 --> **Æther mixed-arity Compose (v3.3).** Existing plan:
       `docs/plan-aether-arity-mixes.md` — variable-arity plumbing,
       then mixed-arity rules tiles.
-- [ ] <!-- workspace:id=work:94421719-2f4d-5aac-b939-a45c4a086101 --> **Multiplayer.** `RemotePlayer` over Firestore; the game kernel
+- [x] <!-- workspace:id=work:94421719-2f4d-5aac-b939-a45c4a086101 --> <!-- closed 2026-08-12: duplicate — the more specific RemotePlayer item work:8c886dc8 under the Multiplayer heading stays open as the live tracker --> **Multiplayer.** `RemotePlayer` over Firestore; the game kernel
       was designed for this (serializable state, pure `applyMove`).
 - [x] <!-- workspace:id=work:0c8a27d6-6f28-5ab3-971f-33499221247d --> **PWA / offline.** Static SPA + immutable blobs cache well;
       fonts must be self-hosted first (see architecture.md
