@@ -69,9 +69,13 @@ the live URL: Lookup answers a query, Play finishes a race.
    outputs (arity-4 commons ≈ hours; full arity-5 ≈ 21 h) and are
    served with immutable cache headers. Don't delete, and don't rebake
    without being asked.
-5. **Never touch the sibling legacy repos** (`..\N2K-v2`, `..\n2k-ui`,
+5. **Never touch the sibling legacy repos** (`..\N2K-v2`,
    `..\N2K-almanac`, `..\N2K-ComprehensiveSolver`, `..\backups`).
-   Archival/consolidation is a user-approval task in the roadmap.
+   Consolidation was approved by Ethan on 2026-08-13 (owner ruling `q-n2k=archive`,
+   doc-truth-packet-20260812), and `n2k-ui` is already archived to
+   `~/projects/_archive/n2k-2026/n2k-ui`, so it is no longer a sibling here. The
+   remaining four still await archiving; see the consolidation item in
+   `docs/roadmap.md`. Approved is not done, and neither means develop in them.
 6. **No secrets in the repo or docs.** There are currently none
    checked in; keep it that way (future Firestore/AI work must keep
    keys server-side or in untracked env files).

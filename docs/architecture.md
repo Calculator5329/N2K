@@ -12,9 +12,12 @@ React SPA backed by precomputed bit-packed `.n2k` datasets — there is
 **no server**; all persistence is local-first (localStorage).
 
 This repo is the **sole survivor of ~11 historical N2K repos**. Legacy
-siblings (`N2K-v2`, `n2k-ui`, `N2K-almanac`, `N2K-ComprehensiveSolver`,
+siblings (`N2K-v2`, `N2K-almanac`, `N2K-ComprehensiveSolver`,
 `backups/`) sit in the parent folder `..\` and are frozen — some have
-broken `.git` dirs. Do not develop in them. Background on the v2→v3
+broken `.git` dirs. Do not develop in them. `n2k-ui` was on that list until
+2026-08-13, when it was archived to `~/projects/_archive/n2k-2026/n2k-ui`
+(owner ruling `q-n2k=archive`, doc-truth-packet-20260812); its history and
+remote moved with it and nothing was deleted. Background on the v2→v3
 rewrite lives in `..\v2-vs-v3-context.md` (note: that file predates
 the v3.1 prune, so its surface inventory is stale; this repo's docs
 are authoritative).

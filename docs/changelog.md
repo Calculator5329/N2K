@@ -1,5 +1,20 @@
 # N2K Platform — Changelog
 
+## 2026-08-13 — n2k-ui archived; family consolidation approved
+
+Docs only, no code. Owner ruling `q-n2k=archive` (doc-truth-packet-20260812,
+answered 2026-08-13).
+
+- Ethan approved the N2K-family consolidation. The roadmap item is no longer
+  waiting on approval; it stays open because four of five siblings are still to be
+  archived.
+- `n2k-ui` is archived to `~/projects/_archive/n2k-2026/n2k-ui`, with history and
+  remote intact and nothing deleted. Nine of its source files were deleted in its
+  working tree while still present in its HEAD; those were restored and verified
+  byte-identical before the move.
+- `CLAUDE.md` rule 5 and `docs/architecture.md` no longer list `n2k-ui` as a
+  sibling in `..\`, because it is not one any more.
+
 ## 2026-08-08 — Restore strict root typecheck
 
 - Narrowed fixed-arity legality-test tuple indexes explicitly so

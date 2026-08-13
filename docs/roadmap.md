@@ -60,15 +60,21 @@ for Ethan, not a task.)
       competition sheets are a teacher hook). *Accept:* posted in ≥ 3
       places; analytics shows ≥ 50 unique visitors; feedback captured
       as GitHub issues.
-- [ ] <!-- workspace:id=work:0bef786d-14f0-57c1-90bf-e55d3fae744e --> **N2K-family consolidation — USER APPROVAL REQUIRED.** Touches
-      repos outside this one: archive the siblings in `..\`
-      (`N2K-v2`, `n2k-ui`, `N2K-almanac`, `N2K-ComprehensiveSolver`,
+- [ ] <!-- workspace:id=work:0bef786d-14f0-57c1-90bf-e55d3fae744e --> **N2K-family consolidation — APPROVED 2026-08-13, one of five done.**
+      Ethan approved the consolidation in owner ruling `q-n2k=archive`
+      (doc-truth-packet-20260812). The approval gate is satisfied; the work
+      is not, so this stays open. Archive the siblings in `..\`
+      (`N2K-v2`, `N2K-almanac`, `N2K-ComprehensiveSolver`,
       `backups`) into a single `_archive/` folder or zips, and drop a
       one-line pointer README in each ("superseded — active repo is
       N2K-v3 / github.com/Calculator5329/N2K"). Some siblings have
       broken `.git` dirs — archive as-is, do not repair. *Accept:*
-      Ethan approves the list first; every sibling has a pointer;
-      nothing deleted, only archived.
+      every sibling has a pointer; nothing deleted, only archived.
+      **Done:** `n2k-ui`, archived 2026-08-13 to
+      `~/projects/_archive/n2k-2026/n2k-ui` with `status: archived` and
+      `agents: none` in `workspace.json`, an ending written into its
+      `CLAUDE.md`, and nine working-tree deletions restored from HEAD first
+      so nothing was lost. **Left:** the four named above.
 - [x] <!-- workspace:id=work:6020af66-f483-5979-8b8e-da8e21d0ea13 --> **Daily challenge (local).** *(done 2026-07-10)* Date-seeded board, same for every
       visitor, result + streak stored via `ContentBackend`. No server
       needed; this is the retention feature and the on-ramp to a real
