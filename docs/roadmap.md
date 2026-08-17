@@ -94,7 +94,7 @@ for Ethan, not a task.)
       anonymous → named upgrade keeps local data; leaderboard writes
       validated by security rules (no client-trusted scores without
       at least plausibility checks — document the anti-cheat stance).
-- [ ] **Migrate remaining solver callers to canonical/B&B paths** and retire
+- [ ] <!-- workspace:id=work:922d4f43-be1b-5685-9f11-56442ca044c1 --> **Migrate remaining solver callers to canonical/B&B paths** and retire
       old paths where safe (exporter collapse-before-serialization changes the
       wire format and belongs with the `.n2k` v2++ phase). Promoted 2026-08-16
       from `docs/current_task.md` (the one live item there) under the
