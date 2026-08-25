@@ -30,19 +30,6 @@ for Ethan, not a task.)
       **tracked** — decide keep vs delete. Production blobs under
       `web/public/data/` are tracked and wired.
       *Accept:* `git status` is clean; a fresh clone can deploy.
-- [ ] <!-- workspace:id=work:e8a49c75-7cec-523a-9fb0-ffbc17a7568b --> **Add analytics.** Pick a privacy-friendly, script-light option
-      (Plausible / GoatCounter / Firebase-native GA4 — user's call on
-      cost). Wire page view + surface-switch (`AppStore.view`) + race
-      completed events. No PII, no cookie banner requirement if
-      cookieless. *Accept:* events visible in the dashboard from the
-      live site after a deploy; page-load cost < 5 KB script.
-- [ ] <!-- workspace:id=work:c4f52529-1519-570b-a112-76635c66213f --> **Resolve the product domain.** Portfolio notes say
-      `mentalmath.site`; the repo only knows `n2k-almanac-v3.web.app`.
-      Check the Firebase console (project `ethan-488900`) for a custom
-      domain mapping; if absent, connect one. Then update README badge
-      + `web/index.html` meta/OG tags (title, description, social
-      card) to the product identity. *Accept:* canonical URL decided,
-      documented in README, link unfurls with a card.
 - [x] <!-- workspace:id=work:da10cae3-2e4d-5816-a89c-feb0660bb4a1 --> **First-run onboarding pass.** *(done 2026-07-11)* One-time
       welcome overlay (`ui/chrome/WelcomeOverlay.tsx`, gated by
       `OnboardingStore` on `n2k.onboarded.v1`) explains the game in a
@@ -54,12 +41,6 @@ for Ethan, not a task.)
 
 ### Next
 
-- [ ] <!-- workspace:id=work:bed090f7-2d04-5cfc-b17f-c79e8bcbedb7 --> **Product push — communities + 50 users.** Write a short pitch
-      + GIF; post to 3–5 fitting communities (e.g. HN Show, r/math,
-      r/mentalmath, r/webgames, a teachers' forum — Compose's printable
-      competition sheets are a teacher hook). *Accept:* posted in ≥ 3
-      places; analytics shows ≥ 50 unique visitors; feedback captured
-      as GitHub issues.
 - [ ] <!-- workspace:id=work:0bef786d-14f0-57c1-90bf-e55d3fae744e --> **N2K-family consolidation — APPROVED 2026-08-13, one of five done.**
       Ethan approved the consolidation in owner ruling `q-n2k=archive`
       (doc-truth-packet-20260812). The approval gate is satisfied; the work
@@ -100,13 +81,6 @@ for Ethan, not a task.)
       from `docs/current_task.md` (the one live item there) under the
       backlog-is-not-work ruling: current_task.md no longer feeds the rollup,
       so committed work moves here. Detail and context stay in that file.
-- [ ] <!-- workspace:id=work:785defa5-11e0-5460-af88-a8163cd2e035 --> **Full arity-5 commons bake.** Overnight job (~21 h at
-      concurrency 19, see changelog 2026-04-20). *Accept:* all 5,005
-      tuples served from blob; bundle-size budget re-approved by Ethan
-      (~50 MB Æther download question is an open decision checkpoint).
-- [ ] <!-- workspace:id=work:1447b9ac-d77b-5850-94c5-f3441b784c59 --> **Æther mixed-arity Compose (v3.3).** Existing plan:
-      `docs/plan-aether-arity-mixes.md` — variable-arity plumbing,
-      then mixed-arity rules tiles.
 - [x] <!-- workspace:id=work:94421719-2f4d-5aac-b939-a45c4a086101 --> <!-- closed 2026-08-12: duplicate — the more specific RemotePlayer item work:8c886dc8 under the Multiplayer heading stays open as the live tracker --> **Multiplayer.** `RemotePlayer` over Firestore; the game kernel
       was designed for this (serializable state, pure `applyMove`).
 - [x] <!-- workspace:id=work:0c8a27d6-6f28-5ab3-971f-33499221247d --> **PWA / offline.** Static SPA + immutable blobs cache well;
@@ -252,13 +226,6 @@ lives in `docs/current_task.md` (canonical/B&B migration, v2++ blobs).
       Play IV), but `PlayView` hardcoded folio `"III"` and `LibraryView`
       `"IV"` — swapped vs nav. Both now resolve via a new `folioFor(id)`
       helper in `nav.ts`, so headers can't drift again.
-- [ ] <!-- workspace:id=work:1fe05e57-833a-570a-9349-b565464a32af --> **Æther 4d/5d candidate scoring** — runs serially per candidate.
-      For pools with hundreds of tuples this is slow (each candidate is
-      a 1-3s worker sweep). Largely obsoleted once
-      `docs/plan-aether-arity-mixes.md` lands — pre-baked matrices
-      replace the live worker for Compose. Keep this entry for
-      `Lookup` which still solves arbitrary user-typed tuples on
-      demand.
 - [x] <!-- workspace:id=work:608ad59d-dd25-53f4-a725-7611dbba56fa --> **Mode-aware DicePicker validation** (done 2026-07-10, burndown w2)
       — the Æther Lookup picker now validates typed dice entry against
       `AETHER_MODE` (−10..32) via `AetherLookupStore`, and also honours
@@ -279,35 +246,19 @@ lives in `docs/current_task.md` (canonical/B&B migration, v2++ blobs).
 - [x] <!-- workspace:id=work:61675c8e-8e07-56e1-ae71-0d240dcb5a14 --> **Saved competitions** as named `CompetitionDoc` content entities
       (Library tab + `competitionLibrary.ts` / `LocalStorageContentBackend`;
       shipped v3.2).
-- [ ] <!-- workspace:id=work:bc6d2b59-2d1a-552f-a67c-3df5bee443e2 --> **Saved custom themes** as a `ThemeDoc` content entity.
-- [ ] <!-- workspace:id=work:56fb5abb-17a7-550e-b1a8-d52516a78d9e --> **IndexedDB backend** for boards / competitions that exceed
-      localStorage's ~5 MB quota.
 
 ### Game kernel UX
 
-- [ ] <!-- workspace:id=work:f1828999-d0ec-58f0-93fb-cfd183e6c7c4 --> **In-app replay UI** — read a serialized game log and scrub
-      move-by-move (the kernel already supports it; `Play` only shows
-      the post-race scrubber).
-
 ### Backend swap (when ready)
 
-- [ ] <!-- workspace:id=work:46f24c61-aebb-5300-9b78-ac135bdde3d0 --> **`FirestoreContentBackend`** behind the existing interface.
-- [ ] <!-- workspace:id=work:43fbc04b-d299-563c-acf0-1bf17fa525d1 --> **`FirebaseIdentityService`** behind a future identity interface.
 - [x] <!-- workspace:id=work:d89c8861-755b-5ebb-beed-a72ca5dab52f --> **Cloud Run TS backend** hosting an AI service so API keys never
   - Completed via Visions (denied, 2026-07-19; receipt `completion-denied-2f94de58acc6f6ef79ef0754`). <!-- visions-completion:completion-denied-2f94de58acc6f6ef79ef0754 -->
       ship to the client.
-- [ ] <!-- workspace:id=work:aed3d386-ee0e-5a98-b699-01a1b34d5fc3 --> **Hoist `src/core` + `src/services`** into `packages/n2k-core` if
-      the workspace ever splits.
 
 ### Multiplayer
 
-- [ ] <!-- workspace:id=work:8c886dc8-8977-5a4d-b94b-d665dbe39bce --> **`RemotePlayer`** impl reading moves from a Firestore
-      subscription (the kernel is ready).
-- [ ] <!-- workspace:id=work:223e6ee1-cd04-5002-9ae0-012c73f52028 --> **Game session as a content entity.**
 - [x] <!-- workspace:id=work:ffa486f2-d8e5-529f-80ac-badf8f2643af --> **Lobby / matchmaking UI.**
   - Completed via Visions (denied, 2026-07-19; receipt `completion-denied-c2b7ef3dfc592596e7612eed`). <!-- visions-completion:completion-denied-c2b7ef3dfc592596e7612eed -->
-- [ ] <!-- workspace:id=work:febc1032-25c5-59fe-8f3d-a3f25a08e0ac --> **Spectator mode** — free with the kernel design once
-      `RemotePlayer` lands.
 
 ### Future ideas (no commitment, captured here so they don't leak)
 
@@ -359,3 +310,56 @@ either match the current code or were trimmed in the v3.1 prune.
   Play audited + fixed at 10 viewports (320 → 2560px). Race screen
   switched to container queries. Playwright responsive suite (40
   cases) added.
+
+## Expired (backlog audit, 2026-08-25)
+
+Ethan's packet reply, planning/reports/backlog-audit-packet-20260825. Reversible: move a line back to its section to revive.
+
+- <!-- workspace:id=work:e8a49c75-7cec-523a-9fb0-ffbc17a7568b --> **Add analytics.** Pick a privacy-friendly, script-light option
+      (Plausible / GoatCounter / Firebase-native GA4 — user's call on
+      cost). Wire page view + surface-switch (`AppStore.view`) + race
+      completed events. No PII, no cookie banner requirement if
+      cookieless. *Accept:* events visible in the dashboard from the
+      live site after a deploy; page-load cost < 5 KB script.
+- <!-- workspace:id=work:c4f52529-1519-570b-a112-76635c66213f --> **Resolve the product domain.** Portfolio notes say
+      `mentalmath.site`; the repo only knows `n2k-almanac-v3.web.app`.
+      Check the Firebase console (project `ethan-488900`) for a custom
+      domain mapping; if absent, connect one. Then update README badge
+      + `web/index.html` meta/OG tags (title, description, social
+      card) to the product identity. *Accept:* canonical URL decided,
+      documented in README, link unfurls with a card.
+- <!-- workspace:id=work:bed090f7-2d04-5cfc-b17f-c79e8bcbedb7 --> **Product push — communities + 50 users.** Write a short pitch
+      + GIF; post to 3–5 fitting communities (e.g. HN Show, r/math,
+      r/mentalmath, r/webgames, a teachers' forum — Compose's printable
+      competition sheets are a teacher hook). *Accept:* posted in ≥ 3
+      places; analytics shows ≥ 50 unique visitors; feedback captured
+      as GitHub issues.
+- <!-- workspace:id=work:785defa5-11e0-5460-af88-a8163cd2e035 --> **Full arity-5 commons bake.** Overnight job (~21 h at
+      concurrency 19, see changelog 2026-04-20). *Accept:* all 5,005
+      tuples served from blob; bundle-size budget re-approved by Ethan
+      (~50 MB Æther download question is an open decision checkpoint).
+- <!-- workspace:id=work:1447b9ac-d77b-5850-94c5-f3441b784c59 --> **Æther mixed-arity Compose (v3.3).** Existing plan:
+      `docs/plan-aether-arity-mixes.md` — variable-arity plumbing,
+      then mixed-arity rules tiles.
+- <!-- workspace:id=work:1fe05e57-833a-570a-9349-b565464a32af --> **Æther 4d/5d candidate scoring** — runs serially per candidate.
+      For pools with hundreds of tuples this is slow (each candidate is
+      a 1-3s worker sweep). Largely obsoleted once
+      `docs/plan-aether-arity-mixes.md` lands — pre-baked matrices
+      replace the live worker for Compose. Keep this entry for
+      `Lookup` which still solves arbitrary user-typed tuples on
+      demand.
+- <!-- workspace:id=work:bc6d2b59-2d1a-552f-a67c-3df5bee443e2 --> **Saved custom themes** as a `ThemeDoc` content entity.
+- <!-- workspace:id=work:56fb5abb-17a7-550e-b1a8-d52516a78d9e --> **IndexedDB backend** for boards / competitions that exceed
+      localStorage's ~5 MB quota.
+- <!-- workspace:id=work:f1828999-d0ec-58f0-93fb-cfd183e6c7c4 --> **In-app replay UI** — read a serialized game log and scrub
+      move-by-move (the kernel already supports it; `Play` only shows
+      the post-race scrubber).
+- <!-- workspace:id=work:46f24c61-aebb-5300-9b78-ac135bdde3d0 --> **`FirestoreContentBackend`** behind the existing interface.
+- <!-- workspace:id=work:43fbc04b-d299-563c-acf0-1bf17fa525d1 --> **`FirebaseIdentityService`** behind a future identity interface.
+- dropped (Ethan, 2026-08-25 packet reply): <!-- workspace:id=work:aed3d386-ee0e-5a98-b699-01a1b34d5fc3 --> **Hoist `src/core` + `src/services`** into `packages/n2k-core` if
+      the workspace ever splits.
+- <!-- workspace:id=work:8c886dc8-8977-5a4d-b94b-d665dbe39bce --> **`RemotePlayer`** impl reading moves from a Firestore
+      subscription (the kernel is ready).
+- <!-- workspace:id=work:223e6ee1-cd04-5002-9ae0-012c73f52028 --> **Game session as a content entity.**
+- <!-- workspace:id=work:febc1032-25c5-59fe-8f3d-a3f25a08e0ac --> **Spectator mode** — free with the kernel design once
+      `RemotePlayer` lands.
