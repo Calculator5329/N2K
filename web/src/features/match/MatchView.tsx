@@ -80,6 +80,7 @@ const IndicatorStrip = observer(function IndicatorStrip({ match }: { match: Matc
         {!match.isMatchEnded && match.play.isRacing && (
           <button
             type="button"
+            data-testid="match.header.pause"
             onClick={() => match.pauseExplicit()}
             className="px-3 py-1 font-mono uppercase tracking-wide-caps text-[10px] text-ink-200 border border-ink-100/40 hover:border-oxblood-500 hover:text-oxblood-500 transition-colors"
             style={{ borderRadius: "2px" }}
@@ -89,6 +90,7 @@ const IndicatorStrip = observer(function IndicatorStrip({ match }: { match: Matc
         )}
         <button
           type="button"
+          data-testid="match.header.discard"
           onClick={async () => {
             if (!confirm("Discard this match? Your in-flight scores will be lost.")) return;
             await match.discard();
@@ -253,6 +255,9 @@ const SideColumn = observer(function SideColumn({
         </span>
       </div>
       <BoardGrid
+        cellTestId={isPlayer
+          ? (idx) => `match.board.player.cell-${idx}`
+          : (idx) => `match.board.bot.cell-${idx}`}
         cells={play.boardCells}
         knockedSet={knockedSet}
         accentClass={accentClass}
@@ -265,6 +270,7 @@ const SideColumn = observer(function SideColumn({
 });
 
 function BoardGrid(props: {
+  cellTestId: (idx: number) => string;
   cells: readonly number[];
   knockedSet: ReadonlySet<number>;
   accentClass: string;
@@ -285,6 +291,7 @@ function BoardGrid(props: {
           return (
             <button
               key={idx}
+              data-testid={props.cellTestId(idx)}
               type="button"
               onClick={() => props.interactive && props.onKnock(idx)}
               disabled={!props.interactive}
@@ -365,6 +372,7 @@ const PausedOverlay = observer(function PausedOverlay({ match }: { match: MatchS
       <div className="flex gap-3">
         <button
           type="button"
+          data-testid="match.pause.resume"
           onClick={() => match.resume()}
           className="px-5 py-2 font-mono uppercase tracking-wide-caps text-[12px] text-paper-50 bg-oxblood-500 hover:bg-oxblood-500/90"
           style={{ borderRadius: "2px" }}
@@ -395,6 +403,7 @@ const PassDeviceOverlay = observer(function PassDeviceOverlay({ match }: { match
       </p>
       <button
         type="button"
+        data-testid="match.hot-seat.ready"
         onClick={() => match.acknowledgePassingDevice()}
         className="px-6 py-3 font-mono uppercase tracking-wide-caps text-[13px] text-paper-50 bg-oxblood-500 hover:bg-oxblood-500/90"
         style={{ borderRadius: "2px" }}
@@ -453,6 +462,7 @@ const BoutSummaryCard = observer(function BoutSummaryCard({
       </p>
       <button
         type="button"
+        data-testid="match.bout.next"
         onClick={() => match.advanceFromBoutSummary()}
         className="mt-6 px-5 py-2 font-mono uppercase tracking-wide-caps text-[12px] text-paper-50 bg-oxblood-500 hover:bg-oxblood-500/90"
         style={{ borderRadius: "2px" }}
@@ -494,6 +504,7 @@ const PhaseInterstitial = observer(function PhaseInterstitial({ match }: { match
       </div>
       <button
         type="button"
+        data-testid="match.phase.begin-next"
         onClick={() => match.beginNextPhase()}
         className="px-6 py-3 font-mono uppercase tracking-wide-caps text-[13px] text-paper-50 bg-oxblood-500 hover:bg-oxblood-500/90"
         style={{ borderRadius: "2px" }}
@@ -573,6 +584,7 @@ const MatchEndScreen = observer(function MatchEndScreen({ match }: { match: Matc
       <div className="flex justify-center gap-3 flex-wrap">
         <button
           type="button"
+          data-testid="match.end.open-compose"
           onClick={async () => {
             await root.composition.loadFromContentBackend(match.compId);
             root.setMatch(null);
@@ -585,6 +597,7 @@ const MatchEndScreen = observer(function MatchEndScreen({ match }: { match: Matc
         </button>
         <button
           type="button"
+          data-testid="match.end.view-history"
           onClick={() => {
             root.library.openHistory(match.compId);
             root.setMatch(null);
@@ -597,6 +610,7 @@ const MatchEndScreen = observer(function MatchEndScreen({ match }: { match: Matc
         </button>
         <button
           type="button"
+          data-testid="match.end.quick-race"
           onClick={() => {
             root.setMatch(null);
           }}

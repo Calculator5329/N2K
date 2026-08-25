@@ -96,6 +96,7 @@ const NavItem = observer(function NavItem({ item }: { item: NavItem }) {
   return (
     <button
       type="button"
+      data-testid={`chrome.nav.item-${item.id}`}
       onClick={() => store.setView(item.id)}
       className={[
         "group block w-full text-left py-3 pr-4 pl-5 -ml-5 transition-colors",

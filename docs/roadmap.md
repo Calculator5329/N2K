@@ -23,6 +23,18 @@ for Ethan, not a task.)
 
 ### Now
 
+- [x] <!-- workspace:id=work:n2k-agent-handles-adoption-20260825 --> **Adopt Agent Handles with measured control candidates and journeys.**
+      *(done 2026-08-25)* Replaced the incomplete 99-candidate / 0-identified
+      legacy baseline with the versioned source-candidate predicate: 146
+      candidates (127 definite, 19 review-required), all identified. Eight
+      N2K wrapper types forward identities. Three control-path journeys cover
+      Lookup, Competition phase management, and Play setup; each passed twice
+      under Chromium with settled runtime reconciliation. The durable
+      `web/agent-handles-adoption.json` receipt records the 2-pass, ~34-minute
+      trial, production build/registry evidence, manual steps, package scars,
+      and 238 controls observed during 3 journeys with zero unidentified or
+      duplicate controls. Runtime evidence is path-bound; unvisited states are
+      not counted green.
 - [ ] <!-- workspace:id=work:b6f80c02-dd0d-57b8-8dbd-80b0e4682072 --> **Track the deploy config.** `firebase.json` and `.firebaserc`
       exist locally but are **untracked** (2026-07-10 truth pass);
       add `.firebase/` and `tmp-bake/` to `.gitignore` (neither is

@@ -65,6 +65,7 @@ export function AllEquationsList({ dice, total }: AllEquationsListProps) {
     <div className="mt-6">
       <button
         type="button"
+        data-testid="lookup.equations.toggle"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         className={[
@@ -181,6 +182,7 @@ function ResultList({
       {remaining > 0 && (
         <button
           type="button"
+          data-testid="lookup.equations.show-more"
           onClick={onShowMore}
           className={[
             "mt-3 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wide-caps",

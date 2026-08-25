@@ -28,6 +28,7 @@ export const FavoriteToggle = observer(function FavoriteToggle({
   return (
     <button
       type="button"
+      data-testid="lookup.favorite.toggle"
       onClick={(e) => {
         e.stopPropagation();
         favorites.toggle(dice);

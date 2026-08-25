@@ -95,6 +95,7 @@ function SegmentRow({
   return (
     <button
       type="button"
+      data-testid={`chrome.theme.row-${id}`}
       role="radio"
       aria-checked={active}
       onClick={onSelect}
@@ -135,6 +136,7 @@ function SegmentCompact({
   return (
     <button
       type="button"
+      data-testid={`chrome.theme.compact-${id}`}
       role="radio"
       aria-checked={active}
       onClick={onSelect}
@@ -224,6 +226,7 @@ function DiscreetSelector({
     <div ref={wrapRef} className="relative inline-block">
       <button
         type="button"
+        data-testid="chrome.theme.trigger"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`Edition: ${theme.label}. Click to change.`}

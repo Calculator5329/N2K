@@ -199,6 +199,7 @@ const NavPanel = observer(function NavPanel({
   return (
     <button
       type="button"
+      data-testid={`chrome.nav.item-${item.id}`}
       onClick={() => store.setView(item.id)}
       title={item.subtitle}
       className="text-left transition-transform hover:-translate-y-1"

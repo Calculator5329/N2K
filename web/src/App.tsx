@@ -187,6 +187,7 @@ const MatchResumeGate = observer(function MatchResumeGate() {
         <div className="flex justify-end gap-3">
           <button
             type="button"
+            data-testid="app.resume.discard"
             onClick={() => void state.discard()}
             className="px-4 py-1.5 font-mono uppercase tracking-wide-caps text-[11px] text-ink-300 border border-ink-100/40 hover:border-oxblood-500 hover:text-oxblood-500"
             style={{ borderRadius: "2px" }}
@@ -195,6 +196,7 @@ const MatchResumeGate = observer(function MatchResumeGate() {
           </button>
           <button
             type="button"
+            data-testid="app.resume.resume"
             onClick={() => void state.resume()}
             className="px-4 py-1.5 font-mono uppercase tracking-wide-caps text-[11px] text-paper-50 bg-oxblood-500 hover:bg-oxblood-500/90"
             style={{ borderRadius: "2px" }}

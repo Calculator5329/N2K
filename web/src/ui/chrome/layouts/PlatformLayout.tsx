@@ -144,6 +144,7 @@ const RouteBullet = observer(function RouteBullet({
   return (
     <button
       type="button"
+      data-testid={`chrome.nav.item-${item.id}`}
       onClick={() => store.setView(item.id)}
       title={item.subtitle}
       className="flex items-center gap-2 font-display transition-opacity"

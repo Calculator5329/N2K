@@ -18,6 +18,7 @@ const PORT = Number(process.env["N2K_E2E_PORT"] ?? 5173);
 // `127.0.0.1` would skip an IPv6-only Vite instance and trick
 // Playwright into thinking no server is running.
 const BASE_URL = `http://localhost:${PORT}`;
+const CHROMIUM_EXECUTABLE = process.env["PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"];
 
 export default defineConfig({
   testDir: "./e2e",
@@ -30,6 +31,9 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     trace: "on-first-retry",
+    ...(CHROMIUM_EXECUTABLE && {
+      launchOptions: { executablePath: CHROMIUM_EXECUTABLE },
+    }),
   },
   projects: [
     {

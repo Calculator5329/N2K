@@ -29,12 +29,19 @@ import { useActiveThemeId } from "../chrome/themeOverride.js";
 type Size = "sm" | "md" | "lg";
 type Emphasis = "default" | "active" | "muted";
 
-interface DiceGlyphProps {
+type DiceGlyphProps = {
   dice: DiceTriple;
   size?: Size;
   emphasis?: Emphasis;
-  onClick?: () => void;
-}
+  onClick?: undefined;
+  testId?: undefined;
+} | {
+  dice: DiceTriple;
+  size?: Size;
+  emphasis?: Emphasis;
+  onClick: () => void;
+  testId: string;
+};
 
 const TILE_SIZES: Record<Size, { tile: string; gap: string }> = {
   sm: { tile: "w-7 h-7 text-[13px]",   gap: "gap-1"   },
@@ -148,12 +155,13 @@ export const DiceGlyph = observer(function DiceGlyph(props: DiceGlyphProps) {
 // ---------------------------------------------------------------------------
 //  Variant: TILE  — original typecase block
 // ---------------------------------------------------------------------------
-function DiceTile({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DiceTile({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = TILE_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["inline-flex items-center", sizes.gap, onClick && "transition-transform hover:-translate-y-px focus:outline-none"].filter(Boolean).join(" ")}
       type={onClick ? "button" : undefined}
     >
@@ -169,13 +177,13 @@ function DiceTile({ dice, size = "md", emphasis = "default", onClick }: DiceGlyp
 // ---------------------------------------------------------------------------
 //  Variant: ASCII  — bracketed mono triplet "[  2   3   5 ]"
 // ---------------------------------------------------------------------------
-function DiceAscii({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DiceAscii({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const Tag = onClick ? "button" : "span";
   const cls = ["dice-ascii", ASCII_SIZES[size], emphasis === "active" ? "is-active" : "", onClick && "hover:opacity-90 focus:outline-none"]
     .filter(Boolean)
     .join(" ");
   return (
-    <Tag onClick={onClick} className={cls} type={onClick ? "button" : undefined}>
+    <Tag data-testid={onClick ? testId : undefined} onClick={onClick} className={cls} type={onClick ? "button" : undefined}>
       <span className="dice-ascii__bracket">[</span>
       {dice.map((value, i) => (
         <span key={i} className="inline-block min-w-[1.6em] text-center tabular">
@@ -190,12 +198,13 @@ function DiceAscii({ dice, size = "md", emphasis = "default", onClick }: DiceGly
 // ---------------------------------------------------------------------------
 //  Variant: NEWSROOM  — three numerals stacked horizontally in a hairline box
 // ---------------------------------------------------------------------------
-function DiceNewsroom({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DiceNewsroom({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = NEWSROOM_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["dice-newsroom", sizes.box, emphasis === "active" ? "is-active" : "", onClick && "hover:opacity-95 focus:outline-none"]
         .filter(Boolean)
         .join(" ")}
@@ -211,12 +220,13 @@ function DiceNewsroom({ dice, size = "md", emphasis = "default", onClick }: Dice
 // ---------------------------------------------------------------------------
 //  Variant: PIP-TILE  — chunky 8-bit dice with beveled shadow
 // ---------------------------------------------------------------------------
-function DicePixel({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DicePixel({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = PIXEL_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["dice-pixel", emphasis === "active" ? "is-active" : "", onClick && "hover:-translate-y-px focus:outline-none"]
         .filter(Boolean)
         .join(" ")}
@@ -234,12 +244,13 @@ function DicePixel({ dice, size = "md", emphasis = "default", onClick }: DiceGly
 // ---------------------------------------------------------------------------
 //  Variant: ILLUMINATED  — gilded versal capital, manuscript-style
 // ---------------------------------------------------------------------------
-function DiceIlluminated({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DiceIlluminated({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = ILLUMINATED_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["dice-illuminated", emphasis === "active" ? "is-active" : "", onClick && "hover:-translate-y-px focus:outline-none"]
         .filter(Boolean)
         .join(" ")}
@@ -257,12 +268,13 @@ function DiceIlluminated({ dice, size = "md", emphasis = "default", onClick }: D
 // ---------------------------------------------------------------------------
 //  Variant: BLUEPRINT  — orthographic line-cube projection
 // ---------------------------------------------------------------------------
-function DiceBlueprint({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DiceBlueprint({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = BLUEPRINT_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["dice-blueprint", emphasis === "active" ? "is-active" : "", onClick && "hover:-translate-y-px focus:outline-none"]
         .filter(Boolean)
         .join(" ")}
@@ -280,12 +292,13 @@ function DiceBlueprint({ dice, size = "md", emphasis = "default", onClick }: Dic
 // ---------------------------------------------------------------------------
 //  Variant: TAROT  — mini-card with arcane numerals
 // ---------------------------------------------------------------------------
-function DiceTarot({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DiceTarot({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = TAROT_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["dice-tarot", emphasis === "active" ? "is-active" : "", onClick && "hover:-translate-y-px focus:outline-none"]
         .filter(Boolean)
         .join(" ")}
@@ -303,12 +316,13 @@ function DiceTarot({ dice, size = "md", emphasis = "default", onClick }: DiceGly
 // ---------------------------------------------------------------------------
 //  Variant: BOARDGAME  — chunky black numerals on white tile, like a real board
 // ---------------------------------------------------------------------------
-function DiceBoardgame({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DiceBoardgame({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = BOARDGAME_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["dice-boardgame", emphasis === "active" ? "is-active" : "", onClick && "hover:-translate-y-px focus:outline-none"]
         .filter(Boolean)
         .join(" ")}
@@ -326,12 +340,13 @@ function DiceBoardgame({ dice, size = "md", emphasis = "default", onClick }: Dic
 // ---------------------------------------------------------------------------
 //  Variant: BULLET  — solid colored route bullets with white numerals (Subway)
 // ---------------------------------------------------------------------------
-function DiceBullet({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DiceBullet({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = BULLET_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["dice-bullet", emphasis === "active" ? "is-active" : "", onClick && "hover:-translate-y-px focus:outline-none"]
         .filter(Boolean)
         .join(" ")}
@@ -349,12 +364,13 @@ function DiceBullet({ dice, size = "md", emphasis = "default", onClick }: DiceGl
 // ---------------------------------------------------------------------------
 //  Variant: CELL  — adjacent gridlined spreadsheet cells (Spreadsheet)
 // ---------------------------------------------------------------------------
-function DiceCell({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DiceCell({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = CELL_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["dice-cell", emphasis === "active" ? "is-active" : "", onClick && "hover:-translate-y-px focus:outline-none"]
         .filter(Boolean)
         .join(" ")}
@@ -372,12 +388,13 @@ function DiceCell({ dice, size = "md", emphasis = "default", onClick }: DiceGlyp
 // ---------------------------------------------------------------------------
 //  Variant: POLAROID  — rotated mini photo cards with white border (Polaroid)
 // ---------------------------------------------------------------------------
-function DicePolaroid({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DicePolaroid({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = POLAROID_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["dice-polaroid", emphasis === "active" ? "is-active" : "", onClick && "hover:-translate-y-px focus:outline-none"]
         .filter(Boolean)
         .join(" ")}
@@ -395,12 +412,13 @@ function DicePolaroid({ dice, size = "md", emphasis = "default", onClick }: Dice
 // ---------------------------------------------------------------------------
 //  Variant: PANEL  — numbered comic-book panels with thick ink border (Comic)
 // ---------------------------------------------------------------------------
-function DicePanel({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DicePanel({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = PANEL_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["dice-panel", emphasis === "active" ? "is-active" : "", onClick && "hover:-translate-y-px focus:outline-none"]
         .filter(Boolean)
         .join(" ")}
@@ -418,12 +436,13 @@ function DicePanel({ dice, size = "md", emphasis = "default", onClick }: DiceGly
 // ---------------------------------------------------------------------------
 //  Variant: BUOY  — ringed navigational marker (Cartographic)
 // ---------------------------------------------------------------------------
-function DiceBuoy({ dice, size = "md", emphasis = "default", onClick }: DiceGlyphProps) {
+function DiceBuoy({ dice, size = "md", emphasis = "default", onClick, testId }: DiceGlyphProps) {
   const sizes = BUOY_SIZES[size];
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      data-testid={onClick ? testId : undefined}
       className={["dice-buoy", emphasis === "active" ? "is-active" : "", onClick && "hover:-translate-y-px focus:outline-none"]
         .filter(Boolean)
         .join(" ")}

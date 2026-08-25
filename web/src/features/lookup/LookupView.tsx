@@ -58,6 +58,7 @@ const DiceStepper = observer(function DiceStepper({
     <div className="flex flex-col items-center gap-1">
       <button
         type="button"
+        data-testid={`lookup.dice.increment-${index}`}
         onClick={() => store.setDie(index, value + 1)}
         aria-label="increment"
         className="text-ink-100 hover:text-oxblood-500 text-xs leading-none p-1"
@@ -66,6 +67,7 @@ const DiceStepper = observer(function DiceStepper({
       </button>
       <input
         type="number"
+        data-testid={`lookup.dice.value-${index}`}
         min={DICE_MIN}
         max={DICE_MAX}
         value={value}
@@ -75,6 +77,7 @@ const DiceStepper = observer(function DiceStepper({
       />
       <button
         type="button"
+        data-testid={`lookup.dice.decrement-${index}`}
         onClick={() => store.setDie(index, value - 1)}
         aria-label="decrement"
         className="text-ink-100 hover:text-oxblood-500 text-xs leading-none p-1"
@@ -216,6 +219,7 @@ const NeighborhoodStrip = observer(function NeighborhoodStrip({
       </div>
       <div
         ref={containerRef}
+        data-testid="lookup.neighborhood.group"
         role="group"
         aria-label="Adjacent targets — keyboard navigable"
         onKeyDown={handleKeyDown}
@@ -237,6 +241,7 @@ const NeighborhoodStrip = observer(function NeighborhoodStrip({
           return (
             <button
               key={t}
+              data-testid={`lookup.neighborhood.target-${t}`}
               ref={active ? activeButtonRef : undefined}
               type="button"
               tabIndex={active ? 0 : -1}
@@ -409,6 +414,7 @@ const StandardLookupView = observer(function StandardLookupView() {
             <div className="relative inline-block max-w-full">
               <input
                 type="number"
+                data-testid="lookup.target.value"
                 min={TARGET_MIN}
                 max={TARGET_MAX}
                 value={lookup.total}
@@ -423,6 +429,7 @@ const StandardLookupView = observer(function StandardLookupView() {
                 <button
                   key={i}
                   type="button"
+                  data-testid={`lookup.target.quick-${i}`}
                   onClick={() =>
                     lookup.setTotal(qa.kind === "set" ? qa.value : lookup.total + qa.delta)
                   }

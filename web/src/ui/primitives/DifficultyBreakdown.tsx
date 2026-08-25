@@ -214,6 +214,7 @@ export function DifficultyBreakdown({
     <div className="mt-4">
       <button
         type="button"
+        data-testid="lookup.difficulty.toggle"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         className={[
@@ -243,7 +244,7 @@ export function DifficultyBreakdown({
 
           {dormant.length > 0 && (
             <details className="mt-3 group">
-              <summary className="label-caps cursor-pointer text-ink-100 hover:text-ink-300 list-none">
+              <summary data-testid="lookup.difficulty.dormant" className="label-caps cursor-pointer text-ink-100 hover:text-ink-300 list-none">
                 <span className="inline-block group-open:rotate-90 transition-transform mr-1">
                   ▸
                 </span>

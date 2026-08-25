@@ -20,12 +20,14 @@ export const ManagePhasesPanel = observer(function ManagePhasesPanel({
   return (
     <div
       role="dialog"
+      data-testid="compose.phases.backdrop"
       aria-modal="true"
       aria-label="Manage phases"
       className="fixed inset-0 z-40 bg-ink-500/40 flex items-start justify-center pt-20 px-4"
       onClick={onClose}
     >
       <div
+        data-testid="compose.phases.panel"
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-[560px] bg-paper-50 border border-ink-300 p-6 shadow-2xl"
         style={{ borderRadius: "4px" }}
@@ -39,6 +41,7 @@ export const ManagePhasesPanel = observer(function ManagePhasesPanel({
           </div>
           <button
             type="button"
+            data-testid="compose.phases.close"
             onClick={onClose}
             className="font-mono text-[12px] text-ink-200 hover:text-oxblood-500"
           >
@@ -52,6 +55,7 @@ export const ManagePhasesPanel = observer(function ManagePhasesPanel({
         </ul>
         <button
           type="button"
+          data-testid="compose.phases.add"
           onClick={() => store.addPhase()}
           className="px-3 py-1.5 font-mono uppercase tracking-wide-caps text-[11px] text-ink-300 border border-ink-100/40 hover:border-oxblood-500 hover:text-oxblood-500 transition-colors"
           style={{ borderRadius: "2px" }}
@@ -87,6 +91,7 @@ const PhaseRow = observer(function PhaseRow({
       {editing ? (
         <input
           autoFocus
+          data-testid={`compose.phases.name-${phase.id}`}
           value={draftName}
           onChange={(e) => setDraftName(e.target.value)}
           onBlur={() => {
@@ -108,6 +113,7 @@ const PhaseRow = observer(function PhaseRow({
       ) : (
         <button
           type="button"
+          data-testid={`compose.phases.rename-${phase.id}`}
           onClick={() => {
             setDraftName(phase.name);
             setEditing(true);
@@ -123,6 +129,7 @@ const PhaseRow = observer(function PhaseRow({
         {phase.boards.length} board{phase.boards.length === 1 ? "" : "s"}
       </span>
       <IconBtn
+        testId={`compose.phases.move-up-${phase.id}`}
         title="Move up"
         disabled={index === 0}
         onClick={() => store.reorderPhase(phase.id, index - 1)}
@@ -130,16 +137,18 @@ const PhaseRow = observer(function PhaseRow({
         ↑
       </IconBtn>
       <IconBtn
+        testId={`compose.phases.move-down-${phase.id}`}
         title="Move down"
         disabled={index === store.phases.length - 1}
         onClick={() => store.reorderPhase(phase.id, index + 1)}
       >
         ↓
       </IconBtn>
-      <IconBtn title="Duplicate" onClick={() => store.duplicatePhase(phase.id)}>
+      <IconBtn testId={`compose.phases.duplicate-${phase.id}`} title="Duplicate" onClick={() => store.duplicatePhase(phase.id)}>
         ⧉
       </IconBtn>
       <IconBtn
+        testId={`compose.phases.delete-${phase.id}`}
         title="Delete"
         disabled={store.phases.length <= 1}
         onClick={() => {
@@ -155,6 +164,7 @@ const PhaseRow = observer(function PhaseRow({
 });
 
 function IconBtn(props: {
+  testId: string;
   children: React.ReactNode;
   onClick: () => void;
   title: string;
@@ -164,6 +174,7 @@ function IconBtn(props: {
   return (
     <button
       type="button"
+      data-testid={props.testId}
       onClick={props.onClick}
       title={props.title}
       disabled={props.disabled}

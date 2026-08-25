@@ -26,6 +26,7 @@ export const SecretBadge = observer(function SecretBadge({
   return (
     <button
       type="button"
+      data-testid="chrome.secret.toggle"
       onClick={() => secret.toggleMode()}
       className={[
         "inline-flex items-baseline leading-none px-1 -mx-1",

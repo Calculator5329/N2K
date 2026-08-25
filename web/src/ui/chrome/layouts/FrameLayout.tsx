@@ -142,6 +142,7 @@ const ArcanaLink = observer(function ArcanaLink({ item }: { item: NavItemT }) {
   return (
     <button
       type="button"
+      data-testid={`chrome.nav.item-${item.id}`}
       onClick={() => store.setView(item.id)}
       title={item.subtitle}
       className={[

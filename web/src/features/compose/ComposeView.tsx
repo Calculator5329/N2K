@@ -172,6 +172,7 @@ const CompositionHeader = observer(function CompositionHeader({
         {editing ? (
           <input
             autoFocus
+            data-testid="compose.header.name-input"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={() => {
@@ -193,6 +194,7 @@ const CompositionHeader = observer(function CompositionHeader({
         ) : (
           <button
             type="button"
+            data-testid="compose.header.rename"
             onClick={() => {
               setDraft(store.name);
               setEditing(true);
@@ -213,6 +215,7 @@ const CompositionHeader = observer(function CompositionHeader({
       <div className="flex items-center gap-2">
         <button
           type="button"
+          data-testid="compose.header.manage-phases"
           onClick={onManagePhases}
           className="px-3 py-1.5 font-mono uppercase tracking-wide-caps text-[11px] text-ink-300 border border-ink-100/40 hover:border-oxblood-500 hover:text-oxblood-500 transition-colors"
           style={{ borderRadius: "2px" }}
@@ -221,6 +224,7 @@ const CompositionHeader = observer(function CompositionHeader({
         </button>
         <button
           type="button"
+          data-testid="compose.header.save-as-new"
           onClick={onSaveAsNew}
           disabled={!store.isFullyGenerated}
           title={
@@ -259,6 +263,7 @@ const PhaseTabs = observer(function PhaseTabs({ store }: { store: CompositionSto
           <button
             key={phase.id}
             type="button"
+            data-testid={`compose.phase.select-${phase.id}`}
             onClick={() => store.setCurrentPhase(phase.id)}
             className={[
               "px-3 py-1.5 font-display text-[15px] border-b-2 transition-colors",
@@ -277,6 +282,7 @@ const PhaseTabs = observer(function PhaseTabs({ store }: { store: CompositionSto
       })}
       <button
         type="button"
+        data-testid="compose.phase.add"
         onClick={() => store.addPhase()}
         title="Add a new phase"
         className="ml-auto px-2 py-1 font-mono uppercase tracking-wide-caps text-[10px] text-ink-200 hover:text-oxblood-500"
@@ -302,11 +308,13 @@ const AetherNotice = observer(function AetherNotice({
       <strong className="text-oxblood-500 uppercase tracking-wide-caps mr-2">Rules</strong>
       <div className="mt-2 inline-flex border border-oxblood-500/40" style={{ borderRadius: "2px" }}>
         <RulesPill
+          testId="compose.rules.standard"
           active={store.rules === "standard"}
           label="Standard"
           onClick={() => store.setRules("standard")}
         />
         <RulesPill
+          testId="compose.rules.aether"
           active={store.rules === "aether"}
           label="Æther"
           onClick={() => store.setRules("aether")}
@@ -335,6 +343,7 @@ const AetherNotice = observer(function AetherNotice({
 });
 
 function RulesPill(props: {
+  testId: string;
   active: boolean;
   label: string;
   onClick: () => void;
@@ -342,6 +351,7 @@ function RulesPill(props: {
   return (
     <button
       type="button"
+      data-testid={props.testId}
       onClick={props.onClick}
       aria-pressed={props.active}
       className={[
@@ -396,6 +406,7 @@ const ConfigPanel = observer(function ConfigPanel({
             <button
               key={s}
               type="button"
+              data-testid={`compose.config.time-budget-${s}`}
               onClick={() => store.setTimeBudget(s as TimeBudgetPreset)}
               className={[
                 "px-3 py-1.5 text-[12px] font-mono uppercase tracking-wide-caps",
@@ -424,6 +435,7 @@ const ConfigPanel = observer(function ConfigPanel({
             <button
               key={p.id}
               type="button"
+              data-testid={`compose.config.spice-${p.id}`}
               onClick={() => store.setSpice(p.id as SpicePresetId)}
               className={[
                 "px-3 py-1.5 text-[12px] font-mono uppercase tracking-wide-caps transition-colors",
@@ -451,6 +463,7 @@ const ConfigPanel = observer(function ConfigPanel({
             <button
               key={p.id}
               type="button"
+              data-testid={`compose.config.variance-${p.id}`}
               onClick={() => store.setVariance(p.id as VariancePresetId)}
               className={[
                 "px-3 py-1.5 text-[12px] font-mono uppercase tracking-wide-caps transition-colors",
@@ -488,6 +501,7 @@ function PoolOption({
   return (
     <button
       type="button"
+      data-testid={`compose.config.pool-${id}`}
       onClick={onSelect}
       className={[
         "block w-full text-left px-3 py-2 border transition-colors",
@@ -515,6 +529,7 @@ const BoardsList = observer(function BoardsList({
         <div className="label-caps">Boards</div>
         <button
           type="button"
+          data-testid="compose.boards.add"
           onClick={() => store.addBoard()}
           className="px-3 py-1 text-[11px] font-mono uppercase tracking-wide-caps text-ink-300 border border-ink-100/40 hover:border-oxblood-500 hover:text-oxblood-500"
           style={{ borderRadius: "2px" }}
@@ -547,6 +562,7 @@ const Toolbar = observer(function Toolbar({
     <section className="flex flex-wrap items-center gap-4 border-t border-ink-100/15 pt-5">
       <button
         type="button"
+        data-testid="compose.toolbar.generate"
         disabled={disabled}
         onClick={() => void store.generateAll()}
         className={[
@@ -620,6 +636,7 @@ const ShareButton = observer(function ShareButton({
   return (
     <button
       type="button"
+      data-testid="compose.toolbar.share"
       onClick={() => void handleClick()}
       className="px-3 py-1.5 text-[12px] font-mono uppercase tracking-wide-caps text-ink-300 border border-ink-100/40 hover:border-oxblood-500 hover:text-oxblood-500 transition-colors"
       style={{ borderRadius: "2px" }}
@@ -706,12 +723,14 @@ const ExportFileButton = observer(function ExportFileButton({
   ariaLabel,
   filename,
   build,
+  testId,
 }: {
   store: CompositionStore;
   label: string;
   ariaLabel: string;
   filename: (data: CompositionExportData) => string;
   build: (data: CompositionExportData) => Promise<Blob>;
+  testId: string;
 }) {
   const [status, setStatus] = useState<"idle" | "working" | "failed">("idle");
 
@@ -736,6 +755,7 @@ const ExportFileButton = observer(function ExportFileButton({
   return (
     <button
       type="button"
+      data-testid={testId}
       onClick={() => void handleClick()}
       className="px-3 py-1.5 text-[12px] font-mono uppercase tracking-wide-caps text-ink-300 border border-ink-100/40 hover:border-oxblood-500 hover:text-oxblood-500 transition-colors disabled:opacity-50"
       style={{ borderRadius: "2px" }}
@@ -756,6 +776,7 @@ function ExportPdfButton({ store }: { store: CompositionStore }) {
       ariaLabel="Export competition as PDF"
       filename={(data) => `n2k-competition-${data.generatedAt.slice(0, 10)}.pdf`}
       build={(data) => exportToPdf(data)}
+      testId="compose.toolbar.export-pdf"
     />
   );
 }
@@ -804,6 +825,7 @@ const ExportButton = observer(function ExportButton({
   return (
     <button
       type="button"
+      data-testid="compose.toolbar.export-json"
       onClick={handleClick}
       className="px-3 py-1.5 text-[12px] font-mono uppercase tracking-wide-caps text-ink-300 border border-ink-100/40 hover:border-oxblood-500 hover:text-oxblood-500 transition-colors"
       style={{ borderRadius: "2px" }}

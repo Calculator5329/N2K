@@ -103,6 +103,7 @@ const NavItem = observer(function NavItem({ item }: { item: NavItemT }) {
   return (
     <button
       type="button"
+      data-testid={`chrome.nav.item-${item.id}`}
       onClick={() => store.setView(item.id)}
       className={[
         "group inline-flex items-baseline gap-2 px-3 py-2 transition-colors border-b-2",

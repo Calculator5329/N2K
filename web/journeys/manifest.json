@@ -1,0 +1,42 @@
+{
+  "schema": "agent-handles/journey/v1",
+  "journeys": [
+    {
+      "name": "lookup-a-target",
+      "description": "Set a target and see the matching adjacent-target control",
+      "kind": "control-path",
+      "context": { "path": "/" },
+      "steps": [
+        { "action": "click", "testId": "welcome.actions.explore" },
+        { "action": "fill", "testId": "lookup.target.value", "value": "24" },
+        { "action": "expect", "testId": "lookup.neighborhood.target-24", "predicate": "visible" }
+      ]
+    },
+    {
+      "name": "manage-competition-phases",
+      "description": "Reach Competition through the chrome and open the phase manager",
+      "kind": "control-path",
+      "context": { "path": "/" },
+      "steps": [
+        { "action": "click", "testId": "welcome.actions.explore" },
+        { "action": "click", "testId": "chrome.nav.item-compose" },
+        { "action": "click", "testId": "compose.header.manage-phases" },
+        { "action": "expect", "testId": "compose.phases.backdrop", "predicate": "visible" },
+        { "action": "click", "testId": "compose.phases.close" }
+      ]
+    },
+    {
+      "name": "start-a-hard-quick-race",
+      "description": "Reach Play, choose a bot difficulty, and start the race",
+      "kind": "control-path",
+      "context": { "path": "/" },
+      "steps": [
+        { "action": "click", "testId": "welcome.actions.explore" },
+        { "action": "click", "testId": "chrome.nav.item-play" },
+        { "action": "click", "testId": "play.difficulty.select-hard" },
+        { "action": "click", "testId": "play.setup.begin" },
+        { "action": "expect", "testId": "play.board.player.cell-0", "predicate": "visible", "timeoutMs": 10000 }
+      ]
+    }
+  ]
+}

@@ -172,6 +172,7 @@ const NavCell = observer(function NavCell({
   return (
     <button
       type="button"
+      data-testid={`chrome.nav.item-${item.id}`}
       onClick={() => store.setView(item.id)}
       className={[
         "flex-1 px-3 py-2 text-left transition-colors min-w-0",

@@ -99,6 +99,7 @@ export const WelcomeOverlay = observer(function WelcomeOverlay() {
           <button
             ref={primaryRef}
             type="button"
+            data-testid="welcome.actions.quick-race"
             onClick={startQuickRace}
             className="px-6 py-3 font-mono uppercase tracking-wide-caps text-[12px] text-paper-50 bg-oxblood-500 hover:bg-oxblood-500/90 transition-colors"
             style={{ borderRadius: "2px" }}
@@ -107,6 +108,7 @@ export const WelcomeOverlay = observer(function WelcomeOverlay() {
           </button>
           <button
             type="button"
+            data-testid="welcome.actions.explore"
             onClick={() => onboarding.dismiss()}
             className="px-4 py-2 font-mono uppercase tracking-wide-caps text-[11px] text-ink-300 border border-ink-100/40 hover:border-oxblood-500 hover:text-oxblood-500 transition-colors"
             style={{ borderRadius: "2px" }}

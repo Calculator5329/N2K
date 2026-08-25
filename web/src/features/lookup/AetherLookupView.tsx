@@ -64,6 +64,7 @@ const ArityPicker = observer(function ArityPicker({
         return (
           <button
             key={a}
+            data-testid={`lookup.aether.arity-${a}`}
             role="tab"
             aria-selected={active}
             type="button"
@@ -97,6 +98,7 @@ const DieStepper = observer(function DieStepper({
     <div className="flex flex-col items-center gap-1">
       <button
         type="button"
+        data-testid={`lookup.aether.die-increment-${index}`}
         onClick={() => store.setDie(index, value + 1)}
         aria-label={`Die ${index + 1} increment`}
         className="text-ink-100 hover:text-oxblood-500 text-xs leading-none p-1"
@@ -105,6 +107,7 @@ const DieStepper = observer(function DieStepper({
       </button>
       <input
         type="number"
+        data-testid={`lookup.aether.die-value-${index}`}
         min={ADV_DICE_RANGE.min}
         max={ADV_DICE_RANGE.max}
         value={value}
@@ -114,6 +117,7 @@ const DieStepper = observer(function DieStepper({
       />
       <button
         type="button"
+        data-testid={`lookup.aether.die-decrement-${index}`}
         onClick={() => store.setDie(index, value - 1)}
         aria-label={`Die ${index + 1} decrement`}
         className="text-ink-100 hover:text-oxblood-500 text-xs leading-none p-1"
@@ -385,6 +389,7 @@ const NeighborhoodStripCore = observer(function NeighborhoodStripCore({
         </div>
       </div>
       <div
+        data-testid="lookup.aether.neighborhood"
         role="group"
         aria-label="Adjacent targets — keyboard navigable"
         onKeyDown={handleKeyDown}
@@ -399,6 +404,7 @@ const NeighborhoodStripCore = observer(function NeighborhoodStripCore({
           return (
             <button
               key={t}
+              data-testid={`lookup.aether.target-${t}`}
               ref={active ? activeButtonRef : undefined}
               type="button"
               tabIndex={active ? 0 : -1}
@@ -559,6 +565,7 @@ export const AetherLookupView = observer(function AetherLookupView() {
             <div className="label-caps mb-3">Target</div>
             <input
               type="number"
+              data-testid="lookup.aether.target-input"
               min={ADV_TARGET_RANGE.min}
               max={ADV_TARGET_RANGE.max}
               value={lookup.total}
@@ -571,6 +578,7 @@ export const AetherLookupView = observer(function AetherLookupView() {
                 <button
                   key={a.label}
                   type="button"
+                  data-testid={`lookup.aether.quick-${a.label.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
                   onClick={() => {
                     if (a.kind === "set") lookup.setTotal(a.value);
                     else lookup.setTotal(lookup.total + a.delta);

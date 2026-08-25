@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import { agentHandles } from "agent-handles/vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -12,6 +13,9 @@ export default defineConfig({
   base: BASE,
   plugins: [
     react(),
+    // Registry verification at build time; dev-only drive executor for
+    // agents (loopback + per-session token; absent from production builds).
+    agentHandles(),
     // PWA / offline (roadmap.md). Static SPA shell + immutable dataset blobs
     // cache well. `autoUpdate` + Workbox's content-hashed precache manifest
     // means a fresh build's assets are picked up on next visit — users are

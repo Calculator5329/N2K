@@ -202,6 +202,7 @@ const ColumnNavCell = observer(function ColumnNavCell({ item }: { item: NavItemT
   return (
     <button
       type="button"
+      data-testid={`chrome.nav.item-${item.id}`}
       onClick={() => store.setView(item.id)}
       title={item.subtitle}
       className="flex-1 flex items-baseline justify-center gap-2 px-3 py-1.5 font-mono transition-colors"

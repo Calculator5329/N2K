@@ -33,6 +33,7 @@ export const BoardEditor = observer(function BoardEditor({
         </div>
         <button
           type="button"
+          data-testid={`compose.board.remove-${board.id}`}
           onClick={() => store.removeBoard(board.id)}
           className="text-[11px] font-mono uppercase tracking-wide-caps text-ink-100 hover:text-oxblood-500 transition-colors"
         >
@@ -86,6 +87,7 @@ const KindToggle = observer(function KindToggle({
         <button
           key={kind}
           type="button"
+          data-testid={`compose.board.kind-${board.id}-${kind}`}
           onClick={() => store.updateBoard(board.id, { kind })}
           className={[
             "px-3 py-1 text-[11px] font-mono uppercase tracking-wide-caps",
@@ -112,6 +114,7 @@ const RandomParams = observer(function RandomParams({
   return (
     <div className="grid grid-cols-2 gap-3">
       <NumberField
+        testId={`compose.board.range-min-${board.id}`}
         label="Min"
         value={board.rangeMin}
         min={min}
@@ -119,6 +122,7 @@ const RandomParams = observer(function RandomParams({
         onChange={(v) => store.updateBoard(board.id, { rangeMin: v })}
       />
       <NumberField
+        testId={`compose.board.range-max-${board.id}`}
         label="Max"
         value={board.rangeMax}
         min={min}
@@ -157,6 +161,7 @@ const PatternParams = observer(function PatternParams({
   return (
     <div className="space-y-3">
       <NumberField
+        testId={`compose.board.pattern-start-${board.id}`}
         label="Start"
         value={board.patternStart}
         min={-99}
@@ -172,6 +177,7 @@ const PatternParams = observer(function PatternParams({
             <div key={i} className="flex items-center gap-1">
               <input
                 type="number"
+                data-testid={`compose.board.multiple-${board.id}-${i}`}
                 value={m}
                 onChange={(e) => setMultipleAt(i, Number(e.target.value))}
                 className="w-16 bg-paper-100 border border-ink-100/30 font-mono tabular text-[14px] text-center text-ink-500 px-1 py-0.5 focus:outline-none focus:border-oxblood-500"
@@ -180,6 +186,7 @@ const PatternParams = observer(function PatternParams({
               {board.multiples.length > 1 && (
                 <button
                   type="button"
+                  data-testid={`compose.board.multiple-remove-${board.id}-${i}`}
                   onClick={() => setMultipleAt(i, null)}
                   className="text-ink-100 hover:text-oxblood-500 text-xs px-1"
                   aria-label="remove multiple"
@@ -192,6 +199,7 @@ const PatternParams = observer(function PatternParams({
           {board.multiples.length < 3 && (
             <button
               type="button"
+              data-testid={`compose.board.multiple-add-${board.id}`}
               onClick={addMultiple}
               className="text-[11px] font-mono uppercase tracking-wide-caps text-ink-200 border border-dashed border-ink-100/40 px-2 py-0.5 hover:border-oxblood-500 hover:text-oxblood-500"
               style={{ borderRadius: "2px" }}
@@ -214,6 +222,7 @@ const RoundsField = observer(function RoundsField({
 }) {
   return (
     <NumberField
+      testId={`compose.board.bouts-${board.id}`}
       label="Bouts"
       value={board.bouts}
       min={1}
@@ -224,12 +233,14 @@ const RoundsField = observer(function RoundsField({
 });
 
 function NumberField({
+  testId,
   label,
   value,
   min,
   max,
   onChange,
 }: {
+  testId: string;
   label: string;
   value: number;
   min: number;
@@ -241,6 +252,7 @@ function NumberField({
       <span className="label-caps block mb-1">{label}</span>
       <input
         type="number"
+        data-testid={testId}
         value={value}
         min={min}
         max={max}
@@ -281,6 +293,7 @@ const CellGrid = observer(function CellGrid({
             row={row}
             col={col}
             slot={slot}
+            testId={`compose.board.cell-${board.id}-${slot}`}
             previewValue={previewValue}
             overrideValue={overrideValue}
             onPin={(value) => store.setOverride(board.id, slot, value)}
@@ -295,6 +308,7 @@ function Cell({
   row,
   col,
   slot,
+  testId,
   previewValue,
   overrideValue,
   onPin,
@@ -302,6 +316,7 @@ function Cell({
   row: number;
   col: number;
   slot: number;
+  testId: string;
   previewValue: number | undefined;
   overrideValue: number | undefined;
   onPin: (value: number | null) => void;
@@ -320,6 +335,7 @@ function Cell({
     >
       <input
         type="number"
+        data-testid={testId}
         value={display === "" ? "" : String(display)}
         placeholder=""
         onChange={(e) => {

@@ -74,6 +74,7 @@ const NewCompButton = observer(function NewCompButton() {
   return (
     <button
       type="button"
+      data-testid="library.header.new-competition"
       onClick={() => {
         root.composition.resetToDefault();
         root.setView("compose");
@@ -94,18 +95,19 @@ const Toolbar = observer(function Toolbar({ lib }: { lib: LibraryStore }) {
         className="inline-flex border border-ink-100/30"
         style={{ borderRadius: "2px" }}
       >
-        <SortPill label="Last played" active={lib.sort === "last-played"} onClick={() => lib.setSort("last-played")} />
-        <SortPill label="Updated"     active={lib.sort === "updated"}     onClick={() => lib.setSort("updated")} />
-        <SortPill label="Name"        active={lib.sort === "name"}        onClick={() => lib.setSort("name")} />
+        <SortPill testId="library.sort.last-played" label="Last played" active={lib.sort === "last-played"} onClick={() => lib.setSort("last-played")} />
+        <SortPill testId="library.sort.updated" label="Updated"     active={lib.sort === "updated"}     onClick={() => lib.setSort("updated")} />
+        <SortPill testId="library.sort.name" label="Name"        active={lib.sort === "name"}        onClick={() => lib.setSort("name")} />
       </div>
     </div>
   );
 });
 
-function SortPill(props: { label: string; active: boolean; onClick: () => void }) {
+function SortPill(props: { testId: string; label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
+      data-testid={props.testId}
       onClick={props.onClick}
       aria-pressed={props.active}
       className={[
@@ -233,6 +235,7 @@ const EntryCard = observer(function EntryCard({
       <div className="flex items-center gap-2 ml-auto">
         <button
           type="button"
+          data-testid={`library.entry.open-${entry.id}`}
           onClick={async () => {
             const ok = await compose.loadFromContentBackend(entry.id);
             if (ok) root.setView("compose");
@@ -244,6 +247,7 @@ const EntryCard = observer(function EntryCard({
         </button>
         <button
           type="button"
+          data-testid={`library.entry.play-${entry.id}`}
           onClick={() => {
             if (!entry.isGenerated) return;
             lib.openPlayPicker(entry.id);
@@ -263,6 +267,7 @@ const EntryCard = observer(function EntryCard({
         <div className="relative">
           <button
             type="button"
+            data-testid={`library.entry.menu-${entry.id}`}
             onClick={() => setOverflowOpen((v) => !v)}
             aria-haspopup="menu"
             aria-expanded={overflowOpen}
@@ -278,6 +283,7 @@ const EntryCard = observer(function EntryCard({
               style={{ borderRadius: "3px" }}
             >
               <OverflowItem
+                testId={`library.entry.rename-${entry.id}`}
                 label="Rename"
                 onClick={() => {
                   setOverflowOpen(false);
@@ -285,6 +291,7 @@ const EntryCard = observer(function EntryCard({
                 }}
               />
               <OverflowItem
+                testId={`library.entry.duplicate-${entry.id}`}
                 label="Duplicate"
                 onClick={async () => {
                   setOverflowOpen(false);
@@ -292,6 +299,7 @@ const EntryCard = observer(function EntryCard({
                 }}
               />
               <OverflowItem
+                testId={`library.entry.history-${entry.id}`}
                 label="View history"
                 onClick={() => {
                   setOverflowOpen(false);
@@ -299,6 +307,7 @@ const EntryCard = observer(function EntryCard({
                 }}
               />
               <OverflowItem
+                testId={`library.entry.delete-${entry.id}`}
                 label="Delete"
                 destructive
                 onClick={async () => {
@@ -398,10 +407,11 @@ function ModeBadge({ rules }: { rules: "standard" | "aether" }) {
   );
 }
 
-function OverflowItem(props: { label: string; onClick: () => void; destructive?: boolean }) {
+function OverflowItem(props: { testId: string; label: string; onClick: () => void; destructive?: boolean }) {
   return (
     <button
       type="button"
+      data-testid={props.testId}
       onClick={props.onClick}
       role="menuitem"
       className={[
@@ -455,17 +465,19 @@ export const RenameDialog = observer(function RenameDialog({
 }) {
   const [name, setName] = useState(currentName);
   return (
-    <ModalShell title="Rename competition" onClose={() => lib.closeDialog()}>
+    <ModalShell testId="library.modal.rename" title="Rename competition" onClose={() => lib.closeDialog()}>
       <input
         autoFocus
+        data-testid="library.rename.name"
         value={name}
         onChange={(e) => setName(e.target.value)}
         className="w-full px-3 py-2 text-[14px] border border-ink-100/40 bg-paper-50"
         style={{ borderRadius: "2px" }}
       />
       <ModalActions>
-        <ModalButton onClick={() => lib.closeDialog()}>Cancel</ModalButton>
+        <ModalButton testId="library.rename.cancel" onClick={() => lib.closeDialog()}>Cancel</ModalButton>
         <ModalButton
+          testId="library.rename.confirm"
           primary
           onClick={async () => {
             const ok = await lib.rename(entryId, name);
@@ -515,7 +527,7 @@ export const SaveAsDialog = observer(function SaveAsDialog({
   }
 
   return (
-    <ModalShell title="Save as new" onClose={() => { if (!saving) lib.closeDialog(); }}>
+    <ModalShell testId="library.modal.save-as" title="Save as new" onClose={() => { if (!saving) lib.closeDialog(); }}>
       {!fullyGenerated && (
         <p className="mb-3 text-[12px] font-mono text-oxblood-500">
           Generate every board first — ungenerated competitions can't be saved.
@@ -523,6 +535,7 @@ export const SaveAsDialog = observer(function SaveAsDialog({
       )}
       <input
         autoFocus
+        data-testid="library.save-as.name"
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
@@ -534,8 +547,9 @@ export const SaveAsDialog = observer(function SaveAsDialog({
         style={{ borderRadius: "2px" }}
       />
       <ModalActions>
-        <ModalButton disabled={saving} onClick={() => lib.closeDialog()}>Cancel</ModalButton>
+        <ModalButton testId="library.save-as.cancel" disabled={saving} onClick={() => lib.closeDialog()}>Cancel</ModalButton>
         <ModalButton
+          testId="library.save-as.confirm"
           primary
           disabled={!fullyGenerated || name.trim() === "" || saving}
           onClick={handleSave}
@@ -562,6 +576,7 @@ const PlayPickerDialog = observer(function PlayPickerDialog({
 
   return (
     <ModalShell
+      testId="library.modal.play-picker"
       title={`Play "${entry.name}"`}
       onClose={() => lib.closeDialog()}
       maxWidthClass="max-w-[560px]"
@@ -573,11 +588,13 @@ const PlayPickerDialog = observer(function PlayPickerDialog({
           style={{ borderRadius: "2px" }}
         >
           <FormatPill
+            testId="library.play-picker.vs-bot"
             label="vs Bot"
             active={format === "vs-bot"}
             onClick={() => setFormat("vs-bot")}
           />
           <FormatPill
+            testId="library.play-picker.hot-seat"
             label="Hot-seat"
             active={format === "hot-seat"}
             onClick={() => setFormat("hot-seat")}
@@ -598,6 +615,7 @@ const PlayPickerDialog = observer(function PlayPickerDialog({
               <button
                 key={p.difficulty}
                 type="button"
+                data-testid={`library.play-picker.persona-${p.difficulty}`}
                 onClick={() => setPersona(p)}
                 className={[
                   "px-2 py-2 text-center transition-colors",
@@ -622,8 +640,9 @@ const PlayPickerDialog = observer(function PlayPickerDialog({
       )}
 
       <ModalActions>
-        <ModalButton onClick={() => lib.closeDialog()}>Cancel</ModalButton>
+        <ModalButton testId="library.play-picker.cancel" onClick={() => lib.closeDialog()}>Cancel</ModalButton>
         <ModalButton
+          testId="library.play-picker.begin"
           primary
           onClick={async () => {
             const doc = await defaultCompetitionLibrary.load(entryId);
@@ -656,10 +675,11 @@ const PlayPickerDialog = observer(function PlayPickerDialog({
   );
 });
 
-function FormatPill(props: { label: string; active: boolean; onClick: () => void }) {
+function FormatPill(props: { testId: string; label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
+      data-testid={props.testId}
       onClick={props.onClick}
       aria-pressed={props.active}
       className={[
@@ -682,7 +702,7 @@ const HistoryDialog = observer(function HistoryDialog({
   const stats = lib.statsByCompId.get(entryId);
   const entry = lib.entries.find((e) => e.id === entryId);
   return (
-    <ModalShell title={`History — ${entry?.name ?? "competition"}`} onClose={() => lib.closeDialog()}>
+    <ModalShell testId="library.modal.history" title={`History — ${entry?.name ?? "competition"}`} onClose={() => lib.closeDialog()}>
       {stats === undefined || stats.matches.length === 0 ? (
         <p className="text-[12px] italic text-ink-200">No matches recorded yet.</p>
       ) : (
@@ -713,7 +733,7 @@ const HistoryDialog = observer(function HistoryDialog({
         </ul>
       )}
       <ModalActions>
-        <ModalButton onClick={() => lib.closeDialog()}>Close</ModalButton>
+        <ModalButton testId="library.history.close" onClick={() => lib.closeDialog()}>Close</ModalButton>
       </ModalActions>
     </ModalShell>
   );
@@ -724,6 +744,7 @@ const HistoryDialog = observer(function HistoryDialog({
 // ---------------------------------------------------------------------------
 
 function ModalShell(props: {
+  testId: string;
   title: string;
   children: React.ReactNode;
   onClose: () => void;
@@ -735,12 +756,14 @@ function ModalShell(props: {
   return (
     <div
       role="dialog"
+      data-testid={`${props.testId}.backdrop`}
       aria-modal="true"
       aria-label={props.title}
       className="fixed inset-0 z-40 bg-ink-500/40 flex items-start justify-center pt-24 px-4"
       onClick={props.onClose}
     >
       <div
+        data-testid={`${props.testId}.panel`}
         onClick={(e) => e.stopPropagation()}
         className={`w-full ${props.maxWidthClass ?? "max-w-[480px]"} bg-paper-50 border border-ink-300 p-6 shadow-2xl`}
         style={{ borderRadius: "4px" }}
@@ -762,6 +785,7 @@ function ModalActions(props: { children: React.ReactNode }) {
 }
 
 function ModalButton(props: {
+  testId: string;
   children: React.ReactNode;
   onClick: () => void | Promise<void>;
   primary?: boolean;
@@ -770,6 +794,7 @@ function ModalButton(props: {
   return (
     <button
       type="button"
+      data-testid={props.testId}
       onClick={() => void props.onClick()}
       disabled={props.disabled}
       className={[

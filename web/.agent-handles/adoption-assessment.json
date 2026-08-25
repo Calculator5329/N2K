@@ -1,0 +1,403 @@
+{
+  "schema": "agent-handles/adoption-assessment/v1",
+  "generatedAt": "2026-08-25T22:31:10.202Z",
+  "project": {
+    "packageName": "n2k-web",
+    "framework": "react",
+    "vite": {
+      "configured": true,
+      "configPath": "vite.config.ts",
+      "version": "^6.0.7",
+      "major": 6,
+      "wired": true,
+      "supported": true
+    },
+    "packageManager": "npm",
+    "sourceRoots": [
+      "src"
+    ],
+    "sourceFileCount": 37,
+    "routes": [],
+    "identityVocabulary": {
+      "literalIds": 73,
+      "areas": [
+        [
+          "library",
+          19
+        ],
+        [
+          "compose",
+          16
+        ],
+        [
+          "play",
+          14
+        ],
+        [
+          "lookup",
+          9
+        ],
+        [
+          "match",
+          9
+        ],
+        [
+          "app",
+          2
+        ],
+        [
+          "chrome",
+          2
+        ],
+        [
+          "welcome",
+          2
+        ]
+      ],
+      "components": [
+        [
+          "header",
+          7
+        ],
+        [
+          "replay",
+          6
+        ],
+        [
+          "modal",
+          4
+        ],
+        [
+          "phases",
+          4
+        ],
+        [
+          "play-picker",
+          4
+        ],
+        [
+          "rules",
+          4
+        ],
+        [
+          "toolbar",
+          4
+        ],
+        [
+          "end",
+          3
+        ],
+        [
+          "rename",
+          3
+        ],
+        [
+          "save-as",
+          3
+        ],
+        [
+          "sort",
+          3
+        ],
+        [
+          "actions",
+          2
+        ],
+        [
+          "aether",
+          2
+        ],
+        [
+          "difficulty",
+          2
+        ],
+        [
+          "equations",
+          2
+        ],
+        [
+          "mode",
+          2
+        ],
+        [
+          "phase",
+          2
+        ],
+        [
+          "results",
+          2
+        ],
+        [
+          "resume",
+          2
+        ],
+        [
+          "boards",
+          1
+        ],
+        [
+          "bout",
+          1
+        ],
+        [
+          "favorite",
+          1
+        ],
+        [
+          "history",
+          1
+        ],
+        [
+          "hot-seat",
+          1
+        ],
+        [
+          "neighborhood",
+          1
+        ],
+        [
+          "pause",
+          1
+        ],
+        [
+          "race",
+          1
+        ],
+        [
+          "secret",
+          1
+        ],
+        [
+          "setup",
+          1
+        ],
+        [
+          "target",
+          1
+        ],
+        [
+          "theme",
+          1
+        ]
+      ]
+    },
+    "scripts": {
+      "dev": "vite",
+      "build": "tsc -b && vite build",
+      "preview": "vite preview",
+      "typecheck": "tsc -b --noEmit",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "test:perf": "vitest run -c vitest.perf.config.ts",
+      "test:e2e": "playwright test"
+    },
+    "dependencies": {
+      "react": "^18.3.1",
+      "playwright": "^1.49.1",
+      "agentHandles": "file:../../../../ai/agent-handles"
+    },
+    "currentAgentHandlesState": {
+      "configured": true,
+      "registrySchema": "agent-handles/testid-registry/v2",
+      "ratchetSchema": "agent-handles/ratchet/v2",
+      "adoptionStatus": "verified",
+      "adoptionPassCount": 2
+    }
+  },
+  "sourceRoot": "src",
+  "identityGrammar": "area.component.element[.qualifier]",
+  "identityVocabulary": {
+    "literalIds": 73,
+    "areas": [
+      [
+        "library",
+        19
+      ],
+      [
+        "compose",
+        16
+      ],
+      [
+        "play",
+        14
+      ],
+      [
+        "lookup",
+        9
+      ],
+      [
+        "match",
+        9
+      ],
+      [
+        "app",
+        2
+      ],
+      [
+        "chrome",
+        2
+      ],
+      [
+        "welcome",
+        2
+      ]
+    ],
+    "components": [
+      [
+        "header",
+        7
+      ],
+      [
+        "replay",
+        6
+      ],
+      [
+        "modal",
+        4
+      ],
+      [
+        "phases",
+        4
+      ],
+      [
+        "play-picker",
+        4
+      ],
+      [
+        "rules",
+        4
+      ],
+      [
+        "toolbar",
+        4
+      ],
+      [
+        "end",
+        3
+      ],
+      [
+        "rename",
+        3
+      ],
+      [
+        "save-as",
+        3
+      ],
+      [
+        "sort",
+        3
+      ],
+      [
+        "actions",
+        2
+      ],
+      [
+        "aether",
+        2
+      ],
+      [
+        "difficulty",
+        2
+      ],
+      [
+        "equations",
+        2
+      ],
+      [
+        "mode",
+        2
+      ],
+      [
+        "phase",
+        2
+      ],
+      [
+        "results",
+        2
+      ],
+      [
+        "resume",
+        2
+      ],
+      [
+        "boards",
+        1
+      ],
+      [
+        "bout",
+        1
+      ],
+      [
+        "favorite",
+        1
+      ],
+      [
+        "history",
+        1
+      ],
+      [
+        "hot-seat",
+        1
+      ],
+      [
+        "neighborhood",
+        1
+      ],
+      [
+        "pause",
+        1
+      ],
+      [
+        "race",
+        1
+      ],
+      [
+        "secret",
+        1
+      ],
+      [
+        "setup",
+        1
+      ],
+      [
+        "target",
+        1
+      ],
+      [
+        "theme",
+        1
+      ]
+    ]
+  },
+  "routes": [],
+  "sourceRoots": [
+    "src"
+  ],
+  "sourceDigest": "sha256:c7f5517de1ea67148b3169c8a34f4c4b4ef02c220d40e8bd4372bc1e067d5af9",
+  "controlCandidates": {
+    "total": 146,
+    "definite": 127,
+    "reviewRequired": 19,
+    "identified": 146,
+    "unresolved": 0
+  },
+  "configuredWrappers": [
+    "DifficultyTile",
+    "FormatPill",
+    "IconBtn",
+    "ModalButton",
+    "OverflowItem",
+    "RulesPill",
+    "RulesTile",
+    "SortPill"
+  ],
+  "wrapperCandidates": [
+    "Tag"
+  ],
+  "reviewRequired": [],
+  "exactCommands": {
+    "scan": "npx agent-handles scan check",
+    "ratchet": "npx agent-handles ratchet check",
+    "verify": "npx agent-handles adopt verify"
+  }
+}

@@ -382,6 +382,7 @@ const BoardNavTile = observer(function BoardNavTile({ item }: { item: NavItemT }
   return (
     <button
       type="button"
+      data-testid={`chrome.nav.item-${item.id}`}
       onClick={() => store.setView(item.id)}
       title={item.subtitle}
       className="font-display uppercase transition-all flex items-baseline gap-1.5 sm:gap-2 px-2.5 py-2 sm:px-4 sm:py-3"

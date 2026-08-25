@@ -97,12 +97,14 @@ const SetupScreen = observer(function SetupScreen() {
           <div className="label-caps mb-4">Race mode</div>
           <div className="grid grid-cols-2 border border-ink-100/30 divide-x divide-ink-100/30 bg-paper-100 mb-10">
             <RulesTile
+              testId="play.mode.quick-race"
               active
               label="Quick race"
               caption="Fresh board · any time"
               onClick={() => play.start()}
             />
             <RulesTile
+              testId="play.mode.daily"
               active={false}
               label="Daily"
               caption={formatDailyDate(daily.challenge.dateKey)}
@@ -122,6 +124,7 @@ const SetupScreen = observer(function SetupScreen() {
           >
             {DIFFICULTIES.map((d) => (
               <DifficultyTile
+                testId={`play.difficulty.select-${d}`}
                 key={d}
                 difficulty={d}
                 active={play.setup.difficulty === d}
@@ -140,12 +143,14 @@ const SetupScreen = observer(function SetupScreen() {
               <div className="label-caps mb-3">Rules</div>
               <div className="grid grid-cols-2 border border-ink-100/30 divide-x divide-ink-100/30 bg-paper-100">
                 <RulesTile
+                  testId="play.rules.standard"
                   active={play.setup.rules === "standard"}
                   label="Standard"
                   caption="Dice 2–20 · Target 1–999"
                   onClick={() => play.setSetup({ rules: "standard" })}
                 />
                 <RulesTile
+                  testId="play.rules.aether"
                   active={play.setup.rules === "aether"}
                   label="Æther"
                   caption="Wider dice · negatives · 1–5,000"
@@ -163,6 +168,7 @@ const SetupScreen = observer(function SetupScreen() {
           <div className="mt-12 flex items-center gap-4">
             <button
               type="button"
+              data-testid="play.setup.begin"
               onClick={() => play.start()}
               className="px-7 py-3.5 font-mono uppercase tracking-wide-caps text-[12px] text-paper-50 bg-oxblood-500 hover:bg-oxblood-500/90 transition-colors"
               style={{ borderRadius: "2px" }}
@@ -204,6 +210,7 @@ const SetupScreen = observer(function SetupScreen() {
 });
 
 function DifficultyTile(props: {
+  testId: string;
   difficulty: BotDifficulty;
   active: boolean;
   onClick: () => void;
@@ -211,6 +218,7 @@ function DifficultyTile(props: {
   return (
     <button
       type="button"
+      data-testid={props.testId}
       onClick={props.onClick}
       aria-pressed={props.active}
       className={[
@@ -247,6 +255,7 @@ function DifficultyTile(props: {
 }
 
 function RulesTile(props: {
+  testId: string;
   active: boolean;
   label: string;
   caption: string;
@@ -255,6 +264,7 @@ function RulesTile(props: {
   return (
     <button
       type="button"
+      data-testid={props.testId}
       onClick={props.onClick}
       aria-pressed={props.active}
       className={[
@@ -400,6 +410,7 @@ const PlayerColumn = observer(function PlayerColumn() {
         subtitle="Click to knock"
       />
       <BoardGrid
+        cellTestId={(idx) => `play.board.player.cell-${idx}`}
         knockedSet={play.playerKnockedSet}
         accentClass="bg-oxblood-500 text-paper-50 border-oxblood-500"
         interactive
@@ -421,6 +432,7 @@ const BotColumn = observer(function BotColumn() {
         } · ${play.botKnocked.length}/${play.boardCells.length} found`}
       />
       <BoardGrid
+        cellTestId={(idx) => `play.board.bot.cell-${idx}`}
         knockedSet={play.botKnockedSet}
         accentClass="bg-support-500 text-paper-50 border-support-500"
         interactive={false}
@@ -517,6 +529,7 @@ const DiceStrip = observer(function DiceStrip(props: {
 });
 
 const BoardGrid = observer(function BoardGrid(props: {
+  cellTestId: (idx: number) => string;
   knockedSet: ReadonlySet<number>;
   accentClass: string;
   interactive: boolean;
@@ -539,6 +552,7 @@ const BoardGrid = observer(function BoardGrid(props: {
       >
         {cells.map((value, idx) => (
           <BoardCell
+            testId={props.cellTestId(idx)}
             key={idx}
             idx={idx}
             value={value}
@@ -553,6 +567,7 @@ const BoardGrid = observer(function BoardGrid(props: {
 });
 
 const BoardCell = observer(function BoardCell(props: {
+  testId: string;
   idx: number;
   value: number;
   knocked: boolean;
@@ -573,6 +588,7 @@ const BoardCell = observer(function BoardCell(props: {
   return (
     <button
       type="button"
+      data-testid={props.testId}
       onClick={onClick}
       disabled={!props.interactive}
       aria-pressed={props.knocked}
@@ -612,6 +628,7 @@ const RaceFooter = observer(function RaceFooter() {
       </span>
       <button
         type="button"
+        data-testid="play.race.forfeit"
         onClick={() => play.restart()}
         className="ml-auto px-3 py-1 font-mono uppercase tracking-wide-caps text-[10px] border border-ink-100/30 text-ink-200 hover:border-oxblood-500 hover:text-oxblood-500 transition-colors"
         style={{ borderRadius: "2px" }}
@@ -708,6 +725,7 @@ const ResultsScreen = observer(function ResultsScreen() {
         right={
           <button
             type="button"
+            data-testid="play.results.new-race"
             onClick={() => {
               if (daily.active) daily.leave();
               play.restart();
@@ -825,6 +843,7 @@ const ShareRaceBar = observer(function ShareRaceBar() {
     <div className="my-6 flex items-center gap-3 no-print">
       <button
         type="button"
+        data-testid="play.results.share"
         onClick={() => void handleClick()}
         className="px-3 py-1.5 font-mono uppercase tracking-wide-caps text-[11px] text-ink-300 border border-ink-100/40 hover:border-oxblood-500 hover:text-oxblood-500 transition-colors"
         style={{ borderRadius: "2px" }}
@@ -854,6 +873,7 @@ const ReplayBar = observer(function ReplayBar() {
       <div className="my-6 flex items-center gap-3 no-print">
         <button
           type="button"
+          data-testid="play.replay.enter"
           onClick={() => play.enterReplay()}
           className="px-3 py-1.5 font-mono uppercase tracking-wide-caps text-[11px] border border-ink-100/40 text-ink-300 hover:border-oxblood-500 hover:text-oxblood-500 transition-colors"
           style={{ borderRadius: "2px" }}
@@ -890,6 +910,7 @@ const ReplayBar = observer(function ReplayBar() {
       <div className="flex items-center gap-3">
         <button
           type="button"
+          data-testid="play.replay.previous"
           onClick={() => play.stepReplay(-1)}
           aria-label="Previous knock"
           title="Previous knock (←)"
@@ -900,6 +921,7 @@ const ReplayBar = observer(function ReplayBar() {
         </button>
         <button
           type="button"
+          data-testid="play.replay.toggle"
           onClick={() => play.togglePlayReplay()}
           aria-label={play.replayPlaying ? "Pause replay" : "Play replay"}
           title={play.replayPlaying ? "Pause (Space)" : "Play (Space)"}
@@ -910,6 +932,7 @@ const ReplayBar = observer(function ReplayBar() {
         </button>
         <button
           type="button"
+          data-testid="play.replay.next"
           onClick={() => play.stepReplay(1)}
           aria-label="Next knock"
           title="Next knock (→)"
@@ -920,6 +943,7 @@ const ReplayBar = observer(function ReplayBar() {
         </button>
         <input
           type="range"
+          data-testid="play.replay.timeline"
           min={0}
           max={totalMs}
           step={100}
@@ -930,6 +954,7 @@ const ReplayBar = observer(function ReplayBar() {
         />
         <button
           type="button"
+          data-testid="play.replay.exit"
           onClick={() => play.exitReplay()}
           aria-label="Exit replay"
           title="Exit replay (Esc)"

@@ -1,0 +1,59 @@
+{
+  "sourceRoot": "src",
+  "registryPath": "testid-registry.json",
+  "journeyManifestPath": "journeys/manifest.json",
+  "ratchetPath": "testid-ratchet.json",
+  "playwrightSpecPath": "e2e/journeys.generated.spec.ts",
+  "interactiveComponents": [
+    "DifficultyTile",
+    "FormatPill",
+    "IconBtn",
+    "ModalButton",
+    "OverflowItem",
+    "RulesPill",
+    "RulesTile",
+    "SortPill"
+  ],
+  "adoption": {
+    "buildCommand": "npm run build",
+    "buildRegistryPath": "dist/testid-registry.json",
+    "journeyVerifyCommand": "N2K_E2E_PORT=54176 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npx playwright test e2e/journeys.generated.spec.ts",
+    "trial": {
+      "agentPassCount": 2,
+      "baseline": {
+        "legacyRegistryCandidates": 99,
+        "legacyRegistryIdentified": 0,
+        "candidateV3Candidates": 146,
+        "candidateV3InitiallyUnresolved": 144,
+        "journeys": 0
+      },
+      "final": {
+        "candidates": 146,
+        "identified": 146,
+        "journeys": 3
+      },
+      "manualSteps": [
+        "Installed the local Agent Handles package dependency.",
+        "Applied the coordinator's proposed Vite plugin import and plugins-array patch.",
+        "Configured eight N2K wrapper components for deterministic scanning.",
+        "Ran the two-phase coding-agent identity and journey pass.",
+        "Selected an isolated E2E port and the available system Chromium executable.",
+        "Ran adopt verify, which performed the build and two repeat journey runs."
+      ],
+      "packageChangesRequired": [
+        "Replace the native-only denominator with definite and review-required JSX/TSX candidates.",
+        "Detect dynamic tags, handler-bearing custom components, ARIA roles, tabIndex, keyboard handlers, and clickable table structures.",
+        "Add wrapper configuration and require forwarding identities at call sites.",
+        "Add interaction fingerprints so deleting an interaction cannot improve coverage.",
+        "Add settled runtime reconciliation and durable per-journey observations.",
+        "Make adoption resumable and prove Vite 6 wiring with a real build and emitted registry."
+      ],
+      "scars": [
+        "The old 99/0 registry was an incomplete predicate baseline, not a denominator.",
+        "Dynamic Tag controls and wrapper components were invisible to the old scan.",
+        "Conditional and interaction-revealed controls required journey-bound runtime evidence.",
+        "Playwright's default port reused an unrelated live app, so acceptance now uses an isolated strict port and fresh per-run evidence."
+      ]
+    }
+  }
+}

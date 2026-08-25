@@ -1,5 +1,30 @@
 # N2K Platform — Changelog
 
+## 2026-08-25 — Agent Handles adoption baseline
+
+- Completed the Vite 6 adoption trial and preserved its evidence in
+  `web/agent-handles-adoption.json`. The earlier native/wrapper scan reported
+  99 candidates and 0 identified; the hardened predicate measured 146 source
+  candidates (127 definite, 19 review-required), including dynamic tags,
+  wrapper controls, ARIA/focus/keyboard sites, and conditional controls. All
+  146 now carry stable identities; no narrated scope exclusions were needed.
+- Added eight app-specific wrapper types and identity forwarding through
+  `SortPill`, `ModalButton`, `IconBtn`, `DiceGlyph`, and the other shared
+  controls. Dynamic board cells, table rows, navigation items, overlays,
+  dialogs, phases, setup controls, and match/play state now expose stable
+  identity families without changing their handlers.
+- Added three control-path journeys: Lookup target selection, Competition phase
+  management, and hard quick-race setup. The production build emitted a
+  byte-identical registry, and all three journeys passed twice under system
+  Chromium. Settled reconciliation observed 238 distinct identified runtime
+  controls across those paths with zero unidentified and zero duplicates.
+  This is additive path evidence; unvisited routes and states remain uncovered.
+- Trial scars became Agent Handles package gates: honest definite/review
+  candidates, interaction fingerprints, resumable adoption state, isolated
+  Playwright ports with fresh per-run evidence, and a verifier that owns the
+  final status. The measured trial took two agent passes and about 34 minutes;
+  the receipt lists every manual setup step and package change required.
+
 ## 2026-08-13 — n2k-ui archived; family consolidation approved
 
 Docs only, no code. Owner ruling `q-n2k=archive` (doc-truth-packet-20260812,
