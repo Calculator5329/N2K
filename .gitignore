@@ -25,3 +25,4 @@ web/public/data/*-smoke*.n2k
 *.swp
 # agent-orchestrator local state
 .orc/
+web/test-results/

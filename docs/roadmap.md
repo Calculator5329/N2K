@@ -90,7 +90,7 @@ for Ethan, not a task.)
 - [ ] <!-- workspace:id=work:922d4f43-be1b-5685-9f11-56442ca044c1 --> **Migrate remaining solver callers to canonical/B&B paths** and retire
       old paths where safe (exporter collapse-before-serialization changes the
       wire format and belongs with the `.n2k` v2++ phase). Promoted 2026-08-16
-      from `docs/current_task.md` (the one live item there) under the
+      from `docs/internal/current_task.md` (the one live item there) under the
       backlog-is-not-work ruling: current_task.md no longer feeds the rollup,
       so committed work moves here. Detail and context stay in that file.
 - [x] <!-- workspace:id=work:94421719-2f4d-5aac-b939-a45c4a086101 --> <!-- closed 2026-08-12: duplicate — the more specific RemotePlayer item work:8c886dc8 under the Multiplayer heading stays open as the live tracker --> **Multiplayer.** `RemotePlayer` over Firestore; the game kernel
@@ -227,7 +227,7 @@ download budget before Phase B starts.
 
 Delivered end-to-end. See the v3.2 section above and
 `features/library/` + `features/match/`. Ongoing solver/Æther work
-lives in `docs/current_task.md` (canonical/B&B migration, v2++ blobs).
+lives in `docs/internal/current_task.md` (canonical/B&B migration, v2++ blobs).
 
 ## Open follow-ups (queued)
 
