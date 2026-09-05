@@ -1,5 +1,19 @@
 # N2K Platform — Changelog
 
+## 2026-09-05 — Journey verification artifacts (A30)
+
+- Regenerated `web/e2e/journeys.generated.spec.ts` through delivered Handles core
+  `bf64ba9f75227f94c95090be67603bcab79fd50e`. The existing sibling dependency resolves
+  that compiler. No journey definition, app behavior or dataset changed.
+- Runtime and final-page evidence now lives in per-test Playwright attachments;
+  historical/manual baselines remain unchanged. No deployment or rebaseline.
+- Verification: both typechecks, 304 root tests, 85 web tests, 11 performance
+  checks and three generated browser journeys passed. Performance verification
+  required outside-sandbox execution after the sandbox blocked localhost I/O;
+  budgets were unchanged. The preview's existing predicate-v3/v4 ratchet warning
+  remains outside this artifact migration.
+
+
 ## 2026-08-25 — Agent Handles adoption baseline
 
 - Completed the Vite 6 adoption trial and preserved its evidence in

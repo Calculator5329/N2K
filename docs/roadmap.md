@@ -6,6 +6,12 @@ than v3.1 landed during the rebuild and is captured below for
 archeology. v3.2 added the Library + Match play story end-to-end.
 Everything later than v3.2 is queued.
 
+- [x] **A30: regenerate journey evidence as test artifacts** (2026-09-05).
+  All three journeys use the delivered Handles compiler and attach observations,
+  screenshots and receipts per test. Root/web typechecks, 304 root tests, 85 web
+  tests, 11 performance checks and all three generated journeys pass. The existing
+  dev-server predicate-v3/v4 ratchet warning remains; no baseline was raised.
+
 ---
 
 ## Handoff plan — Now / Next / Later (added 2026-07-05)
