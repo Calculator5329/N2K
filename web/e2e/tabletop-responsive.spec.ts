@@ -51,6 +51,7 @@ test.describe("Tabletop edition is responsive at every supported viewport", () =
     test(`Lookup @ ${vp.width}x${vp.height} (${vp.label})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/");
+      await page.getByTestId("welcome.actions.explore").click();
       await expect(page.getByRole("heading", { name: /Lookup|easiest equation/i, level: 1 }))
         .toBeVisible();
       await expectNoPageOverflow(page);
@@ -59,6 +60,7 @@ test.describe("Tabletop edition is responsive at every supported viewport", () =
     test(`Competition @ ${vp.width}x${vp.height} (${vp.label})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/");
+      await page.getByTestId("welcome.actions.explore").click();
       await page.getByRole("button", { name: /^II Competition$/ }).click();
       await expect(page.getByRole("heading", { name: /Compose|Boards, dice, and balance/i, level: 1 }))
         .toBeVisible();
@@ -68,6 +70,7 @@ test.describe("Tabletop edition is responsive at every supported viewport", () =
     test(`Play setup @ ${vp.width}x${vp.height} (${vp.label})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/");
+      await page.getByTestId("welcome.actions.explore").click();
       await page.getByRole("button", { name: /^IV Play$/ }).click();
       await expect(page.getByRole("heading", { name: /one minute|sixty seconds/i, level: 1 }))
         .toBeVisible();
@@ -83,6 +86,7 @@ test.describe("Tabletop edition is responsive at every supported viewport", () =
     test(`Play race @ ${vp.width}x${vp.height} (${vp.label})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/");
+      await page.getByTestId("welcome.actions.explore").click();
       await page.getByRole("button", { name: /^IV Play$/ }).click();
       await page.getByRole("button", { name: /Roll dice & begin/i }).click();
       // Both boards (player + bot) render their 36 cells; assert the

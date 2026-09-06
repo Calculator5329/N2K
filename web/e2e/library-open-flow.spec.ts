@@ -17,6 +17,7 @@ test.describe("Library — Open button", () => {
     await page.goto("/");
     await page.evaluate(() => window.localStorage.clear());
     await page.reload();
+    await page.getByTestId("welcome.actions.explore").click();
   });
 
   test("Open switches to Compose and loads the saved plan", async ({ page }) => {

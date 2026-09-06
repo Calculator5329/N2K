@@ -1,3 +1,12 @@
+# 2026-09-06 — Outcome exploration preserves drafts and match starts
+
+Draft phase edits now survive reload, and newly launched matches do not pause
+because of development effect cleanup. Added outcome evidence with timed captures,
+six registered journeys, and persistence/match browser regressions. Stabilized the
+Lookup perf fixture without changing its cap; old browser flows now dismiss the
+welcome overlay. See `explorer-dogfood-20260906.md` for measured runs and remaining
+registry predicate migration. Not deployed.
+
 # N2K Platform — Changelog
 
 ## 2026-09-05 — Journey verification artifacts (A30)

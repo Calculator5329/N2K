@@ -30,8 +30,11 @@ async function captureRuntimeObservation(page: import("@playwright/test").Page) 
         await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
         const RUNTIME_INTERACTIVE_SELECTOR =
           "button,input,select,textarea,a[href],summary,[contenteditable]:not([contenteditable='false']),[role='button'],[role='checkbox'],[role='combobox'],[role='link'],[role='menuitem'],[role='menuitemcheckbox'],[role='menuitemradio'],[role='option'],[role='radio'],[role='slider'],[role='spinbutton'],[role='switch'],[role='tab'],[role='textbox'],[role='treeitem'],[tabindex]:not([tabindex='-1'])";
+        const RUNTIME_DEVTOOLS_ROOT_SELECTOR =
+          "[data-agent-handles-devtools],[class*='TanStackRouterDevtools'],[id*='TanStackRouterDevtools'],[id*='tanstack-router-devtools'],[class*='tsqd-'],[class*='ReactQueryDevtools'],[id*='react-query-devtools'],vite-error-overlay,vite-plugin-checker-error-overlay";
         function isRuntimeObservationCandidate(element: Element) {
           if (element.closest("[data-agent-handles-overlay]")) return false;
+          if (element.closest(RUNTIME_DEVTOOLS_ROOT_SELECTOR)) return false;
           if (element.closest('[aria-hidden="true"]')) return false;
           const role = element.getAttribute?.("role");
           const nativeControl = element.matches?.('button,input,select,textarea,a[href],summary,[contenteditable]:not([contenteditable="false"])');
@@ -138,7 +141,7 @@ async function recordFinalPageState(page: import("@playwright/test").Page, journ
 
 const observationRunText = process.env.AGENT_HANDLES_OBSERVATION_RUN;
 const observationRun = observationRunText ? JSON.parse(observationRunText) : null;
-const manifestDigest = "004ea73797754edb17691580c80e37f6be97fb66432c177dc3de34c62464ca0b";
+const manifestDigest = "6fd697cab1bf3742959f941da8732c1c6e6bff1e2899863659b23dc0e112e613";
 const sha256 = (bytes: string | Buffer) => createHash("sha256").update(bytes).digest("hex");
 const artifactIdentity = (testInfo: import("@playwright/test").TestInfo) => ({
   testId: testInfo.testId, project: testInfo.project.name, retry: testInfo.retry, repeatEachIndex: testInfo.repeatEachIndex,
@@ -224,4 +227,61 @@ test("start-a-hard-quick-race: Reach Play, choose a bot difficulty, and start th
   await expect(page.getByTestId("play.board.player.cell-0")).toBeVisible({ timeout: 10000 });
   await reconcileRuntime(page, "start-a-hard-quick-race", 5, testInfo);
   await recordFinalPageState(page, "start-a-hard-quick-race", testInfo);
+});
+
+test("competition-name-survives-reload: Rename the draft competition, reload, and check the restored name", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await page.getByTestId("welcome.actions.explore").click();
+  await reconcileRuntime(page, "competition-name-survives-reload", 1, testInfo);
+  await page.getByTestId("chrome.nav.item-compose").click();
+  await reconcileRuntime(page, "competition-name-survives-reload", 2, testInfo);
+  await page.getByTestId("compose.header.rename").click();
+  await reconcileRuntime(page, "competition-name-survives-reload", 3, testInfo);
+  await page.getByTestId("compose.header.name-input").fill("Fictional saved draft");
+  await reconcileRuntime(page, "competition-name-survives-reload", 4, testInfo);
+  await page.getByTestId("compose.header.name-input").press("Enter");
+  await reconcileRuntime(page, "competition-name-survives-reload", 5, testInfo);
+  await page.goto("/");
+  await reconcileRuntime(page, "competition-name-survives-reload", 6, testInfo);
+  await page.getByTestId("chrome.nav.item-compose").click();
+  await reconcileRuntime(page, "competition-name-survives-reload", 7, testInfo);
+  await expect(page.getByTestId("compose.header.rename")).toContainText("Fictional saved draft");
+  await reconcileRuntime(page, "competition-name-survives-reload", 8, testInfo);
+  await recordFinalPageState(page, "competition-name-survives-reload", testInfo);
+});
+
+test("invalid-target-recovers: Clamp invalid zero target and recover to a valid query", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await page.getByTestId("welcome.actions.explore").click();
+  await reconcileRuntime(page, "invalid-target-recovers", 1, testInfo);
+  await page.getByTestId("lookup.target.value").fill("0");
+  await reconcileRuntime(page, "invalid-target-recovers", 2, testInfo);
+  await page.getByTestId("lookup.target.value").press("Tab");
+  await reconcileRuntime(page, "invalid-target-recovers", 3, testInfo);
+  await page.getByTestId("lookup.target.value").fill("24");
+  await reconcileRuntime(page, "invalid-target-recovers", 4, testInfo);
+  await expect(page.getByTestId("lookup.neighborhood.target-24")).toBeVisible();
+  await reconcileRuntime(page, "invalid-target-recovers", 5, testInfo);
+  await recordFinalPageState(page, "invalid-target-recovers", testInfo);
+});
+
+test("forfeit-and-restart-quick-race: Forfeit one race and start a new race from setup", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await page.getByTestId("welcome.actions.explore").click();
+  await reconcileRuntime(page, "forfeit-and-restart-quick-race", 1, testInfo);
+  await page.getByTestId("chrome.nav.item-play").click();
+  await reconcileRuntime(page, "forfeit-and-restart-quick-race", 2, testInfo);
+  await page.getByTestId("play.setup.begin").click();
+  await reconcileRuntime(page, "forfeit-and-restart-quick-race", 3, testInfo);
+  await expect(page.getByTestId("play.board.player.cell-0")).toBeVisible();
+  await reconcileRuntime(page, "forfeit-and-restart-quick-race", 4, testInfo);
+  await page.getByTestId("play.race.forfeit").click();
+  await reconcileRuntime(page, "forfeit-and-restart-quick-race", 5, testInfo);
+  await expect(page.getByTestId("play.setup.begin")).toBeVisible();
+  await reconcileRuntime(page, "forfeit-and-restart-quick-race", 6, testInfo);
+  await page.getByTestId("play.setup.begin").click();
+  await reconcileRuntime(page, "forfeit-and-restart-quick-race", 7, testInfo);
+  await expect(page.getByTestId("play.board.player.cell-0")).toBeVisible();
+  await reconcileRuntime(page, "forfeit-and-restart-quick-race", 8, testInfo);
+  await recordFinalPageState(page, "forfeit-and-restart-quick-race", testInfo);
 });

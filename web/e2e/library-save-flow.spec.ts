@@ -27,6 +27,7 @@ test.describe("Library — save & play flow", () => {
     await page.goto("/");
     await page.evaluate(() => window.localStorage.clear());
     await page.reload();
+    await page.getByTestId("welcome.actions.explore").click();
   });
 
   test("Save as new produces exactly one entry per click", async ({ page }) => {

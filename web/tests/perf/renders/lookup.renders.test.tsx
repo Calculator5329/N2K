@@ -7,8 +7,9 @@
  *
  * DataStore note: `LookupView` calls `data.ensureDice(dice)` on mount,
  * which fires a `fetch` against the bundled dataset. In happy-dom
- * there is no network, so the promise rejects and the panel renders
- * the error/skeleton branch. That is fine for this measurement —
+ * the network is stubbed to fail during mount, before the counter resets.
+ * Counting an operating-system rejection racing the keypress would measure
+ * unrelated I/O instead of observer fanout. The error branch is fine here —
  * we're counting observer commits under the Profiler, not asserting
  * on solution rendering.
  */
@@ -29,8 +30,10 @@ import {
 describe("LookupView render counts", () => {
   beforeAll(() => {
     vi.useFakeTimers();
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Offline perf fixture"));
   });
   afterAll(() => {
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
@@ -54,8 +57,8 @@ describe("LookupView render counts", () => {
 
     // Allow any synchronous observer follow-ups from mount (e.g.
     // data.diceState transitioning to 'loading') to commit before
-    // we start counting. The `ensureDice` fetch itself will never
-    // resolve under happy-dom, so no further commits arrive.
+    // we start counting. The controlled fetch rejection has settled
+    // inside act, so unrelated network completion cannot enter this window.
     counter.reset();
 
     // We can't call lookup.setTotal directly — the store instance is

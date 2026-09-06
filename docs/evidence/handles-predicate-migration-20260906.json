@@ -1,0 +1,377 @@
+{
+  "schema": "n2k/handles-predicate-migration/v1",
+  "date": "2026-09-06",
+  "review": "Parent independently reviewed all28 forwarded-prop sites; supported deliberate predicate migration authorized. Static uncertainty remains visible.",
+  "oldPredicate": 3,
+  "newPredicate": 4,
+  "oldCoverage": {
+    "controlCandidates": 146,
+    "definiteCandidates": 127,
+    "reviewRequiredCandidates": 19,
+    "identifiedCandidates": 146,
+    "nonInteractiveCandidates": 0,
+    "unreachableCandidates": 0,
+    "unresolvedCandidates": 0,
+    "interactiveElements": 146,
+    "identifiedInteractive": 146,
+    "unidentifiedInteractive": 0,
+    "maximumUnidentifiedInteractive": 0
+  },
+  "newCoverage": {
+    "controlCandidates": 146,
+    "definiteCandidates": 127,
+    "reviewRequiredCandidates": 19,
+    "identifiedCandidates": 118,
+    "nonInteractiveCandidates": 0,
+    "unreachableCandidates": 0,
+    "unresolvedCandidates": 28,
+    "invalidIdentityMigrations": 0,
+    "interactiveElements": 146,
+    "identifiedInteractive": 118,
+    "unidentifiedInteractive": 28,
+    "maximumUnidentifiedInteractive": 28
+  },
+  "sameCandidateSites": true,
+  "removedSites": [],
+  "addedSites": [],
+  "unresolvedCandidates": [
+    {
+      "id": "candidate:a139f16dbacc9e18",
+      "file": "src/features/compose/BoardEditor.tsx",
+      "line": 253,
+      "element": "input",
+      "classification": "definite",
+      "evidence": [
+        "native:input"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:0fcca795c1b306ef",
+      "file": "src/features/compose/BoardEditor.tsx",
+      "line": 336,
+      "element": "input",
+      "classification": "definite",
+      "evidence": [
+        "native:input"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:b0a587bf12af1365",
+      "file": "src/features/compose/ComposeView.tsx",
+      "line": 353,
+      "element": "button",
+      "classification": "definite",
+      "evidence": [
+        "native:button"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:1d5f5e9380bffdbf",
+      "file": "src/features/compose/ComposeView.tsx",
+      "line": 757,
+      "element": "button",
+      "classification": "definite",
+      "evidence": [
+        "native:button"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:937f2dbc81c2517c",
+      "file": "src/features/compose/ManagePhasesPanel.tsx",
+      "line": 175,
+      "element": "button",
+      "classification": "definite",
+      "evidence": [
+        "native:button"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:acc92f6cdcfae2f2",
+      "file": "src/features/library/LibraryView.tsx",
+      "line": 108,
+      "element": "button",
+      "classification": "definite",
+      "evidence": [
+        "native:button"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:fc4bdd3830e0c766",
+      "file": "src/features/library/LibraryView.tsx",
+      "line": 412,
+      "element": "button",
+      "classification": "definite",
+      "evidence": [
+        "native:button"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:79e1b7b46489017d",
+      "file": "src/features/library/LibraryView.tsx",
+      "line": 680,
+      "element": "button",
+      "classification": "definite",
+      "evidence": [
+        "native:button"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:817ddb3e6ffa3882",
+      "file": "src/features/library/LibraryView.tsx",
+      "line": 757,
+      "element": "div",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:b1044432e240749a",
+      "file": "src/features/library/LibraryView.tsx",
+      "line": 765,
+      "element": "div",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:30460a320308de59",
+      "file": "src/features/library/LibraryView.tsx",
+      "line": 795,
+      "element": "button",
+      "classification": "definite",
+      "evidence": [
+        "native:button"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:749a2f1ad490fe38",
+      "file": "src/features/match/MatchView.tsx",
+      "line": 280,
+      "element": "button",
+      "classification": "definite",
+      "evidence": [
+        "native:button"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:d52294321d6f30d2",
+      "file": "src/features/play/PlayView.tsx",
+      "line": 219,
+      "element": "button",
+      "classification": "definite",
+      "evidence": [
+        "native:button"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:95f008ee276dc48a",
+      "file": "src/features/play/PlayView.tsx",
+      "line": 265,
+      "element": "button",
+      "classification": "definite",
+      "evidence": [
+        "native:button"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:5e29b98517f40af6",
+      "file": "src/features/play/PlayView.tsx",
+      "line": 589,
+      "element": "button",
+      "classification": "definite",
+      "evidence": [
+        "native:button"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:4c0be43be86817c7",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 162,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:be1317ac9550d8ef",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 186,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:66c08eaa11d23f64",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 205,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:baa83b7336ee71e5",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 227,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:9f7668fe29b3dd04",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 251,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:529e47df5f9930b7",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 275,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:1c09ca3e7134504e",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 299,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:40f22500cf815697",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 323,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:221948d0db9c1f40",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 347,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:a1d61501b6fee061",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 371,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:19e0ebfc219015e2",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 395,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:e2ab16db622f9c85",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 419,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    },
+    {
+      "id": "candidate:4b45f3665a37a56f",
+      "file": "src/ui/primitives/DiceGlyph.tsx",
+      "line": 443,
+      "element": "Tag",
+      "classification": "review-required",
+      "evidence": [
+        "handler:onClick"
+      ],
+      "identified": false,
+      "disposition": "unresolved"
+    }
+  ],
+  "runtimeEvidence": "web/.explorer/dogfood/2026-09-06T21-08-45.235Z/receipt.json",
+  "originalRegistry": "web/.agent-handles/migrations/testid-registry.agent-handles-testid-registry-v2.json"
+}

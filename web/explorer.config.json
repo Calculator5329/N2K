@@ -1,0 +1,7 @@
+{
+  "appLabel": "N2K",
+  "devServer": { "port": 8880 },
+  "exploration": { "journeys": ["*"], "resetStorage": "all" },
+  "budget": { "maxSteps": 80, "maxDepth": 2, "maxStates": 15, "maxActionsPerState": 10 },
+  "capture": { "adaptive": { "enabled": true, "maxFrames": 12, "maxDurationMs": 2500 } }
+}
