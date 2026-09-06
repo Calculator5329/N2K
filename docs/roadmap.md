@@ -15,8 +15,10 @@ Everything later than v3.2 is queued.
 - [x] **App Explorer outcome dogfood** (2026-09-06). Repaired draft reload loss
   and new-match StrictMode pause; six registered journeys, four repeated goal
   scenarios, 56 browser tests. Evidence: `docs/explorer-dogfood-20260906.md`.
-- [ ] Resolve registry-v4 forwarded-identity proof before replacing the old
-  predicate ratchet; preserve the 146-site denominator and original gate.
+- [x] Reviewed registry-v4 migration (2026-09-06): all 146 source sites
+  preserved; supported rebaseline records 28 forwarded-prop static uncertainties.
+- [ ] Improve upstream forwarded-identity proof; do not conflate static uncertainty
+  with missing runtime controls.
 
 ---
 

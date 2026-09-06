@@ -77,6 +77,10 @@ first-run welcome interaction before attempting obscured navigation.
 
 The original registry-v2 evidence was archived by the supported adoption migration.
 The candidate v4 scan still measures the same 146 sites, with 118 statically
-identified and 28 unresolved forwarded-prop sites. Original ratchet floors remain
-preserved pending explicit migration review. Build under those old-predicate floors
-refuses; the source/test improvements must not be described as deployable yet.
+identified and 28 unresolved forwarded-prop sites. An independent parent review confirmed
+that all 146 source sites are unchanged and the 28 reclassifications are explicit
+forwarded identity props. The supported deliberate rebaseline was approved and
+committed separately; it changes measurement semantics, not effective runtime
+coverage. Original registry and provisional baseline evidence remain archived.
+The unchanged build and ratchet commands pass after this reviewed migration.
+See `docs/evidence/handles-predicate-migration-20260906.json` for the measured diff.
