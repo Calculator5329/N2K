@@ -17,7 +17,6 @@
  * `appStore.play` keeps its independent Quick Race state untouched.
  */
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
 import { useAppStore } from "../../stores/AppStoreContext.js";
 import { BOUT_SUMMARY_AUTO_ADVANCE_MS, type MatchStore } from "./MatchStore.js";
 import type { PlayStore, BoutSummary } from "../../stores/PlayStore.js";
@@ -26,19 +25,8 @@ export const MatchView = observer(function MatchView() {
   const root = useAppStore();
   const match = root.match;
 
-  // Tear down match-specific timers if the component unmounts. We do
-  // NOT dispose the match here — the AppStore owns its lifecycle.
-  // The hook stays declared even when `match` is null so React's
-  // rules-of-hooks ordering is preserved across re-renders.
-  useEffect(() => {
-    if (match === null) return;
-    return () => {
-      // Auto-pause on unmount as a safety net (the explicit
-      // setView-listener already handles tab switches).
-      if (match.play.isRacing) match.autoPause();
-    };
-  }, [match]);
-
+  // AppStore owns match timers and pauses on navigation. An effect cleanup
+  // here also runs during StrictMode replay and would pause a newly started race.
   if (match === null) return null;
 
   return (

@@ -5,37 +5,209 @@
       "name": "lookup-a-target",
       "description": "Set a target and see the matching adjacent-target control",
       "kind": "control-path",
-      "context": { "path": "/" },
+      "context": {
+        "path": "/"
+      },
       "steps": [
-        { "action": "click", "testId": "welcome.actions.explore" },
-        { "action": "fill", "testId": "lookup.target.value", "value": "24" },
-        { "action": "expect", "testId": "lookup.neighborhood.target-24", "predicate": "visible" }
+        {
+          "action": "click",
+          "testId": "welcome.actions.explore"
+        },
+        {
+          "action": "fill",
+          "testId": "lookup.target.value",
+          "value": "24"
+        },
+        {
+          "action": "expect",
+          "testId": "lookup.neighborhood.target-24",
+          "predicate": "visible"
+        }
       ]
     },
     {
       "name": "manage-competition-phases",
       "description": "Reach Competition through the chrome and open the phase manager",
       "kind": "control-path",
-      "context": { "path": "/" },
+      "context": {
+        "path": "/"
+      },
       "steps": [
-        { "action": "click", "testId": "welcome.actions.explore" },
-        { "action": "click", "testId": "chrome.nav.item-compose" },
-        { "action": "click", "testId": "compose.header.manage-phases" },
-        { "action": "expect", "testId": "compose.phases.backdrop", "predicate": "visible" },
-        { "action": "click", "testId": "compose.phases.close" }
+        {
+          "action": "click",
+          "testId": "welcome.actions.explore"
+        },
+        {
+          "action": "click",
+          "testId": "chrome.nav.item-compose"
+        },
+        {
+          "action": "click",
+          "testId": "compose.header.manage-phases"
+        },
+        {
+          "action": "expect",
+          "testId": "compose.phases.backdrop",
+          "predicate": "visible"
+        },
+        {
+          "action": "click",
+          "testId": "compose.phases.close"
+        }
       ]
     },
     {
       "name": "start-a-hard-quick-race",
       "description": "Reach Play, choose a bot difficulty, and start the race",
       "kind": "control-path",
-      "context": { "path": "/" },
+      "context": {
+        "path": "/"
+      },
       "steps": [
-        { "action": "click", "testId": "welcome.actions.explore" },
-        { "action": "click", "testId": "chrome.nav.item-play" },
-        { "action": "click", "testId": "play.difficulty.select-hard" },
-        { "action": "click", "testId": "play.setup.begin" },
-        { "action": "expect", "testId": "play.board.player.cell-0", "predicate": "visible", "timeoutMs": 10000 }
+        {
+          "action": "click",
+          "testId": "welcome.actions.explore"
+        },
+        {
+          "action": "click",
+          "testId": "chrome.nav.item-play"
+        },
+        {
+          "action": "click",
+          "testId": "play.difficulty.select-hard"
+        },
+        {
+          "action": "click",
+          "testId": "play.setup.begin"
+        },
+        {
+          "action": "expect",
+          "testId": "play.board.player.cell-0",
+          "predicate": "visible",
+          "timeoutMs": 10000
+        }
+      ]
+    },
+    {
+      "name": "competition-name-survives-reload",
+      "description": "Rename the draft competition, reload, and check the restored name",
+      "context": {
+        "path": "/"
+      },
+      "steps": [
+        {
+          "action": "click",
+          "testId": "welcome.actions.explore"
+        },
+        {
+          "action": "click",
+          "testId": "chrome.nav.item-compose"
+        },
+        {
+          "action": "click",
+          "testId": "compose.header.rename"
+        },
+        {
+          "action": "fill",
+          "testId": "compose.header.name-input",
+          "value": "Fictional saved draft"
+        },
+        {
+          "action": "press",
+          "testId": "compose.header.name-input",
+          "key": "Enter"
+        },
+        {
+          "action": "navigate",
+          "path": "/"
+        },
+        {
+          "action": "click",
+          "testId": "chrome.nav.item-compose"
+        },
+        {
+          "action": "expect",
+          "testId": "compose.header.rename",
+          "predicate": "contains-text",
+          "value": "Fictional saved draft"
+        }
+      ]
+    },
+    {
+      "name": "invalid-target-recovers",
+      "description": "Clamp invalid zero target and recover to a valid query",
+      "context": {
+        "path": "/"
+      },
+      "steps": [
+        {
+          "action": "click",
+          "testId": "welcome.actions.explore"
+        },
+        {
+          "action": "fill",
+          "testId": "lookup.target.value",
+          "value": "0"
+        },
+        {
+          "action": "press",
+          "testId": "lookup.target.value",
+          "key": "Tab"
+        },
+        {
+          "action": "fill",
+          "testId": "lookup.target.value",
+          "value": "24"
+        },
+        {
+          "action": "expect",
+          "testId": "lookup.neighborhood.target-24",
+          "predicate": "visible"
+        }
+      ]
+    },
+    {
+      "name": "forfeit-and-restart-quick-race",
+      "description": "Forfeit one race and start a new race from setup",
+      "context": {
+        "path": "/"
+      },
+      "steps": [
+        {
+          "action": "click",
+          "testId": "welcome.actions.explore"
+        },
+        {
+          "action": "click",
+          "testId": "chrome.nav.item-play"
+        },
+        {
+          "action": "click",
+          "testId": "play.setup.begin"
+        },
+        {
+          "action": "expect",
+          "testId": "play.board.player.cell-0",
+          "predicate": "visible"
+        },
+        {
+          "action": "click",
+          "testId": "play.race.forfeit"
+        },
+        {
+          "action": "expect",
+          "testId": "play.setup.begin",
+          "predicate": "visible"
+        },
+        {
+          "action": "click",
+          "testId": "play.setup.begin"
+        },
+        {
+          "action": "expect",
+          "testId": "play.board.player.cell-0",
+          "predicate": "visible"
+        }
       ]
     }
   ]

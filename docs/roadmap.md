@@ -12,6 +12,12 @@ Everything later than v3.2 is queued.
   tests, 11 performance checks and all three generated journeys pass. The existing
   dev-server predicate-v3/v4 ratchet warning remains; no baseline was raised.
 
+- [x] **App Explorer outcome dogfood** (2026-09-06). Repaired draft reload loss
+  and new-match StrictMode pause; six registered journeys, four repeated goal
+  scenarios, 56 browser tests. Evidence: `docs/explorer-dogfood-20260906.md`.
+- [ ] Resolve registry-v4 forwarded-identity proof before replacing the old
+  predicate ratchet; preserve the 146-site denominator and original gate.
+
 ---
 
 ## Handoff plan — Now / Next / Later (added 2026-07-05)

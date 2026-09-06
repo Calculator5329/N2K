@@ -13,6 +13,7 @@ import { test, expect } from "@playwright/test";
 test.describe("v2 web smoke", () => {
   test("boots into the Tabletop board layout", async ({ page }) => {
     await page.goto("/");
+      await page.getByTestId("welcome.actions.explore").click();
     await expect(page.getByRole("button", { name: /^I Lookup$/ })).toBeVisible();
     await expect(
       page.getByRole("heading", { name: /Lookup|easiest equation/i, level: 1 }),
@@ -22,6 +23,7 @@ test.describe("v2 web smoke", () => {
 
   test("solver worker returns reachable targets for the default dice", async ({ page }) => {
     await page.goto("/");
+      await page.getByTestId("welcome.actions.explore").click();
     // The default rolled tuple resolves to many targets; assert at
     // least one Target N button appears within the worker round-trip.
     await expect(page.getByRole("button", { name: /^Target \d+, difficulty / }).first()).toBeVisible();
@@ -29,6 +31,7 @@ test.describe("v2 web smoke", () => {
 
   test("every primary surface mounts without crashing", async ({ page }) => {
     await page.goto("/");
+      await page.getByTestId("welcome.actions.explore").click();
     // Phase 6.5 trimmed the v3 chrome to the three canonical
     // surfaces: Lookup (equation lookup), Competition (compose), and
     // Play (number knockout). Other tools live behind direct URLs or
@@ -49,6 +52,7 @@ test.describe("v2 web smoke", () => {
 
   test("switching theme re-renders the layout chrome", async ({ page }) => {
     await page.goto("/");
+      await page.getByTestId("welcome.actions.explore").click();
     await page.getByRole("button", { name: /Edition: Tabletop/ }).click();
     await page.getByRole("radio", { name: "Almanac" }).click();
     // Almanac uses the sidebar layout — the wordmark renders as

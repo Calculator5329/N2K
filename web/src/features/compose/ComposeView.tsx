@@ -71,22 +71,23 @@ export const ComposeView = observer(function ComposeView() {
   // re-load the draft over a deliberately-loaded saved entry. The
   // store itself flips the flag once any hydrate path runs.
   useEffect(() => {
-    if (compose.hasHydratedFromBackend) return;
     let cancelled = false;
+    let detachAutosave: (() => void) | undefined;
     void (async () => {
-      const fromHash = await compose.loadFromUrl();
-      if (cancelled) return;
-      if (!fromHash) await compose.loadFromContentBackend();
+      if (!compose.hasHydratedFromBackend) {
+        const fromHash = await compose.loadFromUrl();
+        if (cancelled) return;
+        if (!fromHash) await compose.loadFromContentBackend();
+      }
+      // Starting autosave before hydration writes the constructor's blank
+      // draft over the saved document while loadFromUrl is still pending.
+      if (!cancelled) detachAutosave = compose.attachAutosave();
     })();
     return () => {
       cancelled = true;
+      detachAutosave?.();
     };
   }, [compose]);
-
-  // Subscribe the autosave reaction. The disposer tears it down on
-  // unmount so React StrictMode's double-mount cycle in dev doesn't
-  // leave dangling autoruns.
-  useEffect(() => compose.attachAutosave(), [compose]);
 
   return (
     <article>
