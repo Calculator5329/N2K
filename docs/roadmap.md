@@ -6,18 +6,18 @@ than v3.1 landed during the rebuild and is captured below for
 archeology. v3.2 added the Library + Match play story end-to-end.
 Everything later than v3.2 is queued.
 
-- [x] **A30: regenerate journey evidence as test artifacts** (2026-09-05).
+- [x] <!-- workspace:id=work:278a6a6e-ddcd-5287-aa49-4a0a6cd1dd68 --> **A30: regenerate journey evidence as test artifacts** (2026-09-05).
   All three journeys use the delivered Handles compiler and attach observations,
   screenshots and receipts per test. Root/web typechecks, 304 root tests, 85 web
   tests, 11 performance checks and all three generated journeys pass. The existing
   dev-server predicate-v3/v4 ratchet warning remains; no baseline was raised.
 
-- [x] **App Explorer outcome dogfood** (2026-09-06). Repaired draft reload loss
+- [x] <!-- workspace:id=work:39dcffa2-b639-5e9c-9be5-b119e805edd3 --> **App Explorer outcome dogfood** (2026-09-06). Repaired draft reload loss
   and new-match StrictMode pause; six registered journeys, four repeated goal
   scenarios, 56 browser tests. Evidence: `docs/explorer-dogfood-20260906.md`.
-- [x] Reviewed registry-v4 migration (2026-09-06): all 146 source sites
+- [x] <!-- workspace:id=work:e4c5e5c1-c41d-5f7e-a36b-86ff7a6779cb --> Reviewed registry-v4 migration (2026-09-06): all 146 source sites
   preserved; supported rebaseline records 28 forwarded-prop static uncertainties.
-- [ ] Improve upstream forwarded-identity proof; do not conflate static uncertainty
+- [ ] <!-- workspace:id=work:f22eef3a-2a7c-554a-92f6-5c12e12453f0 --> Improve upstream forwarded-identity proof; do not conflate static uncertainty
   with missing runtime controls.
 
 ---
