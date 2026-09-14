@@ -316,8 +316,7 @@ npm run test:e2e      # Playwright responsive sweep (needs browsers installed)
 npm run build         # tsc -b && vite build → web/dist (copies .n2k blobs)
 ```
 
-Deploy (from the **repo root**; `firebase.json` lives there, even
-though the README says `cd web`):
+Deploy (from the **repo root**; `firebase.json` lives there):
 
 ```bash
 cd web && npm run build && cd ..
