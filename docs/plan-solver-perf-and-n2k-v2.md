@@ -1,4 +1,4 @@
-# Plan — Solver perf overhaul + Æther curated blobs + `.n2k` v2 format
+# Plan: Solver perf overhaul + Æther curated blobs + `.n2k` v2 format
 
 **Status:** approved, ready to execute (Phase 1 starting)
 **Scope:** solver, dice legality, on-disk format, Lookup UI for arity 4/5
@@ -6,7 +6,7 @@
 **Triggering observation:** Æther arity-5 `easiestSolution` for a single
 target enumerates ~120 perms × thousands of exp-tuples × 256 op-tuples,
 producing all solutions before returning the easiest one. The user's
-question — "do we really need all permutations?" — is the right one.
+question ("do we really need all permutations?") is the right one.
 For the single-target case: no.
 
 ---
@@ -22,21 +22,21 @@ For the single-target case: no.
 3. **Solver itself becomes faster for everyone**, including uncovered
    dice that fall through to the worker. Target: 10–100× speedup on
    `easiestSolution` for the common arity-4/5 case.
-4. **`.n2k` v2 format** — tighter than v1, with arity-4/5 first-class.
-5. **Honest legality rules for arity 4/5** — codify what a "legal"
+4. **`.n2k` v2 format**: tighter than v1, with arity-4/5 first-class.
+5. **Honest legality rules for arity 4/5**: codify what a "legal"
    higher-arity Æther roll is so the curator and the picker agree.
 
 ## Non-goals
 
 - Server-side solver (everything stays client-side).
-- Full coverage of every Æther tuple (1M+ for arity 5 — not feasible
+- Full coverage of every Æther tuple (1M+ for arity 5, not feasible
   as a static blob).
 - Changing standard mode's user-visible behavior except for the
   necessary regen.
 
 ---
 
-## A. Æther dice legality — formalized
+## A. Æther dice legality: formalized
 
 Today only `isLegalDiceTriple(triple)` exists, baked into standard
 mode's roll generators and `DICE_COMBINATIONS`. Æther arity 4/5 has no
@@ -65,7 +65,7 @@ Worked examples:
 | `[1, 13, 15, 19, 19]`  | 5 | yes    | 1 one + 2-of-a-kind                   |
 | `[0, 5, 7]`            | 3 | tbd    | see "zero die" below                  |
 
-### Zero die — open question
+### Zero die: open question
 
 `AETHER_MODE.diceRange` is `-10..32` which technically includes `0`.
 A `0` die is degenerate: `0^p = 0` for `p > 0`, `0^0 = 1`, dividing by
@@ -84,11 +84,11 @@ add a `mode.legalDieValue(d)` predicate. Cleaner than scattering
    - Encapsulates the ≤1-ones, ≤(N−1)-of-a-kind, and value-range checks
 2. `isLegalDiceTriple` becomes a 3-arity wrapper for backwards compat.
 3. `DICE_COMBINATIONS` regenerated using the unified predicate (no
-   change to its contents — same rule, same result).
+   change to its contents; same rule, same result).
 4. New `enumerateLegalTuples(arity, mode)` for the curator (replaces
    the standalone bake-blob script's ad hoc loops).
 5. Lookup picker (`AetherLookupView`) refuses to accept illegal
-   tuples; reports "this roll isn't possible — try …" instead of
+   tuples; reports "this roll isn't possible, try …" instead of
    spinning the worker on an impossible input.
 
 ### Test plan
@@ -97,7 +97,7 @@ add a `mode.legalDieValue(d)` predicate. Cleaner than scattering
 
 ---
 
-## B. Solver perf — three layered wins
+## B. Solver perf: three layered wins
 
 ### B1. Branch-and-bound `easiestSolutionForCell`
 
@@ -112,19 +112,19 @@ that any completion must reach, and skips the subtree if the bound ≥
 
 What the lower bound can use cheaply (all from the prefix alone):
 
-- `totalMagnitude` — known; depends only on `total`, constant per call
-- `negTerm`, `arityTerm`, `hugeExpTerm` — known once exps are picked
-- `largestSqrtTerm` lower bound — `sqrt(maxAbs so far)` only grows
-- `largestDistanceTerm` lower bound — once `acc` walks past `total`
+- `totalMagnitude`: known; depends only on `total`, constant per call
+- `negTerm`, `arityTerm`, `hugeExpTerm`: known once exps are picked
+- `largestSqrtTerm` lower bound: `sqrt(maxAbs so far)` only grows
+- `largestDistanceTerm` lower bound: once `acc` walks past `total`
   in either direction, `largestNum` ≥ `acc`, so distance ≥ |acc−total|
-- `multiplierTerm` — accumulates monotonically as `*` ops fire
+- `multiplierTerm`: accumulates monotonically as `*` ops fire
 
 What's only known at the leaf:
 
-- `shortestDistanceTerm` — needs the full `allBases` set, which is
+- `shortestDistanceTerm`: needs the full `allBases` set, which is
   fixed per dice multiset → can be computed once per call, not per
   candidate
-- `zeroes`/`ones` — additive bonuses, reduce difficulty, so excluding
+- `zeroes`/`ones`: additive bonuses, reduce difficulty, so excluding
   them makes the bound a valid lower bound (we'll find no-bonus
   candidates "harder" than they are; that's safe for pruning)
 
@@ -132,7 +132,7 @@ What's only known at the leaf:
 
 - Try **op-tuples in order of cheapness**: pure `+`/`-` first, then
   with one `*`, etc. Mul chains are expensive in the difficulty model.
-- Try **exp-tuples low-first** (`0`s and `1`s first) — those carry
+- Try **exp-tuples low-first** (`0`s and `1`s first): those carry
   huge bonuses in the difficulty model.
 - Try **perms in canonical-then-symmetry order** (see B2).
 
@@ -167,7 +167,7 @@ tiebreaker.
 **Why this works:**
 - Within a `+`/`-` span, swapping two `+` operands doesn't change the
   walk's max-abs intermediate (since the running sum hits the same
-  set of values, just in different order — and `largestNum` is the
+  set of values, just in different order, and `largestNum` is the
   *max* of those intermediates, which is invariant under reordering
   within a commutative span). Difficulty is identical.
 - Same for `*`/`÷`: smallest-multiplicand at each `*` is a multiset
@@ -189,7 +189,7 @@ B&B on a much smaller search space.
 **Speedup vs B1 alone:** for "easiest equation" we benefit because
 B&B finds the canonical form first and prunes the rest. For "all
 equations" panel we benefit because the list literally becomes
-shorter — no more 6 cosmetic re-orderings of `2 + 3 + 5 = 10`.
+shorter: no more 6 cosmetic re-orderings of `2 + 3 + 5 = 10`.
 
 **User-visible behavior change:** the "All equations for this cell"
 panel will show fewer entries (the *meaningful* ones). Standard-mode
@@ -203,7 +203,7 @@ This is the "regen `standard.n2k`" event. User has approved.
 
 While we're rewriting the hot loop:
 
-1. **`safeMagnitude` early-prune in `pickExp`** — currently only
+1. **`safeMagnitude` early-prune in `pickExp`**: currently only
    checked in `tryAllOps` after every exponent is picked. Move into
    `pickExp` so we abort whole subtrees when a single base value
    already exceeds `safeMagnitude`. Cuts arity-5 high-cap dice (e.g.
@@ -213,7 +213,7 @@ While we're rewriting the hot loop:
    up in profiles for arity-5 sweeps. Inline 4 cases in
    `enumerateForPermutation`'s `tryAllOps` only (keep the public
    `applyOperator` function for other callers).
-3. **Drop the `Number.isFinite` check after `+`/`-`/`*`** — only
+3. **Drop the `Number.isFinite` check after `+`/`-`/`*`**: only
    `/` can produce non-finite. Branch out the `÷` case.
 4. **Skip `*` chain decay computation when `multiplierChainDecay`
    is false** (standard mode). One less branch per `*` iteration.
@@ -222,7 +222,7 @@ While we're rewriting the hot loop:
 
 ---
 
-## C. `.n2k` v2 format — "go crazy with optimization"
+## C. `.n2k` v2 format: "go crazy with optimization"
 
 The current v1 format is already quite tight (varints, bit packing,
 shared exponent width). v2 targets specific structural waste and
@@ -285,12 +285,12 @@ adds arity-4/5 capability cleanly.
      bits/record on dense chunks.
 
 7. **Whole-blob compression.** Currently we don't gzip the `.n2k`
-   blob — relying on per-record bit packing alone.
+   blob, relying on per-record bit packing alone.
    - **v2 fix:** the bake script gzips the final blob. Loader does
      `DecompressionStream("gzip")`. With the redundancy that's left
      after bit-packing, expected 1.5–2× additional shrink.
 
-### v2 wire layout (sketch — finalize during implementation)
+### v2 wire layout (sketch, finalize during implementation)
 
 ```
 chunk:
@@ -328,7 +328,7 @@ output (try with/without dictionaries, keep the shorter).
 ### Aggregate blob
 
 v1 blob is a flat concatenation of chunks with no header. The loader
-parses each chunk's varints to figure out where the next one starts —
+parses each chunk's varints to figure out where the next one starts,
 a sequential `byteLengthOfChunk` walk. This means **the loader cannot
 seek** to a specific tuple's chunk without parsing every chunk before
 it. For arity-5 with ~5k chunks that's ~5 MB of bit-walking on every
@@ -354,10 +354,10 @@ the bundled-blob case (no Range support), the index still lets us
 seek directly to the chunk without bit-walking the prior ones.
 
 **Bonus:** the index is the natural place to ship the curated-blob
-*coverage map* — the picker can grey-out tuples not in the blob and
+*coverage map*: the picker can grey-out tuples not in the blob and
 say "lookup will use the worker for this roll".
 
-### Expected size — measured math
+### Expected size: measured math
 
 For one arity-5 chunk on common dice (`[2, 3, 5, 7, 11]`, ~3500
 solvable targets):
@@ -378,7 +378,7 @@ solvable targets):
 Add gzip on the whole blob: another 1.5×. **Expected v2 chunk size on
 common dice: ~6–7 KB compressed** (vs ~22 KB v1 uncompressed).
 
-### C.5 — Additional v2++ optimizations (added 2026-04-19)
+### C.5: Additional v2++ optimizations (added 2026-04-19)
 
 The optimizations in C above are "obvious wins". This section adds
 five more aggressive ones that compound for another ~2× chunk shrink.
@@ -446,7 +446,7 @@ Most chunks have all difficulties within a tight band (e.g. all in
 [4.5, 8.2]); the upper end of the uvarint range is wasted.
 
 **v2++ fix:** chunk header carries `diffMin100`, `diffMax100`. Per
-record stores `bitsForRange(diffMax100 - diffMin100)` bits — typically
+record stores `bitsForRange(diffMax100 - diffMin100)` bits, typically
 9–10 bits per record, vs ~16 bits for the uvarint.
 
 **Saves:** ~6 bits/record × 3500 = ~2.5 KB per chunk.
@@ -463,12 +463,12 @@ by:
    `.n2k.gz`.
 3. Or, if hosted behind any modern CDN (Firebase Hosting, Cloudflare,
    etc.), let the CDN do `Accept-Encoding: br` negotiation
-   transparently — we ship `.n2k` (uncompressed-on-disk-but-served-
+   transparently: we ship `.n2k` (uncompressed-on-disk-but-served-
    compressed) and let the network do its job.
 
 **Saves:** ~15–25% additional vs gzip. Free.
 
-### C.6 — Updated wire layout (v2++)
+### C.6: Updated wire layout (v2++)
 
 ```
 blob:
@@ -515,7 +515,7 @@ chunk:
     diff           diffRangeBits  (offset from diffMin100)
 ```
 
-### C.7 — Storage plan with three-tier curation
+### C.7: Storage plan with three-tier curation
 
 Per user steer (2026-04-19):
 
@@ -524,18 +524,18 @@ Per user steer (2026-04-19):
 > the legality rule (which allows 1 one and ≤(N−1)-of-a-kind);
 > commons are the curated subset.
 >
-> Above-commons rolls fall through to the worker — which is now fast
+> Above-commons rolls fall through to the worker, which is now fast
 > enough (B&B + canonical solver, target <500ms for arity 5) that
 > the gap is not user-visible.
 
-**Tier 1 — Commons** (ships in v1 of this work):
+**Tier 1: Commons** (ships in v1 of this work):
 - Arity 4: ~1,650 tuples × ~3 KB = **~5 MB compressed**
 - Arity 5: ~5,000 tuples × ~3 KB = **~15 MB compressed**
 - Standard regen (v2++): ~3 MB → **~1.5 MB compressed**
 - **Total: ~20 MB.** Eager-load the standard blob; lazy-load the
   Æther blobs on first Æther use.
 
-**Tier 2 — Extended** (stretch goal, post-v1; bake script ready but
+**Tier 2: Extended** (stretch goal, post-v1; bake script ready but
 not shipped):
 - Adds dice values {13, 14, 16, 17, 18, 19} → 19 values total
 - Same "≤ 2 of any" / "no 1s" rule
@@ -545,7 +545,7 @@ not shipped):
   extended Æther index"). Or we ship it as code-split chunks
   triggered by hitting a Tier-2 tuple.
 
-**Tier 3 — Edge cases** (worker-only forever):
+**Tier 3: Edge cases** (worker-only forever):
 - 3+-of-a-kind rolls (legal but rare)
 - Rolls with a `1`
 - Negative dice
@@ -555,7 +555,7 @@ not shipped):
 **Total Tier-1 bundle: ~20 MB.** Acceptable for code-split. Tier 2 is
 queued in the bake script, decision deferred to post-v1 measurement.
 
-### C.8 — Per-chunk size estimate (v2++)
+### C.8: Per-chunk size estimate (v2++)
 
 Updated table for one arity-5 chunk on common dice (~3500 solvable
 targets):
@@ -591,7 +591,7 @@ Per user steer:
   if covered). Click loads the next batch. Worker yields incrementally.
 - **Sort ascending by difficulty** within and across batches.
 - **Collapse perm-equivalent entries** (canonical form, applies to
-  arity 3 too — small list with badge "× N orderings" if user wants
+  arity 3 too, small list with badge "× N orderings" if user wants
   to peek).
 
 Worker contract change:
@@ -630,17 +630,17 @@ same cursor for the next batch.
 Each step is mergeable on its own; we don't end up with a half-
 working solver in `main`.
 
-### Phase 1 — Foundations (~2 days)
+### Phase 1: Foundations (~2 days)
 
-1. `src/core/legality.ts` — `isLegalDiceTuple` + tests (table-driven).
-2. `enumerateLegalTuples(arity, mode)` — replaces standalone bake
+1. `src/core/legality.ts`: `isLegalDiceTuple` + tests (table-driven).
+2. `enumerateLegalTuples(arity, mode)`: replaces standalone bake
    loops. Verify against `DICE_COMBINATIONS` for arity 3.
 3. **Measure baseline.** Add `npm run bench:solver` that runs a fixed
    set of (dice, target) lookups and dumps timings. Record current
    numbers in `docs/changelog.md` before any optimization. This is
    the regression check for everything that follows.
 
-### Phase 2 — Solver perf (~3–4 days)
+### Phase 2: Solver perf (~3–4 days)
 
 4. **B3 first** (cheap inner-loop wins). Validate against the bench
    suite; expect ~2× across the board.
@@ -657,39 +657,39 @@ working solver in `main`.
 7. **Migrate callers** from `easiestSolution` → `easiestSolutionBnB`.
    Remove old `solver.ts` paths once the bench shows uniform wins.
 
-### Phase 3 — `.n2k` v2++ format (~3–4 days)
+### Phase 3: `.n2k` v2++ format (~3–4 days)
 
-8. **`src/core/n2kBinary2.ts`** — new chunk encoder/decoder.
+8. **`src/core/n2kBinary2.ts`**: new chunk encoder/decoder.
    Magic `N2K2`, version byte `3` (v2++ on the wire). Implements
    C.5.1–C.5.4 (cross-chunk dict refs, sameShape bit, bitmap-keyed
    records, adaptive difficulty). Property test: encode→decode
    round-trips for 1000 random chunks; bitmap rank/select correct
    under fuzzing.
-9. **`src/core/n2kBlob2.ts`** — blob header with index + global op
+9. **`src/core/n2kBlob2.ts`**: blob header with index + global op
    and exp dictionaries. Magic `N2KB`. Loader can pick chunks by
    index without scanning. Brotli-decompress when content-encoded.
-10. **`src/core/dictBuilder.ts`** — pre-pass over a candidate set of
+10. **`src/core/dictBuilder.ts`**: pre-pass over a candidate set of
     chunks that picks which op-tuples and exp-tuples graduate to the
     global dictionary (frequency threshold; verify global dict
     overhead beats per-chunk savings).
-11. **Bake script v2++** — `scripts/bake-blob.ts` extended:
+11. **Bake script v2++**: `scripts/bake-blob.ts` extended:
     - `--format v1|v2` (default v2)
     - `--arity 3|4|5`
     - `--tier commons|extended|all|<custom>` (commons by default)
     - `--compression none|gzip|brotli` (brotli default)
-    - Outputs `<mode>-arity<N>-<tier>.n2k(.br|.gz)` —
+    - Outputs `<mode>-arity<N>-<tier>.n2k(.br|.gz)`,
       e.g. `aether-arity5-commons.n2k.br`
 
-### Phase 4 — UI integration (~1–2 days)
+### Phase 4: UI integration (~1–2 days)
 
-11. **Loader** — `web/src/services/n2kLoader.ts` learns about v2 +
+11. **Loader**: `web/src/services/n2kLoader.ts` learns about v2 +
     blob index. Lazy-loads arity-4/5 blobs on first Æther use.
-12. **AetherLookupView** — uses blob first, worker fallback.
+12. **AetherLookupView**: uses blob first, worker fallback.
     Shows "from cache (instant)" vs "computing…" affordance.
-13. **AllEquationsList** — switches to streaming "show more" with
+13. **AllEquationsList**: switches to streaming "show more" with
     cursor protocol.
 
-### Phase 5 — Regen + cleanup (~1 day)
+### Phase 5: Regen + cleanup (~1 day)
 
 14. Regenerate `standard.n2k` under v2. Diff old vs new equation
     outputs (canonical-form changes); document the user-visible
@@ -703,7 +703,7 @@ working solver in `main`.
 
 ---
 
-## F. Decisions — locked in 2026-04-19
+## F. Decisions: locked in 2026-04-19
 
 All open questions answered by the user during planning:
 
@@ -765,10 +765,10 @@ All open questions answered by the user during planning:
   rank/select.
 - **Honest legality predicate** (`isLegalDiceTuple`) shared by the
   picker, the candidate generator, and the curator.
-- **The "All equations" panel becomes useful** — canonical-form
+- **The "All equations" panel becomes useful**: canonical-form
   dedup means it shows meaningfully different equations, not 44
   cosmetic perms.
-- **The solver is faster for everyone** — B&B + canonical-form +
+- **The solver is faster for everyone**: B&B + canonical-form +
   inner-loop wins compound to a 50–500× speedup on `easiestSolution`
   for arity 4/5.
 

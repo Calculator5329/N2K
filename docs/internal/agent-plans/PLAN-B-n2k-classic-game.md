@@ -1,13 +1,13 @@
-# PLAN-B — N2K Classic Game implementation + bots
+# PLAN-B: N2K Classic Game implementation + bots
 
 **Branch:** `agent/games-n2k-classic`
 **Estimated scope:** ~500–800 LoC + tests
-**Depends on:** Phase 0 foundation (already on `main`) — specifically `src/services/gameKernel.ts`
+**Depends on:** Phase 0 foundation (already on `main`), specifically `src/services/gameKernel.ts`
 **Blocks:** Phase 4 web Play feature (the web Play view will instantiate this game and these bots)
 
 ## Goal
 
-Implement the first concrete `Game<TConfig, TState, TMove>` against the kernel: **N2K Classic**, the original 6×6-board solo + bot game. Plus a `LocalBot` `Player` implementation and a port of v1's bot personas (Easy / Standard / Hard / Aether). The kernel was deliberately built without any game implementations — this plan delivers the first one.
+Implement the first concrete `Game<TConfig, TState, TMove>` against the kernel: **N2K Classic**, the original 6×6-board solo + bot game. Plus a `LocalBot` `Player` implementation and a port of v1's bot personas (Easy / Standard / Hard / Aether). The kernel was deliberately built without any game implementations. This plan delivers the first one.
 
 This is what the future Play view will use; multiplayer in Phase 8 will reuse this same game with a `RemotePlayer` swapped in.
 
@@ -15,30 +15,30 @@ This is what the future Play view will use; multiplayer in Phase 8 will reuse th
 
 ### WILL create
 
-- `src/games/n2kClassic.ts` — implements `Game<N2KClassicConfig, N2KClassicState, N2KClassicMove>`. Concrete types:
+- `src/games/n2kClassic.ts`: implements `Game<N2KClassicConfig, N2KClassicState, N2KClassicMove>`. Concrete types:
   - `N2KClassicConfig`: `{ board: Board; mode: Mode; initialDicePool: readonly number[]; turnLimit?: number; rngSeed?: number }`
   - `N2KClassicState`: `{ board, dicePool, claimed: ReadonlyMap<cellIndex, { byPlayer, equation }>, currentPlayerIdx, turn }`
   - `N2KClassicMove`: `{ kind: "claim"; cellIndex: number; equation: NEquation } | { kind: "pass" }`
   - All game logic (legal moves, score, applyMove) lives here. Pure functions only.
-- `src/games/n2kClassicBots.ts` — `LocalBot` `Player` implementation. Takes a `Persona` and a reference to the easiest-solution evaluator. Returns moves via `pickMove`.
-- `src/games/personas.ts` — port v1 `web/src/features/play/personas.ts` (do not import from v1 at runtime — copy the data). Each persona declares a `difficultyTarget`, `mistakeRate`, `passThreshold`, etc.
-- `src/games/n2kClassicSerializer.ts` — `serialize` / `deserialize` for the state. Verify lossless round-trip in tests. Use plain JSON-friendly objects (no Maps in the serialized form — convert to arrays of `[k, v]`).
-- `tests/games/n2kClassic.test.ts` — pure-function tests for `init`, `legalMoves`, `applyMove`, `isTerminal`, `score`. At least 30 tests.
-- `tests/games/n2kClassicBots.test.ts` — bot persona behavior: easy bot picks low-difficulty moves, hard bot picks low-difficulty moves more reliably, all bots respect `passThreshold`.
-- `tests/games/n2kClassicReplay.test.ts` — `replay()` from `src/services/gameKernel.ts` reconstructs the same state from a logged session.
+- `src/games/n2kClassicBots.ts`: `LocalBot` `Player` implementation. Takes a `Persona` and a reference to the easiest-solution evaluator. Returns moves via `pickMove`.
+- `src/games/personas.ts`: port v1 `web/src/features/play/personas.ts` (do not import from v1 at runtime: copy the data). Each persona declares a `difficultyTarget`, `mistakeRate`, `passThreshold`, etc.
+- `src/games/n2kClassicSerializer.ts`: `serialize` / `deserialize` for the state. Verify lossless round-trip in tests. Use plain JSON-friendly objects (no Maps in the serialized form: convert to arrays of `[k, v]`).
+- `tests/games/n2kClassic.test.ts`: pure-function tests for `init`, `legalMoves`, `applyMove`, `isTerminal`, `score`. At least 30 tests.
+- `tests/games/n2kClassicBots.test.ts`: bot persona behavior: easy bot picks low-difficulty moves, hard bot picks low-difficulty moves more reliably, all bots respect `passThreshold`.
+- `tests/games/n2kClassicReplay.test.ts`: `replay()` from `src/services/gameKernel.ts` reconstructs the same state from a logged session.
 
 ### MAY modify
 
-- `package.json` — add `"games": "tsx src/games/index.ts"` if creating a CLI entry; otherwise no script changes.
-- `src/games/index.ts` (new file) — re-exports the game and bots so consumers can import as `from "n2k-platform/games"` once package exports are wired.
-- `docs/changelog.md` — append a "Games: N2K Classic" section.
-- `docs/roadmap.md` — check off the Play-game-implementation box (currently nested inside Phase 4).
+- `package.json`: add `"games": "tsx src/games/index.ts"` if creating a CLI entry; otherwise no script changes.
+- `src/games/index.ts` (new file): re-exports the game and bots so consumers can import as `from "n2k-platform/games"` once package exports are wired.
+- `docs/changelog.md`: append a "Games: N2K Classic" section.
+- `docs/roadmap.md`: check off the Play-game-implementation box (currently nested inside Phase 4).
 
 ### MUST NOT touch
 
-- `src/core/`, `src/services/` — foundation is stable. The game implementation IMPORTS from these but does not modify them.
-- `web/` — the Play view that uses this game lives in Phase 4.
-- The kernel interface (`src/services/gameKernel.ts`) — the kernel was designed to be game-agnostic; this plan is the test of that design. If the kernel needs changes to support a real game, raise it in the PR description as a request, do NOT modify the kernel directly. (We'd rather know now if the kernel needs work.)
+- `src/core/`, `src/services/`: foundation is stable. The game implementation IMPORTS from these but does not modify them.
+- `web/`: the Play view that uses this game lives in Phase 4.
+- The kernel interface (`src/services/gameKernel.ts`): the kernel was designed to be game-agnostic; this plan is the test of that design. If the kernel needs changes to support a real game, raise it in the PR description as a request, do NOT modify the kernel directly. (We'd rather know now if the kernel needs work.)
 
 ## Concrete API contracts
 
@@ -111,21 +111,21 @@ export interface Persona {
 
 export class LocalBot implements Player {
   constructor(persona: Persona, id: PlayerId);
-  // pickMove is async — uses persona.thinkMs + a tiny random jitter
+  // pickMove is async: uses persona.thinkMs + a tiny random jitter
 }
 ```
 
 ### Personas to port from v1
 
-- `easy` — wide difficulty target, high mistake rate, short think
-- `standard` — narrow difficulty target around medium, moderate mistake rate
-- `hard` — narrow target around low difficulty, low mistake rate, longer think
-- `aether` — only spawns when `config.mode === AETHER_MODE`, picks low-difficulty solutions even at arity 4-5
+- `easy`: wide difficulty target, high mistake rate, short think
+- `standard`: narrow difficulty target around medium, moderate mistake rate
+- `hard`: narrow target around low difficulty, low mistake rate, longer think
+- `aether`: only spawns when `config.mode === AETHER_MODE`, picks low-difficulty solutions even at arity 4-5
 
 ## Acceptance criteria
 
 - `npm run typecheck` clean.
-- `npm test` clean — at least 50 new tests.
+- `npm test` clean, at least 50 new tests.
 - The kernel was not modified. (If you needed to modify it, surface in PR.)
 - A "smoke session" test exists that:
   1. Creates a game with the standard mode + a 6×6 random board + dice (2, 3, 5)

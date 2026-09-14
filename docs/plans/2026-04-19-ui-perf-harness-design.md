@@ -1,4 +1,4 @@
-# UI Reactivity & Performance Test Harness — Design
+# UI Reactivity & Performance Test Harness: Design
 
 Date: 2026-04-19
 Status: Approved, pending implementation plan

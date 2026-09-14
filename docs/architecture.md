@@ -1,4 +1,4 @@
-# N2K Platform — Architecture
+# N2K Platform: Architecture
 
 ## What this is (handoff summary)
 
@@ -8,12 +8,12 @@ and find equations of the form `d1^p1 op1 d2^p2 op2 d3^p3 = total`
 (evaluated strictly left-to-right); the site can look up the easiest
 equation for any roll, build and export multi-board competitions, and
 run 60-second knockout races against bot personas. It is a static
-React SPA backed by precomputed bit-packed `.n2k` datasets — there is
+React SPA backed by precomputed bit-packed `.n2k` datasets. There is
 **no server**; all persistence is local-first (localStorage).
 
 This repo is the **sole survivor of ~11 historical N2K repos**. Legacy
 siblings (`N2K-v2`, `N2K-almanac`, `N2K-ComprehensiveSolver`,
-`backups/`) sit in the parent folder `..\` and are frozen — some have
+`backups/`) sit in the parent folder `..\` and are frozen; some have
 broken `.git` dirs. Do not develop in them. `n2k-ui` was on that list until
 2026-08-13, when it was archived to `~/projects/_archive/n2k-2026/n2k-ui`
 (owner ruling `q-n2k=archive`, doc-truth-packet-20260812); its history and
@@ -25,14 +25,14 @@ are authoritative).
 **Deployment identity:** Firebase Hosting, project `ethan-488900`,
 hosting target `almanac`, live at
 [n2k-almanac-v3.web.app](https://n2k-almanac-v3.web.app). Portfolio
-notes refer to the product as **mentalmath.site** — that domain does
+notes refer to the product as **mentalmath.site**. That domain does
 not appear anywhere in this repo; if it is live it is a custom domain
 mapped in the Firebase console. Verify there before relying on it.
 
 **What does NOT exist yet (despite portfolio shorthand):** no global
 leaderboards, no user profiles, no accounts, no analytics. Identity
 and persistence seams (`ContentBackend`) exist so these can be added
-without rearchitecting — see `docs/ROADMAP.md` and `docs/IDEAS.md`.
+without rearchitecting. See `docs/ROADMAP.md` and `docs/IDEAS.md`.
 
 ## Layered model
 
@@ -51,7 +51,7 @@ without rearchitecting — see `docs/ROADMAP.md` and `docs/IDEAS.md`.
 │                   ThemeStore, FavoritesStore, SecretStore,   │
 │                   PlayStore, useAlmanacIndex hook)           │
 │  feature stores  (LookupStore, AetherLookupStore,            │
-│                   CompositionStore — colocated with views)   │
+│                   CompositionStore, colocated with views)    │
 └─────────────────────────────┬────────────────────────────────┘
                               │
 ┌─────────────────────────────▼────────────────────────────────┐
@@ -146,7 +146,7 @@ export const DEFAULT_THEME: ThemeId = "tabletop";
 Each theme picks one of 12 layout primitives in
 `web/src/ui/chrome/layouts/`. Visual styling lives in
 `web/src/styles.css` keyed off `[data-theme="<id>"]`. The Æther
-unlock layers a violet vignette on top via `[data-aether="1"]` —
+unlock layers a violet vignette on top via `[data-aether="1"]`,
 orthogonal to theme.
 
 ## Public surfaces (v3.2)
@@ -158,7 +158,7 @@ with **four** top-level surfaces routed via `AppStore.view`:
 features/lookup/    # Pick dice + target → easiest equation     (folio I)
 features/compose/   # Phases · boards · bouts · balanced rolls  (folio II, label "Competition")
 features/library/   # Saved competitions + match history        (folio III)
-features/match/     # In-flight competition match (race chain)  (folio IV — shares route with Quick Race)
+features/match/     # In-flight competition match (race chain)  (folio IV, shares route with Quick Race)
 features/play/      # 60s knockout race vs a bot                (folio IV, fallback when no match loaded)
 ```
 
@@ -182,7 +182,7 @@ its phase / board / bout indices, the 36-cell board, and the dice
 for both seats. The store walks the schedule one entry at a time,
 re-using a single `PlayStore` instance for every race.
 
-Stats live in their own namespace (`stats:{compId}`) — kept separate
+Stats live in their own namespace (`stats:{compId}`), kept separate
 from the comp body so the autosave write stays small even after
 hundreds of recorded matches. In-flight matches mirror to
 `match:current` (snapshot v2; v1 falls back to live comp body for
@@ -194,12 +194,12 @@ hundreds of recorded matches. In-flight matches mirror to
 (`SecretStore`). Once unlocked, the three surfaces light up
 differently:
 
-- **Lookup** — full mode swap. `LookupView` checks `secret.aetherActive`
+- **Lookup**: full mode swap. `LookupView` checks `secret.aetherActive`
   and renders `AetherLookupView` (arity 3/4/5, dice −10..32, target
   1..5,000) instead of `StandardLookupView`. The standard view's
   picker bounds are tied to `STANDARD_MODE.diceRange` so the user
   cannot type a triple the dataset can't resolve.
-- **Compose** — match-level rules toggle (Standard / Æther) plus an
+- **Compose**: match-level rules toggle (Standard / Æther) plus an
   Æther-only candidate pool. `CompositionStore.rules` drives both the
   pool picker (`CANDIDATE_POOLS` vs `AETHER_CANDIDATE_POOLS`) and the
   resolver: standard plans key the difficulty matrix off depowered
@@ -207,27 +207,27 @@ differently:
   via `loadDifficultyMatrixFor("aether", …)` (memoized for the
   session) and keep every face value distinct. Snapshot is `v3` with
   v1/v2 back-compat.
-- **Play** — match-level toggle. The setup screen shows a
+- **Play**: match-level toggle. The setup screen shows a
   Standard/Æther rules tile when `secret.aetherActive`, and
   `PlayStore.mode` is computed from `setup.rules` (so each race picks
   rules independently rather than flipping a global mode flag).
   Post-race, the Results screen offers a replay scrubber backed by
-  `PlayStore.replayMs` / `replayTimeline` — the underlying
+  `PlayStore.replayMs` / `replayTimeline`. The underlying
   `playerKnocked` / `botKnocked` arrays are immutable and the
   scrubber is a pure derived view (`currentPlayerKnocked`,
   `currentBotKnocked`).
 
-## Dataset — `.n2k` binary format
+## Dataset: `.n2k` binary format
 
 The dataset ships as two compact binary blobs in `web/public/data/`:
 
-- `standard.n2k` (~1 MB) — full Standard-mode dataset (all
+- `standard.n2k` (~1 MB): full Standard-mode dataset (all
   `DICE_COMBINATIONS` × `[1, 999]`).
-- `aether-arity3.n2k` (~31 MB) — full Æther 3-arity dataset (every
+- `aether-arity3.n2k` (~31 MB): full Æther 3-arity dataset (every
   Æther 3-tuple × `[1, 5000]`); lazily loaded on the first
   Æther-mode query.
 
-Higher-arity Æther tuples (4d / 5d) **don't have a precomputed blob** —
+Higher-arity Æther tuples (4d / 5d) **don't have a precomputed blob**;
 the bundle would be unmanageable. They fall back to
 `aetherSolverWorker` on demand. The fallback chain is centralised in
 `AetherDataStore.sweep`:
@@ -247,7 +247,7 @@ wrapping chunks into the file-level container. The bake pipeline
 (`scripts/bake-blob.ts`) drives a `worker_threads` pool over
 `exporter.worker.ts` to produce both blobs.
 
-## Persistence — `ContentBackend`
+## Persistence: `ContentBackend`
 
 `web/src/services/contentBackend.ts` defines the abstract document
 store (`load` / `save` / `remove` / `list`). The default singleton
@@ -257,7 +257,7 @@ IndexedDB / cloud backend drops in without touching call sites.
 
 `CompositionStore.attachAutosave()` mirrors the live snapshot to the
 backend on every observable change, and `loadFromContentBackend()`
-hydrates on mount. Hash-based share links take precedence — if the
+hydrates on mount. Hash-based share links take precedence: if the
 URL has a `#plan=…`, that wins over the local autosave.
 
 ## Out of scope (today)
@@ -276,7 +276,7 @@ N2K-v3/
   src/            # Node solver workspace: core/ services/ games/ cli/
   scripts/        # bake-blob.ts, export.ts, bench-solver.ts (tsx)
   tests/          # root Vitest suites (solver, CLI, games, binary)
-  web/            # Vite/React SPA — its own package.json + node_modules
+  web/            # Vite/React SPA, its own package.json + node_modules
     public/data/  # .n2k dataset blobs (standard, aether-arity3/4/5)
     src/          # core/ services/ stores/ features/ ui/ workers/
     tests/        # web unit tests + tests/perf/ harness
@@ -290,14 +290,14 @@ N2K-v3/
 
 ## Exact commands
 
-Two npm roots — the repo root and `web/` each need their own
+Two npm roots: the repo root and `web/` each need their own
 `npm install`.
 
 Root (solver workspace):
 
 ```bash
 npm install
-npm test              # Vitest — solver/CLI/games/binary suites
+npm test              # Vitest, solver/CLI/games/binary suites
 npm run typecheck     # tsc -p tsconfig.check.json
 npm run cli           # terminal REPL (mode/dice/roll/solve/sweep/...)
 npm run bake -- --mode standard        # rebuild a .n2k blob
@@ -316,7 +316,7 @@ npm run test:e2e      # Playwright responsive sweep (needs browsers installed)
 npm run build         # tsc -b && vite build → web/dist (copies .n2k blobs)
 ```
 
-Deploy (from the **repo root** — `firebase.json` lives there, even
+Deploy (from the **repo root**; `firebase.json` lives there, even
 though the README says `cd web`):
 
 ```bash
@@ -334,13 +334,13 @@ The repo carries a deliberate performance-regression harness
 (`web/tests/perf/`, run via `npm run test:perf`, ~1.3s wall):
 
 - **Render-count baselines** per surface via a React Profiler wrapper.
-- **MobX fanout assertions** — unrelated store slices must not
+- **MobX fanout assertions**: unrelated store slices must not
   re-fire each other's reactions.
-- **Hot-path microbenches** — `easiestSolution`, `parseEquation`;
+- **Hot-path microbenches**: `easiestSolution`, `parseEquation`;
   budgets are 3× observed median, floored at 5ms.
 - Baselines and open optimization targets: `docs/perf-baseline.md`.
 - **Rule: tighten caps after wins; never loosen caps to silence a
-  flaky test** — a flake means the harness is wrong, not the budget.
+  flaky test**. A flake means the harness is wrong, not the budget.
 
 Solver-side perf work (branch-and-bound `easiestSolution`,
 interleaved enumeration, worker prewarm) is recorded in the git
@@ -348,23 +348,23 @@ history and `docs/plan-solver-perf-and-n2k-v2.md`.
 
 ## Known limitations
 
-- **No analytics** — zero visibility into real usage of the live site.
-- **No accounts / leaderboards / profiles** — all state is per-browser
+- **No analytics**: zero visibility into real usage of the live site.
+- **No accounts / leaderboards / profiles**: all state is per-browser
   localStorage; clearing site data loses saved competitions and stats.
-- **localStorage ~5 MB quota** — large competition libraries will
+- **localStorage ~5 MB quota**: large competition libraries will
   eventually need the IndexedDB backend (seam exists, impl doesn't).
-- **Æther arity-5 coverage is partial** — only the first 50 canonical
+- **Æther arity-5 coverage is partial**: only the first 50 canonical
   commons tuples are baked (`aether-arity5-commons.n2k`, 2 MB); the
   rest fall back to a live worker sweep (~seconds). Full bake ≈ 21 h.
-- **Large blobs in git** — `aether-arity3.n2k` (~31 MB) and
+- **Large blobs in git**: `aether-arity3.n2k` (~31 MB) and
   `aether-arity4-commons.n2k` (~38 MB) are tracked in git; clones are
   heavy. Under GitHub's 100 MB/file limit, but mind future bakes.
-- **Deploy config untracked** — `firebase.json` / `.firebaserc` were
+- **Deploy config untracked**: `firebase.json` / `.firebaserc` were
   untracked as of 2026-07-05 (see ROADMAP "Now").
-- **No ESLint / no CI** — verification is manual (see root CLAUDE.md).
-- **Google Fonts at runtime** — `web/index.html` loads ~25 font
+- **No ESLint / no CI**: verification is manual (see root CLAUDE.md).
+- **Google Fonts at runtime**: `web/index.html` loads ~25 font
   families from fonts.googleapis.com; these are not self-hosted. The
   PWA service worker runtime-caches them (StaleWhileRevalidate for the
   stylesheet, CacheFirst for the webfont files) so a font seen online
-  keeps working offline — but a font never visited online won't be
+  keeps working offline, but a font never visited online won't be
   available offline until it is bundled/subset & self-hosted.

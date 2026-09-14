@@ -1,7 +1,7 @@
-# N2K Platform — Roadmap
+# N2K Platform: Roadmap
 
-The platform now ships **four public surfaces** — Lookup, Competition,
-Library, and Play — with full Æther integration. Everything earlier
+The platform now ships **four public surfaces** (Lookup, Competition,
+Library, and Play) with full Æther integration. Everything earlier
 than v3.1 landed during the rebuild and is captured below for
 archeology. v3.2 added the Library + Match play story end-to-end.
 Everything later than v3.2 is queued.
@@ -22,17 +22,17 @@ Everything later than v3.2 is queued.
 
 ---
 
-## Handoff plan — Now / Next / Later (added 2026-07-05)
+## Handoff plan: Now / Next / Later (added 2026-07-05)
 
 Strategic goal from the portfolio review: **ship this as a product,
-not a repo** — add analytics, post to communities, get 50 real users,
+not a repo**: add analytics, post to communities, get 50 real users,
 and consolidate the N2K repo family down to this one. Each task below
 is sized for a single working session and has acceptance criteria.
 
-**Git health: GOOD.** `.git` is healthy — branch `main`, tracked tree
+**Git health: GOOD.** `.git` is healthy: branch `main`, tracked tree
 clean, remote `origin` → `https://github.com/Calculator5329/N2K.git`,
 up to date as of 2026-07-05. No re-init needed. (If history questions
-ever arise, `Desktop\_FROM_ONEDRIVE` may hold older N2K twins — parked
+ever arise, `Desktop\_FROM_ONEDRIVE` may hold older N2K twins, parked
 for Ethan, not a task.)
 
 ### Now
@@ -53,7 +53,7 @@ for Ethan, not a task.)
       exist locally but are **untracked** (2026-07-10 truth pass);
       add `.firebase/` and `tmp-bake/` to `.gitignore` (neither is
       ignored today); `tmp-bake/*.n2k` smoke files are currently
-      **tracked** — decide keep vs delete. Production blobs under
+      **tracked**; decide keep vs delete. Production blobs under
       `web/public/data/` are tracked and wired.
       *Accept:* `git status` is clean; a fresh clone can deploy.
 - [x] <!-- workspace:id=work:da10cae3-2e4d-5816-a89c-feb0660bb4a1 --> **First-run onboarding pass.** *(done 2026-07-11)* One-time
@@ -67,15 +67,15 @@ for Ethan, not a task.)
 
 ### Next
 
-- [ ] <!-- workspace:id=work:0bef786d-14f0-57c1-90bf-e55d3fae744e --> **N2K-family consolidation — APPROVED 2026-08-13, one of five done.**
+- [ ] <!-- workspace:id=work:0bef786d-14f0-57c1-90bf-e55d3fae744e --> **N2K-family consolidation: APPROVED 2026-08-13, one of five done.**
       Ethan approved the consolidation in owner ruling `q-n2k=archive`
       (doc-truth-packet-20260812). The approval gate is satisfied; the work
       is not, so this stays open. Archive the siblings in `..\`
       (`N2K-v2`, `N2K-almanac`, `N2K-ComprehensiveSolver`,
       `backups`) into a single `_archive/` folder or zips, and drop a
-      one-line pointer README in each ("superseded — active repo is
+      one-line pointer README in each ("superseded; active repo is
       N2K-v3 / github.com/Calculator5329/N2K"). Some siblings have
-      broken `.git` dirs — archive as-is, do not repair. *Accept:*
+      broken `.git` dirs; archive as-is, do not repair. *Accept:*
       every sibling has a pointer; nothing deleted, only archived.
       **Done:** `n2k-ui`, archived 2026-08-13 to
       `~/projects/_archive/n2k-2026/n2k-ui` with `status: archived` and
@@ -100,46 +100,46 @@ for Ethan, not a task.)
       identity seams; daily-challenge leaderboard first. *Accept:*
       anonymous → named upgrade keeps local data; leaderboard writes
       validated by security rules (no client-trusted scores without
-      at least plausibility checks — document the anti-cheat stance).
+      at least plausibility checks; document the anti-cheat stance).
 - [ ] <!-- workspace:id=work:922d4f43-be1b-5685-9f11-56442ca044c1 --> **Migrate remaining solver callers to canonical/B&B paths** and retire
       old paths where safe (exporter collapse-before-serialization changes the
       wire format and belongs with the `.n2k` v2++ phase). Promoted 2026-08-16
       from `docs/internal/current_task.md` (the one live item there) under the
       backlog-is-not-work ruling: current_task.md no longer feeds the rollup,
       so committed work moves here. Detail and context stay in that file.
-- [x] <!-- workspace:id=work:94421719-2f4d-5aac-b939-a45c4a086101 --> <!-- closed 2026-08-12: duplicate — the more specific RemotePlayer item work:8c886dc8 under the Multiplayer heading stays open as the live tracker --> **Multiplayer.** `RemotePlayer` over Firestore; the game kernel
+- [x] <!-- workspace:id=work:94421719-2f4d-5aac-b939-a45c4a086101 --> <!-- closed 2026-08-12: duplicate; the more specific RemotePlayer item work:8c886dc8 under the Multiplayer heading stays open as the live tracker --> **Multiplayer.** `RemotePlayer` over Firestore; the game kernel
       was designed for this (serializable state, pure `applyMove`).
 - [x] <!-- workspace:id=work:0c8a27d6-6f28-5ab3-971f-33499221247d --> **PWA / offline.** Static SPA + immutable blobs cache well;
       fonts must be self-hosted first (see architecture.md
       limitations). *Shipped 2026-07-11:* `vite-plugin-pwa`
-      (`autoUpdate`) — web app manifest + generated service worker.
+      (`autoUpdate`): web app manifest + generated service worker.
       Workbox precaches the SPA shell/assets (content-hashed, so no
       stale-build lock-in) with an `index.html` navigation fallback;
       `.n2k` dataset blobs are runtime-cached CacheFirst (never
-      precached — no multi-tens-of-MB install), Google Fonts are
+      precached, no multi-tens-of-MB install), Google Fonts are
       runtime-cached as an interim until self-hosting lands.
 
 Ranked expansion ideas with impact/effort live in `docs/IDEAS.md`.
 
 ---
 
-## v3.2 — Library + Match play (shipped)
+## v3.2: Library + Match play (shipped)
 
-- **Library tab** (`features/library/`) — 4th surface, lists every saved
+- **Library tab** (`features/library/`): 4th surface, lists every saved
   competition with thumbnails, mode badges, last-played + best-avg
   stats, and a play picker (vs-bot / hot-seat + persona).
-- **Match play** (`features/match/`) — `MatchStore` orchestrates a
+- **Match play** (`features/match/`): `MatchStore` orchestrates a
   multi-bout race chain across phases, with pause/resume,
   bout-summary cards, phase interstitials, hot-seat pass-the-device
   overlay, and a match-end screen. Reload-survives via `match:current`
   snapshot v2.
-- **Phase model** — `SharedPlanV5` reframes competitions as
+- **Phase model**: `SharedPlanV5` reframes competitions as
   `Competition > Phase > Board > Bout`. v1..v4 plans migrate
   transparently as a single "Phase 1" wrapper.
-- **Stats** — per-comp `MatchRecord` history under `stats:{compId}`,
+- **Stats**: per-comp `MatchRecord` history under `stats:{compId}`,
   surfaced via roll-ups (best avg score, win rate, last played) on
   Library cards and a per-comp history drawer.
-- **PlayStore extensions** — pause/resume + `RaceOverrides` for
+- **PlayStore extensions**: pause/resume + `RaceOverrides` for
   injecting per-bout boards / dice + `onFinished` callback +
   `silentFinish` flag for chained bouts.
 
@@ -149,41 +149,41 @@ Ranked expansion ideas with impact/effort live in `docs/IDEAS.md`.
 
 ### Public web surfaces
 
-- **Lookup** (`features/lookup/`) — pick three dice + a target, get the
+- **Lookup** (`features/lookup/`): pick three dice + a target, get the
   easiest equation. Standard view drives off the bundled
   `standard.n2k`. The Æther overlay (Konami unlock) widens the picker
   to arity 3/4/5, dice -10..32, target 1..5,000 and dispatches each
   tuple to the `aetherSolverWorker` pool.
-- **Competition** (`features/compose/`, internal slug `compose`) —
+- **Competition** (`features/compose/`, internal slug `compose`):
   multi-board editor (manual / random / pattern with per-cell pinning),
   balanced multi-round roll generator, PDF export. Full Æther mode at
-  the match-level — `aether-3d` / `aether-4d` / `aether-5d` candidate
+  the match-level: `aether-3d` / `aether-4d` / `aether-5d` candidate
   pools cover the full -10..32 dice range. Autosaves through
   `LocalStorageContentBackend`; URL-hash share links take precedence
   over local autosave on load.
-- **Play** (`features/play/`) — 60-second knockout race vs. a bot.
+- **Play** (`features/play/`): 60-second knockout race vs. a bot.
   Setup screen picks the persona (Easy / Standard / Hard / Æther), the
   board source, the rules (Standard / Æther). Post-race results screen
   ships a replay scrubber backed by `replayMs` / `replayTimeline`.
 
 ### Solver workspace
 
-- **Unified solver** (`src/services/solver.ts`) — `sweepOneTuple` /
+- **Unified solver** (`src/services/solver.ts`): `sweepOneTuple` /
   `easiestSolution` / `allSolutions` / `solveForExport`. One brute-force
   enumeration handles every arity 3..5 and every dice value via the
   `Mode` parameter.
-- **Game kernel** (`src/services/gameKernel.ts`) — `Game<>` + `Player` +
+- **Game kernel** (`src/services/gameKernel.ts`): `Game<>` + `Player` +
   `replay()`. `n2kClassic` is the only registered game today; bots and
   knockout scheduling live in `src/games/`.
-- **CLI REPL** (`src/cli/`) — `mode` / `dice` / `roll` / `board` /
+- **CLI REPL** (`src/cli/`): `mode` / `dice` / `roll` / `board` /
   `solve` / `solve-all` / `sweep` / `explain` / `export` / `help`.
   No Konami; Æther is just `--mode aether`.
 
 ### Data pipeline
 
-- **Bake** (`scripts/bake-blob.ts`) — sweeps every legal tuple for a
+- **Bake** (`scripts/bake-blob.ts`): sweeps every legal tuple for a
   mode, writes a bit-packed `.n2k` blob.
-- **Export** (`scripts/export.ts`) — same sweep, JSON-chunk projection
+- **Export** (`scripts/export.ts`): same sweep, JSON-chunk projection
   for tooling.
 - **Runtime blobs** in `web/public/data/`:
   `standard.n2k` (~1 MB, eager) + `aether-arity3.n2k` (~31 MB, lazy
@@ -195,7 +195,7 @@ Ranked expansion ideas with impact/effort live in `docs/IDEAS.md`.
   composition point).
 - **`ContentBackend`** abstract interface; `LocalStorageContentBackend`
   is the only impl today.
-- **Themes-as-data** — 17 named editions in `web/src/core/themes.ts`,
+- **Themes-as-data**: 17 named editions in `web/src/core/themes.ts`,
   each binds to one of 12 layout primitives in
   `ui/chrome/layouts/`.
 - **Worker pools** for both bake (`worker_threads`) and runtime Æther
@@ -210,7 +210,7 @@ Ranked expansion ideas with impact/effort live in `docs/IDEAS.md`.
 
 ---
 
-## Queued stream — Æther mixed-arity Compose (v3.3)
+## Queued stream: Æther mixed-arity Compose (v3.3)
 
 User explicitly called this out as an oversight in v3.1: Compose
 should be able to generate Æther rounds with mixed dice arity
@@ -218,26 +218,26 @@ should be able to generate Æther rounds with mixed dice arity
 solved live in a worker. Full plan in
 `docs/plan-aether-arity-mixes.md`. Three phases:
 
-1. **Variable-arity plumbing** — refactor Compose's data path off
+1. **Variable-arity plumbing**: refactor Compose's data path off
    `DiceTriple` onto `DiceMultiset`. Pure refactor PR.
-2. **Bake arity-4 / arity-5 curated matrices** — arity-4 commons
+2. **Bake arity-4 / arity-5 curated matrices**: arity-4 commons
    blob ✅ baked and wired 2026-04-20 as
    `aether-arity4-commons.n2k` (38 MB, 1,651 tuples); served
    instantly via `AetherDataStore.loadFromBlob`. Arity-5 commons
-   partial ✅ 2026-04-20 — first 50 canonical tuples
+   partial ✅ 2026-04-20, first 50 canonical tuples
    (`2,2,3,3,4`..`2,2,3,8,8`, 2 MB) baked under the new B&B
    easiestSolution and wired at the production URL. Single tuple
    now ~290s (was >5 min pre-B&B). Full 5,005-tuple bake projects
-   to ~21 hr at concurrency 19 — queue as an overnight job when
+   to ~21 hr at concurrency 19; queue as an overnight job when
    broader coverage is wanted.
-3. **Mixed-arity rules tiles** — three Æther arity-mix presets in the
+3. **Mixed-arity rules tiles**: three Æther arity-mix presets in the
    rules row, per-round arity dispatch, per-round resolver routing.
 
 Decision checkpoints (in the plan doc) are open and need user sign-off
 on the arity-4/5 subset definitions and the total ~50 MB Æther
 download budget before Phase B starts.
 
-## Shipped — Competition Library + Match play (v3.2)
+## Shipped: Competition Library + Match play (v3.2)
 
 Delivered end-to-end. See the v3.2 section above and
 `features/library/` + `features/match/`. Ongoing solver/Æther work
@@ -253,18 +253,18 @@ lives in `docs/internal/current_task.md` (canonical/B&B migration, v2++ blobs).
 - [ ] **Only the Lookup view is in the URL hash**: Back leaves the site from Competition, Library and Play, reload always lands on Lookup, and non-Lookup views cannot be linked.
 - [ ] **Play race board has no move validation** and the clear bonus is out of scale (36 cells worth 5,328 scored 60,317); Easy and Standard bots knock zero cells in 60 seconds.
 - [ ] **Competition small fixes**: Escape does not close Manage Phases; Generate is a silent no-op on a phase with no boards and drops boards with 0 bouts without warning; "Remove" on board headers clips to "REMOV" at 390px; "1 cells knocked" plural.
-- [x] <!-- workspace:id=work:dfc577e3-7ad9-5cc6-9524-690ab4976cf6 --> **Folio numerals** (done 2026-07-10, burndown w2) — `nav.ts` is
+- [x] <!-- workspace:id=work:dfc577e3-7ad9-5cc6-9524-690ab4976cf6 --> **Folio numerals** (done 2026-07-10, burndown w2): `nav.ts` is
       the source of truth (Lookup I · Competition II · Library III ·
       Play IV), but `PlayView` hardcoded folio `"III"` and `LibraryView`
-      `"IV"` — swapped vs nav. Both now resolve via a new `folioFor(id)`
+      `"IV"`, swapped vs nav. Both now resolve via a new `folioFor(id)`
       helper in `nav.ts`, so headers can't drift again.
-- [x] <!-- workspace:id=work:608ad59d-dd25-53f4-a725-7611dbba56fa --> **Mode-aware DicePicker validation** (done 2026-07-10, burndown w2)
-      — the Æther Lookup picker now validates typed dice entry against
+- [x] <!-- workspace:id=work:608ad59d-dd25-53f4-a725-7611dbba56fa --> **Mode-aware DicePicker validation** (done 2026-07-10, burndown w2):
+      the Æther Lookup picker now validates typed dice entry against
       `AETHER_MODE` (−10..32) via `AetherLookupStore`, and also honours
       the mode's one legality rule: 0 is rejected (`d^p` collapses,
       `÷0` blows up). Steppers hop over 0; typed 0s are rejected; the
       URL hash refuses illegal dice. Guarded by `AetherLookupStore.test.ts`.
-- [x] <!-- workspace:id=work:f101badb-1211-5e05-9e4e-026e6e567267 --> **Lookup print sheet** — cosmetic `@media print` styles restored
+- [x] <!-- workspace:id=work:f101badb-1211-5e05-9e4e-026e6e567267 --> **Lookup print sheet**: cosmetic `@media print` styles restored
       for the Lookup view (`.lookup-sheet` on `LookupView` /
       `AetherLookupView`): interactive buttons stripped, dice/target
       inputs print as bare numerals, and the "All equations for this
@@ -305,40 +305,40 @@ lives in `docs/internal/current_task.md` (canonical/B&B migration, v2++ blobs).
 
 ---
 
-## Archive — phases 0 → 6.6 (rebuild work)
+## Archive: phases 0 → 6.6 (rebuild work)
 
 These all landed during the v3 rebuild. Kept here so the v3 history
 isn't lost; collapsed because the surfaces / files they reference
 either match the current code or were trimmed in the v3.1 prune.
 
-- **Phase 0 — Foundation.** `core/` types + constants, `solver.ts`,
+- **Phase 0: Foundation.** `core/` types + constants, `solver.ts`,
   `difficulty.ts`, `parsing.ts`, `arithmetic.ts`, `generators.ts`,
   `gameKernel.ts`, vitest suite.
-- **Phase 1 — Bulk export pipeline.** `exporter.ts` + `scripts/export.ts`,
+- **Phase 1: Bulk export pipeline.** `exporter.ts` + `scripts/export.ts`,
   `worker_threads` pool, `.n2k` chunks + `manifest.json`, JSON-chunk
   projection.
-- **Phase 2 — CLI REPL.** `src/cli/` end-to-end (`mode` / `dice` /
+- **Phase 2: CLI REPL.** `src/cli/` end-to-end (`mode` / `dice` /
   `roll` / `board` / `solve` / `solve-all` / `sweep` / `explain` /
   `export` / `help`).
-- **Phase 3 — Web foundation.** Vite 6 + React 18 + MobX 6 + Tailwind 4
+- **Phase 3: Web foundation.** Vite 6 + React 18 + MobX 6 + Tailwind 4
   + Vitest 2; root `AppStore`; theme registry; first layout primitives.
-- **Phase 4 — Feature parity.** Lookup, Compose (incl. Æther rules
+- **Phase 4: Feature parity.** Lookup, Compose (incl. Æther rules
   toggle), Play (`PlayStore` driving `n2kClassicGame` against
   `LocalBot` personas).
-- **Phase 5 — Power-user surfaces.** A round of v1-era surfaces
+- **Phase 5: Power-user surfaces.** A round of v1-era surfaces
   (Explore / Compare / Visualize / Gallery) was rebuilt on the v3
   stack, then **retired in the v3.1 prune** (see Phase 6.5).
-- **Phase 6 — Platform extensions.** Persisted boards as `BoardDoc`
+- **Phase 6: Platform extensions.** Persisted boards as `BoardDoc`
   content entities, `LocalStorageContentBackend` default. Replay UI +
   Firestore + AI theme generation moved to "open follow-ups".
-- **Phase 6.5 — Cleanup & consolidation (v3.1 trim).** Public nav
+- **Phase 6.5: Cleanup & consolidation (v3.1 trim).** Public nav
   trimmed to `Lookup · Competition · Play`. Compose label renamed to
   Competition. Real Æther in Competition (`aether-3d/4d/5d` pools).
   Stats line follows Æther mode via `useAlmanacIndex`. Retired
   surfaces (Explore, Compare, Visualize, Gallery, Studio, Sandbox,
   Colophon, About, plus the entire `v1features/` + `v1ui/` trees) and
   the dead `src/themes/` parallel system removed.
-- **Phase 6.6 — Tabletop responsive sweep.** Lookup / Competition /
+- **Phase 6.6: Tabletop responsive sweep.** Lookup / Competition /
   Play audited + fixed at 10 viewports (320 → 2560px). Race screen
   switched to container queries. Playwright responsive suite (40
   cases) added.
@@ -348,7 +348,7 @@ either match the current code or were trimmed in the v3.1 prune.
 Ethan's packet reply, planning/reports/backlog-audit-packet-20260825. Reversible: move a line back to its section to revive.
 
 - <!-- workspace:id=work:e8a49c75-7cec-523a-9fb0-ffbc17a7568b --> **Add analytics.** Pick a privacy-friendly, script-light option
-      (Plausible / GoatCounter / Firebase-native GA4 — user's call on
+      (Plausible / GoatCounter / Firebase-native GA4; user's call on
       cost). Wire page view + surface-switch (`AppStore.view`) + race
       completed events. No PII, no cookie banner requirement if
       cookieless. *Accept:* events visible in the dashboard from the
@@ -360,9 +360,9 @@ Ethan's packet reply, planning/reports/backlog-audit-packet-20260825. Reversible
       + `web/index.html` meta/OG tags (title, description, social
       card) to the product identity. *Accept:* canonical URL decided,
       documented in README, link unfurls with a card.
-- <!-- workspace:id=work:bed090f7-2d04-5cfc-b17f-c79e8bcbedb7 --> **Product push — communities + 50 users.** Write a short pitch
+- <!-- workspace:id=work:bed090f7-2d04-5cfc-b17f-c79e8bcbedb7 --> **Product push: communities + 50 users.** Write a short pitch
       + GIF; post to 3–5 fitting communities (e.g. HN Show, r/math,
-      r/mentalmath, r/webgames, a teachers' forum — Compose's printable
+      r/mentalmath, r/webgames, a teachers' forum; Compose's printable
       competition sheets are a teacher hook). *Accept:* posted in ≥ 3
       places; analytics shows ≥ 50 unique visitors; feedback captured
       as GitHub issues.
@@ -371,19 +371,19 @@ Ethan's packet reply, planning/reports/backlog-audit-packet-20260825. Reversible
       tuples served from blob; bundle-size budget re-approved by Ethan
       (~50 MB Æther download question is an open decision checkpoint).
 - <!-- workspace:id=work:1447b9ac-d77b-5850-94c5-f3441b784c59 --> **Æther mixed-arity Compose (v3.3).** Existing plan:
-      `docs/plan-aether-arity-mixes.md` — variable-arity plumbing,
+      `docs/plan-aether-arity-mixes.md`: variable-arity plumbing,
       then mixed-arity rules tiles.
-- <!-- workspace:id=work:1fe05e57-833a-570a-9349-b565464a32af --> **Æther 4d/5d candidate scoring** — runs serially per candidate.
+- <!-- workspace:id=work:1fe05e57-833a-570a-9349-b565464a32af --> **Æther 4d/5d candidate scoring**: runs serially per candidate.
       For pools with hundreds of tuples this is slow (each candidate is
       a 1-3s worker sweep). Largely obsoleted once
-      `docs/plan-aether-arity-mixes.md` lands — pre-baked matrices
+      `docs/plan-aether-arity-mixes.md` lands; pre-baked matrices
       replace the live worker for Compose. Keep this entry for
       `Lookup` which still solves arbitrary user-typed tuples on
       demand.
 - <!-- workspace:id=work:bc6d2b59-2d1a-552f-a67c-3df5bee443e2 --> **Saved custom themes** as a `ThemeDoc` content entity.
 - <!-- workspace:id=work:56fb5abb-17a7-550e-b1a8-d52516a78d9e --> **IndexedDB backend** for boards / competitions that exceed
       localStorage's ~5 MB quota.
-- <!-- workspace:id=work:f1828999-d0ec-58f0-93fb-cfd183e6c7c4 --> **In-app replay UI** — read a serialized game log and scrub
+- <!-- workspace:id=work:f1828999-d0ec-58f0-93fb-cfd183e6c7c4 --> **In-app replay UI**: read a serialized game log and scrub
       move-by-move (the kernel already supports it; `Play` only shows
       the post-race scrubber).
 - <!-- workspace:id=work:46f24c61-aebb-5300-9b78-ac135bdde3d0 --> **`FirestoreContentBackend`** behind the existing interface.
@@ -393,5 +393,5 @@ Ethan's packet reply, planning/reports/backlog-audit-packet-20260825. Reversible
 - <!-- workspace:id=work:8c886dc8-8977-5a4d-b94b-d665dbe39bce --> **`RemotePlayer`** impl reading moves from a Firestore
       subscription (the kernel is ready).
 - <!-- workspace:id=work:223e6ee1-cd04-5002-9ae0-012c73f52028 --> **Game session as a content entity.**
-- <!-- workspace:id=work:febc1032-25c5-59fe-8f3d-a3f25a08e0ac --> **Spectator mode** — free with the kernel design once
+- <!-- workspace:id=work:febc1032-25c5-59fe-8f3d-a3f25a08e0ac --> **Spectator mode**: free with the kernel design once
       `RemotePlayer` lands.

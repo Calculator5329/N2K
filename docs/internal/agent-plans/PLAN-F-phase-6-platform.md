@@ -1,4 +1,4 @@
-# PLAN-F — Phase 6: Platform Extensions
+# PLAN-F, Phase 6: Platform Extensions
 
 **Branch:** `agent/phase-6-platform`
 **Status:** drafted, awaiting kickoff
@@ -10,7 +10,7 @@ Lift the v2 platform off "all features run from one process with no
 persistence" and onto the contracts that real users (and the eventual
 backend) will ride. After Phase 6, custom user content (boards,
 competitions, themes), game replay, and AI-generated themes all work
-end-to-end **without** changing the bootstrap interfaces — the only
+end-to-end **without** changing the bootstrap interfaces. The only
 swap left for Phase 7 is the impl of three services we already own.
 
 ## Non-goals
@@ -25,7 +25,7 @@ swap left for Phase 7 is the impl of three services we already own.
 
 ## Sub-tasks (each is a separable PR)
 
-### F1 — IndexedDB ContentBackend (`web/src/services/local/idbContentBackend.ts`)
+### F1: IndexedDB ContentBackend (`web/src/services/local/idbContentBackend.ts`)
 
 Drop-in replacement for `MemoryContentBackend`. Same interface,
 persists across reloads. `createDefaultAppStore` switches to it when
@@ -36,12 +36,12 @@ test env).
   `kind` keyed by `id`. Indexes on `updatedAt` for `list({ orderBy:
   "updatedAt" })`.
 - Subscriptions: in-memory `EventTarget` per kind, fired on
-  `put`/`delete`. (No multi-tab fan-out yet — that's a Firestore
+  `put`/`delete`. (No multi-tab fan-out yet. That's a Firestore
   feature.)
 - Tests: copy `memoryContentBackend.test.ts` and bootstrap with
   `fake-indexeddb`. Same eight cases pass.
 
-### F2 — `BoardDoc` + Compose persistence
+### F2: `BoardDoc` + Compose persistence
 
 - `web/src/core/contentTypes.ts`: `BoardDoc { mode, name, board,
   createdBy, createdAt }`. Lives next to existing `core/types.ts`.
@@ -53,7 +53,7 @@ test env).
 - Tests: `ComposeStore.test.ts` (round-trip a board through
   `MemoryContentBackend`, verify list filtering by user).
 
-### F3 — `CompetitionDoc` + Compose results persistence
+### F3: `CompetitionDoc` + Compose results persistence
 
 - `CompetitionDoc { mode, plan: GeneratedPlan, params, createdBy,
   createdAt }`.
@@ -63,7 +63,7 @@ test env).
   buttons unchanged.
 - Tests: 3 cases (round-trip, list, delete).
 
-### F4 — `ThemeDoc` + ThemeStore hydration
+### F4: `ThemeDoc` + ThemeStore hydration
 
 - `ThemeDoc` is the existing `Theme` shape (id, displayName, tokens)
   plus `createdBy` + `createdAt`. Built-in `tabletop` / `noir` /
@@ -76,7 +76,7 @@ test env).
 - Tests: hydration + override (a user theme with the same id as a
   built-in wins after seed has run once).
 
-### F5 — Game replay UI (`web/src/features/play/ReplayView.tsx`)
+### F5: Game replay UI (`web/src/features/play/ReplayView.tsx`)
 
 The kernel already supports `replay()`. This surface reads a
 serialized game session from `ContentBackend` and lets the user scrub
@@ -92,12 +92,12 @@ move-by-move.
 - Tests: round-trip a recorded session (use the existing fixture from
   `n2kClassicReplay.test.ts`).
 
-### F6 — AI-generated themes (Stub-backed)
+### F6: AI-generated themes (Stub-backed)
 
 Wire the `AIService` end-to-end so the only Phase 7 change is the
 service impl.
 
-- `web/src/features/gallery/AIThemePrompt.tsx` — text input + "Generate"
+- `web/src/features/gallery/AIThemePrompt.tsx`: text input + "Generate"
   button. Calls `aiService.completeStructured<Theme>` with a JSON-Schema
   matching `ThemeTokens`. `StubAIService` returns a deterministic
   rotated palette so the UX is testable today.
@@ -115,7 +115,7 @@ service impl.
   Gallery and persists across reload. Play a match → "Watch replay"
   link reconstructs every move.
 - No file in `src/core/` or `src/services/` (root, not `web/`) is
-  modified — Phase 6 is a pure web-layer expansion on top of the
+  modified. Phase 6 is a pure web-layer expansion on top of the
   Phase 0–5 platform.
 
 ## Deferred to Phase 7

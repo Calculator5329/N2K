@@ -1,4 +1,4 @@
-# UI Reactivity & Performance Test Harness — Implementation Plan
+# UI Reactivity & Performance Test Harness: Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -78,7 +78,7 @@ Run (from `web/`): `npm test`
 Expected: existing suite green, unchanged count.
 
 Run: `npm run test:perf`
-Expected: "No test files found" — acceptable at this point (exit code 1). We'll have real tests in the next tasks; no commit failure risk because we haven't committed yet.
+Expected: "No test files found", which is acceptable at this point (exit code 1). We'll have real tests in the next tasks; no commit failure risk because we haven't committed yet.
 
 **Step 6: Commit**
 
@@ -89,7 +89,7 @@ git commit -m "test(perf): scaffold perf suite config and npm script"
 
 ---
 
-## Task 2: Harness — median-of-N microbench helper
+## Task 2: Harness, median-of-N microbench helper
 
 **Files:**
 - Create: `web/tests/perf/harness/budget.ts`
@@ -121,7 +121,7 @@ describe("medianMs", () => {
 });
 ```
 
-**Step 2: Run — expect fail** (`npm run test:perf`) — "Cannot find module '../budget.js'".
+**Step 2: Run, expect fail** (`npm run test:perf`) reports "Cannot find module '../budget.js'".
 
 **Step 3: Implement**
 
@@ -146,7 +146,7 @@ export function medianMs(fn: () => unknown, opts: MedianOptions): number {
 }
 ```
 
-**Step 4: Run — expect pass**
+**Step 4: Run, expect pass**
 
 **Step 5: Commit**
 
@@ -157,7 +157,7 @@ git commit -m "test(perf): add medianMs microbench helper"
 
 ---
 
-## Task 3: Harness — render counter via React Profiler
+## Task 3: Harness, render counter via React Profiler
 
 **Files:**
 - Create: `web/tests/perf/harness/renderCounter.tsx`
@@ -204,7 +204,7 @@ describe("renderCounter", () => {
 });
 ```
 
-**Step 2: Run — expect fail**
+**Step 2: Run, expect fail**
 
 **Step 3: Implement**
 
@@ -238,7 +238,7 @@ export function CountProfiler({
 }
 ```
 
-**Step 4: Run — expect pass**
+**Step 4: Run, expect pass**
 
 **Step 5: Commit**
 
@@ -249,7 +249,7 @@ git commit -m "test(perf): add React Profiler render-counter harness"
 
 ---
 
-## Task 4: Hot-path microbench — solver `easiestSolution`
+## Task 4: Hot-path microbench, solver `easiestSolution`
 
 **Files:**
 - Create: `web/tests/perf/hotpath/solver.bench.test.ts`
@@ -280,7 +280,7 @@ describe("hot-path: solver.easiestSolution", () => {
 });
 ```
 
-**Step 2: Run (`npm run test:perf`) — record actual median**
+**Step 2: Run (`npm run test:perf`), record actual median**
 
 If test passes, note the median by temporarily logging `console.log(median)` and then update `BUDGET_MS` to `Math.ceil(median * 3)` with a reasonable floor of 5ms.
 
@@ -295,7 +295,7 @@ git commit -m "test(perf): add solver hot-path microbench"
 
 ---
 
-## Task 5: Hot-path microbench — parseEquation
+## Task 5: Hot-path microbench, parseEquation
 
 **Files:**
 - Create: `web/tests/perf/hotpath/parseEquation.bench.test.ts`
@@ -324,7 +324,7 @@ Verify `parseEquation` signature in `src/services/parsing.ts` before writing; ad
 
 ---
 
-## Task 6: MobX reactivity — unrelated-slice fanout
+## Task 6: MobX reactivity, unrelated-slice fanout
 
 **Files:**
 - Create: `web/tests/perf/reactivity/storeFanout.test.ts`
@@ -372,7 +372,7 @@ describe("store reactivity fanout", () => {
 
 Read `web/src/stores/ThemeStore.ts` and `PlayStore.ts` and fix the mutator name + use a theme edition that exists. Remove the `?.` once the API is known.
 
-**Step 4: Run — expect pass; if it fails, we've found our first optimization opportunity.** In that case, do NOT fix it in this task — leave the test failing-in-intent and instead make the assertion tolerant (`toBeLessThanOrEqual(fires)` with the current count) and file a follow-up note in the test comment. Task 9 handles optimizations.
+**Step 4: Run, expect pass; if it fails, we've found our first optimization opportunity.** In that case, do NOT fix it in this task. Leave the test failing-in-intent and instead make the assertion tolerant (`toBeLessThanOrEqual(fires)` with the current count) and file a follow-up note in the test comment. Task 9 handles optimizations.
 
 **Step 5: Commit**
 
@@ -383,7 +383,7 @@ git commit -m "test(perf): add MobX reactivity fanout test for unrelated store s
 
 ---
 
-## Task 7: Render-count test — PlayView knockCell fanout
+## Task 7: Render-count test, PlayView knockCell fanout
 
 **Files:**
 - Create: `web/tests/perf/renders/playView.renders.test.tsx`
@@ -485,7 +485,7 @@ git commit -m "docs(perf): record initial perf suite baselines"
 
 ---
 
-## Task 9: Iterate — one optimization at a time
+## Task 9: Iterate, one optimization at a time
 
 This task is a loop, not a single change. For each candidate:
 
@@ -497,7 +497,7 @@ This task is a loop, not a single change. For each candidate:
    - If the change is a one-liner (wrap in `observer`, narrow destructuring, hoist a literal) → edit in place.
    - If the change requires meaningful new mechanism → create a new file under `web/src/ui/perf/` (e.g. `web/src/ui/perf/selector.ts`), export cleanly, and import with one line at the call site. Do NOT rewrite existing component bodies for perf.
 4. Re-run perf suite. If numbers improved, tighten the affected assertion to the new baseline + 0 headroom.
-5. Run full test suite (`npm test` and `npm run test:perf`) — must be green, and zero visual changes (no JSX/className/CSS edits).
+5. Run full test suite (`npm test` and `npm run test:perf`). Must be green, and zero visual changes (no JSX/className/CSS edits).
 6. Commit with a message like `perf(play): wrap Cell in observer to stop board-wide re-render`.
 7. Update `docs/perf-baseline.md` if a headline number moved.
 
@@ -524,7 +524,7 @@ Commit: `docs(perf): document perf suite entry point`.
 
 ## Execution notes
 
-- Frequent commits — every task above is its own commit.
+- Frequent commits: every task above is its own commit.
 - If any task reveals that an existing API doesn't exist as assumed (e.g. `setEdition`), fix the plan by reading the actual source and adapt the test; don't add production APIs just to make tests work.
 - If `happy-dom` causes flake in Profiler tests, switch only the perf config to `"jsdom"` (already a transitive dep via `@vitejs/plugin-react` tooling; add `jsdom` as devDep if needed).
 - Keep the perf suite deterministic: no `Math.random`, no real timers. If PlayStore uses `setInterval` for its race timer, inject fake timers via `vi.useFakeTimers()` in the affected tests.

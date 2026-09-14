@@ -24,11 +24,11 @@ tests/perf/
 ## What it measures (and doesn't)
 
 - **Yes:** render counts, MobX subscription fanout, JS function-call timing, store-slice decoupling.
-- **No:** real-browser paint latency, bundle size, worker round-trip time, PDF export cost, dataset-load blocking. If you care about any of these, add a new test — this harness is the wrong tool.
+- **No:** real-browser paint latency, bundle size, worker round-trip time, PDF export cost, dataset-load blocking. If you care about any of these, add a new test; this harness is the wrong tool.
 
 ## Assertion style
 
-All render-count assertions are **upper bounds** (`toBeLessThanOrEqual(observed)`). Tighten after a verified optimization win; **never loosen** to make a flaky test pass — that means the harness is wrong, not the budget.
+All render-count assertions are **upper bounds** (`toBeLessThanOrEqual(observed)`). Tighten after a verified optimization win; **never loosen** to make a flaky test pass. That means the harness is wrong, not the budget.
 
 All microbench budgets are `3× observed median`, floored at 5ms, with a comment recording the calibration date. Recalibrate on React/MobX/Vitest upgrades.
 

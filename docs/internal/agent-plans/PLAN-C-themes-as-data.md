@@ -1,4 +1,4 @@
-# PLAN-C — Theme registry as data + bundled editions
+# PLAN-C: Theme registry as data + bundled editions
 
 **Branch:** `agent/themes-as-data`
 **Estimated scope:** ~400–700 LoC + tests + 5–17 JSON theme files
@@ -20,30 +20,30 @@ This is the foundation for Phase 6 ("Persisted custom themes as `ThemeDoc`") and
 
 ### WILL create
 
-- `src/themes/types.ts` — `Theme`, `ThemeTokens`, `ThemeMeta`, `ThemeValidationError`. The token map is structured (color group, typography group, spacing group, shadow group, radius group) — NOT a flat string→string map. The flat form lives in `web/`'s legacy `ThemeStore`; this is the upgrade.
-- `src/themes/schema.ts` — pure-TS validator (zero runtime deps). Returns `{ ok: true, value } | { ok: false, errors }`. No third-party validator library — keeps the package dependency-free.
-- `src/themes/registry.ts` — `ThemeRegistry` class. Construct with `Theme[]`, exposes `byId(id) → Theme | null`, `all() → readonly Theme[]`, `register(theme) → void` (validates before accepting). Throws on duplicate ids unless `replace: true` is passed.
-- `src/themes/loader.ts` — `loadBundledThemes(): readonly Theme[]`. Imports every `*.theme.json` from `editions/` via Vite/tsx-friendly dynamic imports OR a static index file (preferred — see "Bundling note" below).
-- `src/themes/editions/index.ts` — static `[tabletop, noir, ...]` array re-exporting parsed JSON. Keeps the bundle deterministic.
-- `src/themes/editions/tabletop.theme.json` — **the canonical foundation theme.** Must include every token in the schema; serves as the implicit fallback for editions that omit tokens.
-- `src/themes/editions/noir.theme.json` — dark contrast theme.
-- `src/themes/editions/<at least 3 more>.theme.json` — your pick, but each must demonstrate one schema feature (e.g. one with custom typography, one with a saturated accent palette, one with a heavy shadow style). Suggested: `frost`, `ember`, `verdant`. Port colors/feel from v1 editions if useful, but the schema is fresh — don't try to be 100% v1-faithful.
-- `tests/themes/schema.test.ts` — schema validation: rejects missing required fields, accepts well-formed input, reports field paths in errors.
-- `tests/themes/registry.test.ts` — register / byId / all / duplicate handling.
-- `tests/themes/editions.test.ts` — for EVERY bundled `*.theme.json`, asserts `validate(theme).ok === true`. Catches schema drift in edition files.
-- `tests/themes/inheritance.test.ts` — verifies the `extends: "tabletop"` token-merge behavior (see "Inheritance" below).
+- `src/themes/types.ts`: `Theme`, `ThemeTokens`, `ThemeMeta`, `ThemeValidationError`. The token map is structured (color group, typography group, spacing group, shadow group, radius group), NOT a flat string→string map. The flat form lives in `web/`'s legacy `ThemeStore`; this is the upgrade.
+- `src/themes/schema.ts`: pure-TS validator (zero runtime deps). Returns `{ ok: true, value } | { ok: false, errors }`. No third-party validator library, which keeps the package dependency-free.
+- `src/themes/registry.ts`: `ThemeRegistry` class. Construct with `Theme[]`, exposes `byId(id) → Theme | null`, `all() → readonly Theme[]`, `register(theme) → void` (validates before accepting). Throws on duplicate ids unless `replace: true` is passed.
+- `src/themes/loader.ts`: `loadBundledThemes(): readonly Theme[]`. Imports every `*.theme.json` from `editions/` via Vite/tsx-friendly dynamic imports OR a static index file (preferred, see "Bundling note" below).
+- `src/themes/editions/index.ts`: static `[tabletop, noir, ...]` array re-exporting parsed JSON. Keeps the bundle deterministic.
+- `src/themes/editions/tabletop.theme.json`: **the canonical foundation theme.** Must include every token in the schema; serves as the implicit fallback for editions that omit tokens.
+- `src/themes/editions/noir.theme.json`: dark contrast theme.
+- `src/themes/editions/<at least 3 more>.theme.json`: your pick, but each must demonstrate one schema feature (e.g. one with custom typography, one with a saturated accent palette, one with a heavy shadow style). Suggested: `frost`, `ember`, `verdant`. Port colors/feel from v1 editions if useful, but the schema is fresh, so don't try to be 100% v1-faithful.
+- `tests/themes/schema.test.ts`: schema validation: rejects missing required fields, accepts well-formed input, reports field paths in errors.
+- `tests/themes/registry.test.ts`: register / byId / all / duplicate handling.
+- `tests/themes/editions.test.ts`: for EVERY bundled `*.theme.json`, asserts `validate(theme).ok === true`. Catches schema drift in edition files.
+- `tests/themes/inheritance.test.ts`: verifies the `extends: "tabletop"` token-merge behavior (see "Inheritance" below).
 
 ### MAY modify
 
-- `package.json` — no new dependencies. May add `"validate-themes": "tsx src/themes/cli/validate.ts"` script if you ship a CLI helper.
-- `tsconfig.json` — add `"resolveJsonModule": true` if not already present (Phase 0 already enabled it; verify).
-- `docs/changelog.md` — append a "Themes as data" section.
-- `docs/roadmap.md` — check off Phase 6 theme-related boxes.
+- `package.json`: no new dependencies. May add `"validate-themes": "tsx src/themes/cli/validate.ts"` script if you ship a CLI helper.
+- `tsconfig.json`: add `"resolveJsonModule": true` if not already present (Phase 0 already enabled it; verify).
+- `docs/changelog.md`: append a "Themes as data" section.
+- `docs/roadmap.md`: check off Phase 6 theme-related boxes.
 
 ### MUST NOT touch
 
-- `src/core/`, `src/services/` — foundation is stable. The themes module imports from `core/types.ts` only if it needs to (it probably doesn't — themes don't reference `Mode` or `NEquation`).
-- `web/` — the web `ThemeStore` upgrade is Phase 4 work. It will consume this registry but the wiring is the next agent's job.
+- `src/core/`, `src/services/`: foundation is stable. The themes module imports from `core/types.ts` only if it needs to (it probably doesn't, since themes don't reference `Mode` or `NEquation`).
+- `web/`: the web `ThemeStore` upgrade is Phase 4 work. It will consume this registry but the wiring is the next agent's job.
 
 ## Concrete API contracts
 
@@ -149,9 +149,9 @@ Use a **static index file** (`editions/index.ts` re-exporting each JSON via `imp
 ## Acceptance criteria
 
 - `npm run typecheck` clean.
-- `npm test` clean — at least 30 new tests across `tests/themes/`.
+- `npm test` clean, at least 30 new tests across `tests/themes/`.
 - Every bundled `*.theme.json` validates without error.
-- The Tabletop theme is **complete** — every required and every optional token populated. It's the documentation-by-example for theme authors.
+- The Tabletop theme is **complete**: every required and every optional token populated. It's the documentation-by-example for theme authors.
 - At least 5 bundled themes total (tabletop, noir, + 3 more), each demonstrating distinct visual character.
 - A theme with `extends: "tabletop"` and only one overridden token works end-to-end (verified by test).
 - Cycle in `extends` chain throws a clear error with the chain printed.
@@ -160,7 +160,7 @@ Use a **static index file** (`editions/index.ts` re-exporting each JSON via `imp
 
 - A `validate-themes` CLI (`tsx src/themes/cli/validate.ts <glob>`) that lints user-provided JSON files and exits non-zero on failure. Useful for the future "import a theme from a URL" feature.
 - A `serializeTheme(theme)` / `deserializeTheme(json)` pair (currently the JSON IS the theme; this becomes useful when version-migration logic is needed).
-- A `web/` PR that swaps the legacy inline `TABLETOP_THEME` / `NOIR_THEME` for `loadBundledThemes()` — but ONLY if the web foundation is already merged. Otherwise leave for the Phase 4 agent.
+- A `web/` PR that swaps the legacy inline `TABLETOP_THEME` / `NOIR_THEME` for `loadBundledThemes()`, but ONLY if the web foundation is already merged. Otherwise leave for the Phase 4 agent.
 
 ## Hand-off / merge
 

@@ -1,4 +1,4 @@
-# N2K outcome exploration — 2026-09-06
+# N2K outcome exploration, 2026-09-06
 
 Two observed lifecycle defects were repaired. A draft phase rename and two new
 phases were lost after reload: ComposeView started autosave before async hydration,

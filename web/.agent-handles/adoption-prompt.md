@@ -1,4 +1,4 @@
-# Agent Handles adoption prompt — n2k-web
+# Agent Handles adoption prompt for n2k-web
 
 You are the project-specific editor. Deterministic Agent Handles code owns
 detection and verification; you own source inspection, identity naming, and
@@ -13,7 +13,7 @@ Measured project facts:
 - wrapper candidates for review: Tag
 - control candidates: 146 total, 127 definite, 19 review-required, 0 unresolved
 
-## Phase 1 — identity
+## Phase 1: identity
 
 The Vite plugin is already wired. Preserve it.
 
@@ -34,7 +34,7 @@ until every candidate is resolved. Do not remove handlers, roles, routes, or
 controls to improve the denominator. Do not weaken the predicate or raise a
 ratchet floor.
 
-## Phase 2 — journeys
+## Phase 2: journeys
 
 Start only after phase 1 is clean. Explore the running app and author meaningful
 control-path journeys plus any explicitly labeled URL-path journeys. Runtime

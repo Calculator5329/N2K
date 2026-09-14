@@ -1,7 +1,7 @@
-# Plan — Æther arity mixes in Compose (3 / 3+4 / 3+4+5)
+# Plan: Æther arity mixes in Compose (3 / 3+4 / 3+4+5)
 
 Status: **proposed, awaiting go-ahead**. Author: assistant, 2026-04-20.
-Owners: TBD. Related: `docs/architecture.md` "Dataset — `.n2k` binary
+Owners: TBD. Related: `docs/architecture.md` "Dataset: `.n2k` binary
 format", `docs/changelog.md` 2026-04-20 entries on per-rules board
 bounds and the Æther full-range 3d pool.
 
@@ -13,8 +13,8 @@ bounds and the Æther full-range 3d pool.
 
 The dice-range and 4999 cap are already shipped (see today's
 changelog). What's left is the actual mixed-arity generation. The user
-explicitly called out that this should be a first-class capability —
-not an "on-demand worker" hack — so the plan below pre-bakes the
+explicitly called out that this should be a first-class capability
+(not an "on-demand worker" hack), so the plan below pre-bakes the
 matrices and refactors the variable-arity types end-to-end.
 
 > "We absolutely want b and it was an oversight to not have the
@@ -34,11 +34,11 @@ current tree.
   Compose uses `AetherTuple`.
 - `services/competition.ts → generateBalancedRolls` and
   `RoundAssignment` are typed against `DiceTriple`. The picker, the
-  scorer, the per-round assignment, the share-link encoder — all
+  scorer, the per-round assignment, the share-link encoder are all
   arity-3.
 - `web/src/services/competitionService.ts → makeMatrixResolver`
   returns a `DifficultyResolver<DiceTriple>` that calls
-  `matrix.lookup(triple, target)` — a fixed 3-key lookup.
+  `matrix.lookup(triple, target)`, a fixed 3-key lookup.
 
 ### Matrix coverage is arity-3 only
 
@@ -49,7 +49,7 @@ current tree.
   baked. The runtime loader (`n2kLoader.ts` /
   `loadDifficultyMatrixFor`) only knows about the 3-arity file name.
 - Arity 4/5 tuples are solvable today, but only via the
-  `aetherSolverWorker` pool (see `AetherDataStore.sweep`) — which
+  `aetherSolverWorker` pool (see `AetherDataStore.sweep`), which
   takes 1-3 seconds per arity-4 tuple and minutes per arity-5 tuple.
   That's the "fallback chain" architecture documents
   (`docs/architecture.md` lines 170-179), and it's specifically the
@@ -82,8 +82,8 @@ We need a curated subset. (See "Phase B" below.)
 **Goals.**
 1. Compose can pick "arity 3", "arity 3 + sprinkled 4", or
    "arity 3 + sprinkled 4 + sprinkled 5" as a first-class mode.
-2. Each round's chosen tuple resolves against a **pre-baked matrix**
-   — no live solver work in the Compose hot path.
+2. Each round's chosen tuple resolves against a **pre-baked matrix**:
+   no live solver work in the Compose hot path.
 3. Variable-arity tuples flow end-to-end: editor → store → resolver →
    results UI → share link → reload.
 4. Arity-3 behaviour is byte-identical to today; the new arities are
@@ -101,7 +101,7 @@ We need a curated subset. (See "Phase B" below.)
 
 Three phases, sized for separate sessions.
 
-### Phase A — Variable-arity plumbing (no new matrices yet)
+### Phase A: Variable-arity plumbing (no new matrices yet)
 
 Goal: get `AetherTuple` (or a renamed `DiceMultiset`) flowing through
 Compose without breaking arity-3. End state: arity-3 still works
@@ -114,7 +114,7 @@ exactly as today, and the Compose data path is shape-agnostic.
 2. **Resolver.** Generalise `DifficultyResolver<T>` so the
    competition resolver works on any-length multisets. The matrix
    lookup itself (`matrix.lookup(tuple, target)`) is already
-   arity-agnostic at the binary layer — only the TypeScript types
+   arity-agnostic at the binary layer, and only the TypeScript types
    need widening.
 3. **Generator.** Refactor `generateBalancedRolls` /
    `RoundAssignment` to carry `DiceMultiset`, not `DiceTriple`. The
@@ -129,13 +129,13 @@ exactly as today, and the Compose data path is shape-agnostic.
 6. **Tests.** Add a parameterised `competitionStore` test that drives
    the same scenario at arities 3, 4, 5 (using a fake resolver) and
    confirms balancing math is unchanged at arity 3. No matrix
-   changes in this phase — arity-4 / 5 candidate pools stay empty
+   changes in this phase: arity-4 / 5 candidate pools stay empty
    and the UI greys those options out.
 
 Deliverable: PR titled "Compose: variable-arity plumbing". Pure
 refactor, zero behaviour change.
 
-### Phase B — Bake the matrices
+### Phase B: Bake the matrices
 
 Goal: ship `aether-arity4-curated.n2k` and
 `aether-arity5-curated.n2k` blobs, lazily loaded the first time a
@@ -177,10 +177,10 @@ Compose plan needs them.
    `loadDifficultyMatrixFor("aether", arity)` resolves to the right
    blob. Update the `defaultDataset` plumbing so each arity has its
    own cache slot. `competitionService.ts` already has the
-   `makeMatrixResolver` seam — wire each arity's resolver through it.
+   `makeMatrixResolver` seam, so wire each arity's resolver through it.
 5. **Candidate pools.** Add `aetherCurated4d` and `aetherCurated5d`
    pools to `candidatePools.ts`, mirroring the bake subset exactly
-   (same tuple enumerator, single source of truth — `core/`
+   (same tuple enumerator, single source of truth, using `core/`
    constants for the subset bounds).
 6. **Pool guarantee.** The generator must only pick tuples that have
    matrix coverage. Phase B adds an invariant: a candidate pool's
@@ -192,16 +192,16 @@ the two blobs, the loader changes, and the new pool registrations.
 No UI changes yet beyond the new pool entries appearing in the
 existing pool picker.
 
-### Phase C — Mixed-arity Compose modes
+### Phase C: Mixed-arity Compose modes
 
 Goal: the user-facing feature. Pick "3", "3+4", or "3+4+5" in the
 Æther rules tile and have the per-round dice arity vary.
 
 1. **Mode tiles.** Add three Æther arity-mix presets to the rules
    row:
-   - `Æther 3d` — all rounds arity 3 (today's behaviour, default).
-   - `Æther 3d + sprinkled 4d` — ~70% arity 3, ~30% arity 4.
-   - `Æther 3d + sprinkled 4d + 5d` — ~60% arity 3, ~30% arity 4,
+   - `Æther 3d`: all rounds arity 3 (today's behaviour, default).
+   - `Æther 3d + sprinkled 4d`: ~70% arity 3, ~30% arity 4.
+   - `Æther 3d + sprinkled 4d + 5d`: ~60% arity 3, ~30% arity 4,
      ~10% arity 5.
    The exact ratios are tunable; a knob in `CompositionStore`
    (`arityMix: { 3: number; 4?: number; 5?: number }`) controls
@@ -230,12 +230,12 @@ preset row, the per-round dispatch, the routed resolvers.
 
 ## Tests
 
-- Unit: `compositionStore.test.ts` — arity-mix probability
+- Unit: `compositionStore.test.ts`: arity-mix probability
   distributions sum to 1 (per-round selection), arity-3 default
   still produces deterministic results.
-- Unit: `competition.test.ts` (root workspace) — score balancing on a
+- Unit: `competition.test.ts` (root workspace): score balancing on a
   fake resolver at mixed arities; result symmetry.
-- Unit: `n2kLoader.test.ts` — arity-4 / arity-5 file headers parse
+- Unit: `n2kLoader.test.ts`: arity-4 / arity-5 file headers parse
   correctly; subset-tag mismatch raises.
 - E2E: a new `tabletop-aether-mixed-arity.spec.ts` that unlocks
   Æther, picks each arity-mix preset, generates a competition,
@@ -264,16 +264,16 @@ preset row, the per-round dispatch, the routed resolvers.
    arity-4 / 5 blobs into per-arity downloads triggered by which
    mix the user picked.
 5. **Worker pool obsolescence.** Phase B doesn't delete
-   `aetherSolverWorker` — Lookup still uses it for arbitrary
+   `aetherSolverWorker`; Lookup still uses it for arbitrary
    user-typed tuples. Compose just stops calling into it. Worth a
    follow-up note in the architecture doc once Phase C lands.
 
 ## Estimated effort
 
-- Phase A — 1 focused session (4-6 hours of work).
-- Phase B — 1 session for code (4-5 hours) + offline bake time
+- Phase A: 1 focused session (4-6 hours of work).
+- Phase B: 1 session for code (4-5 hours) + offline bake time
   (~24 hours wall clock).
-- Phase C — 1 session (3-4 hours).
+- Phase C: 1 session (3-4 hours).
 - Total: ~2 weeks calendar time, ~3 working sessions.
 
 ## Decision checkpoints (please confirm before we start)
