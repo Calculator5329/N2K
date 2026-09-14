@@ -9,6 +9,34 @@ registry predicate migration. Not deployed.
 
 # N2K Platform — Changelog
 
+## 2026-09-13 — Lookup dead ends, depower note, phone Competition row
+
+Site sweep QA against the live build found four majors. Fixed in source:
+
+- **Lookup stepper skips triples the almanac has no chunk for.** Three of a
+  kind is never a legal roll, so stepping 4,5,5 up used to land on 5,5,5 and
+  a one-line "Couldn't load solutions" panel. `LookupStore.setDie` now asks
+  `standardLoader.hasTupleSync` and keeps walking in the same direction
+  (4,5,5 → 5,5,6); permissive until the blob header is parsed. Three
+  tests in `tests/lookupStore.test.ts`, watched to fail first.
+- **A triple that still arrives unsupported (typed URL hash) gets a real
+  panel**: "Not in this almanac", with the three-of-a-kind rule spelled out.
+- **Depower is explained where it bites.** The dek now says 4, 8, 16 and 9
+  are played as 2 and 3, and a `DepowerNote` under the easiest equation
+  names the reduced dice, so `2³ + 5⁰ + 20¹` next to a rolled 4 no longer
+  contradicts "uses each die exactly once".
+- **Competition config row on phones**: time budget, spice and variance
+  cells are full width under 640px and the segmented groups wrap, so
+  "Spicy" is back on screen (right edge 319px on a 390px viewport).
+- **Tabletop footer edition picker opens upward**, so all 17 editions sit
+  inside the viewport instead of running 440px below the fold.
+
+Verification: `web` typecheck, 88 unit tests, perf suite green; preview
+build measured with Playwright at 1280×900 and 390×844. Root workspace
+untouched. Not deployed; the live build also predates several fixes already
+in source (folio numerals, for one), so the next deploy closes more than
+this entry.
+
 ## 2026-09-05 — Journey verification artifacts (A30)
 
 - Regenerated `web/e2e/journeys.generated.spec.ts` through delivered Handles core

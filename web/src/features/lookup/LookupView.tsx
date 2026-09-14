@@ -15,7 +15,7 @@
  */
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { observer } from "mobx-react-lite";
-import { STANDARD_MODE } from "@solver/core/constants.js";
+import { STANDARD_MODE, depowerDice } from "@solver/core/constants.js";
 import { useStore } from "../../stores/AppStoreContext.js";
 
 const DICE_MIN = STANDARD_MODE.diceRange.min;
@@ -101,9 +101,18 @@ const SolutionPanel = observer(function SolutionPanel({
     return <Skeleton />;
   }
   if (detailState.status === "error") {
+    const threeOfAKind = dice[0] === dice[1] && dice[1] === dice[2];
     return (
-      <div className="font-mono text-oxblood-500 text-sm">
-        Couldn't load solutions for this dice triple.
+      <div>
+        <div className="label-caps mb-2">Not in this almanac</div>
+        <p className="font-display text-[40px] text-ink-500 leading-tight max-w-md" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 30' }}>
+          The dice <DiceInline dice={dice} /> have no entry here.
+        </p>
+        <p className="mt-4 italic text-ink-200 max-w-md">
+          {threeOfAKind
+            ? "Three of the same face is never a legal roll, so nothing was compiled for it. Nudge any one die and the equations return."
+            : "This triple was not compiled into the almanac. Nudge a die to the nearest triple that was."}
+        </p>
       </div>
     );
   }
@@ -140,6 +149,7 @@ const SolutionPanel = observer(function SolutionPanel({
         <DifficultyMeter difficulty={solution.difficulty} />
       </div>
       <Equation equation={solution.equation} size="display" />
+      <DepowerNote dice={dice} />
       <DifficultyBreakdown equation={solution.equation} />
       <div className="lookup-equations">
         <AllEquationsList dice={dice} total={lookup.total} />
@@ -280,6 +290,23 @@ const NeighborhoodStrip = observer(function NeighborhoodStrip({
   );
 });
 
+/**
+ * Standard mode plays 4, 8 and 16 as 2 and 9 as 3 (the exponent absorbs
+ * the difference), so an equation can show a base the player never
+ * rolled. Say so next to the equation instead of leaving the reader to
+ * reconcile "uses each die once" with a 2 where their 4 should be.
+ */
+function DepowerNote({ dice }: { dice: readonly [number, number, number] }) {
+  const reduced = dice.filter((d) => depowerDice(d) !== d);
+  if (reduced.length === 0) return null;
+  const parts = [...new Set(reduced)].map((d) => `${d} as ${depowerDice(d)}`);
+  return (
+    <p className="mt-2 text-[12px] italic text-ink-200">
+      Perfect-power dice are played as their base: {parts.join(", ")}. The exponent takes up the difference.
+    </p>
+  );
+}
+
 function DiceInline({ dice }: { dice: readonly [number, number, number] }) {
   return (
     <span className="inline-flex align-baseline mx-1.5">
@@ -394,7 +421,7 @@ const StandardLookupView = observer(function StandardLookupView() {
             its easiest equation.
           </>
         }
-        dek={`Pick a dice triple and a target between ${TARGET_MIN} and ${TARGET_MAX}. The almanac returns the lowest-difficulty equation that uses each die exactly once.`}
+        dek={`Pick a dice triple and a target between ${TARGET_MIN} and ${TARGET_MAX}. The almanac returns the lowest-difficulty equation that uses each die exactly once; 4, 8, 16 and 9 are played as 2 and 3.`}
       />
 
       <section className="grid grid-cols-12 gap-y-10 lg:gap-14">

@@ -253,11 +253,12 @@ function DiscreetSelector({
         </svg>
       </button>
 
+      {/* Lives in a footer, so the list opens upward and stays on screen. */}
       {open && (
         <div
           role="listbox"
           aria-label="Choose edition"
-          className="absolute z-50 mt-1 right-0 min-w-[180px] p-1 shadow-lg"
+          className="absolute z-50 bottom-full mb-1 right-0 min-w-[180px] p-1 shadow-lg"
           style={{
             background: "rgb(var(--paper-50))",
             border: "1px solid rgb(var(--ink-300))",

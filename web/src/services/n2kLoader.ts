@@ -178,6 +178,16 @@ export class N2kLoader {
     };
   }
 
+  /**
+   * Synchronous twin of `hasTuple` for UI code that must answer during a
+   * click (the Lookup dice stepper). Returns `null` until the blob header
+   * has been parsed, so callers can stay permissive while loading.
+   */
+  hasTupleSync(dice: readonly number[]): boolean | null {
+    if (this.tuplesByKey === null) return null;
+    return this.tuplesByKey.has(diceKey(this.canonicalizeDiceTuple(dice)));
+  }
+
   /** True iff the tuple has a chunk in the blob (no decode triggered). */
   async hasTuple(dice: readonly number[]): Promise<boolean> {
     await this.ready();

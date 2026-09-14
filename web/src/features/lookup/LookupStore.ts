@@ -2,6 +2,7 @@ import { autorun, makeAutoObservable, runInAction, type IReactionDisposer } from
 import { STANDARD_MODE } from "@solver/core/constants.js";
 import type { DiceTriple } from "../../core/types";
 import { readHash, subscribeHash, writeHash, type HashSchema } from "../../services/urlHashState";
+import { standardLoader } from "../../services/n2kLoader";
 
 /**
  * Standard-mode dice bounds — `STANDARD_MODE.diceRange` is the source
@@ -58,11 +59,17 @@ export class LookupStore {
   d2 = 3;
   d3 = 5;
   total = 40;
+  private readonly isSupported: (dice: DiceTriple) => boolean | null;
 
-  constructor() {
-    makeAutoObservable<LookupStore, "hydrateFromHash">(this, {
+  constructor(
+    isSupported: (dice: DiceTriple) => boolean | null = (dice) =>
+      standardLoader.hasTupleSync(dice),
+  ) {
+    this.isSupported = isSupported;
+    makeAutoObservable<LookupStore, "hydrateFromHash" | "isSupported">(this, {
       startSync: false,
       hydrateFromHash: false,
+      isSupported: false,
     });
     this.hydrateFromHash();
   }
@@ -73,12 +80,35 @@ export class LookupStore {
     return [sorted[0]!, sorted[1]!, sorted[2]!];
   }
 
+  /**
+   * Set one die. The blob has no chunk for every clamped triple (three of
+   * the same face is never a legal roll, for one), so a stepper click that
+   * would land on an unsupported triple keeps walking in the same
+   * direction until it finds one the almanac can answer. If none exists
+   * in that direction the die stays put; a typed value with no supported
+   * neighbour is left alone rather than replaced with a dead-end panel.
+   * `isSupported` answers `null` until the dataset is parsed, and while it
+   * does the picker is permissive.
+   */
   setDie(index: 0 | 1 | 2, value: number): void {
     const clamped = clampDie(value);
     if (clamped === null) return;
-    if (index === 0) this.d1 = clamped;
-    if (index === 1) this.d2 = clamped;
-    if (index === 2) this.d3 = clamped;
+    const current = [this.d1, this.d2, this.d3][index]!;
+    if (clamped === current) return;
+    const direction = clamped > current ? 1 : -1;
+    let next: number | null = null;
+    for (let v = clamped; v >= DICE_MIN && v <= DICE_MAX; v += direction) {
+      const trial: [number, number, number] = [this.d1, this.d2, this.d3];
+      trial[index] = v;
+      if (this.isSupported(trial) !== false) {
+        next = v;
+        break;
+      }
+    }
+    if (next === null) return;
+    if (index === 0) this.d1 = next;
+    if (index === 1) this.d2 = next;
+    if (index === 2) this.d3 = next;
   }
 
   setTotal(value: number): void {

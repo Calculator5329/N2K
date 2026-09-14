@@ -400,9 +400,9 @@ const ConfigPanel = observer(function ConfigPanel({
         </div>
       </div>
 
-      <div className="col-span-6 md:col-span-4">
+      <div className="col-span-12 sm:col-span-6 md:col-span-4">
         <div className="label-caps mb-2">Time budget per board (s)</div>
-        <div className="inline-flex border border-ink-100/30" style={{ borderRadius: "2px" }}>
+        <div className="inline-flex flex-wrap border border-ink-100/30" style={{ borderRadius: "2px" }}>
           {TIME_BUDGET_PRESETS.map((s) => (
             <button
               key={s}
@@ -426,10 +426,10 @@ const ConfigPanel = observer(function ConfigPanel({
         </p>
       </div>
 
-      <div className="col-span-6 md:col-span-4">
+      <div className="col-span-12 sm:col-span-6 md:col-span-4">
         <div className="label-caps mb-2">Round spice</div>
         <div
-          className="inline-flex border border-ink-100/30"
+          className="inline-flex flex-wrap border border-ink-100/30"
           style={{ borderRadius: "2px" }}
         >
           {SPICE_PRESETS.map((p) => (
@@ -454,10 +454,10 @@ const ConfigPanel = observer(function ConfigPanel({
         </p>
       </div>
 
-      <div className="col-span-6 md:col-span-4">
+      <div className="col-span-12 sm:col-span-6 md:col-span-4">
         <div className="label-caps mb-2">Round variance</div>
         <div
-          className="inline-flex border border-ink-100/30"
+          className="inline-flex flex-wrap border border-ink-100/30"
           style={{ borderRadius: "2px" }}
         >
           {VARIANCE_PRESETS.map((p) => (

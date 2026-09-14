@@ -247,6 +247,12 @@ lives in `docs/internal/current_task.md` (canonical/B&B migration, v2++ blobs).
 
 ### Polish
 
+- [ ] **Deploy HEAD to n2k-almanac-v3.web.app** (owner). The 2026-09-13 site sweep tested a stale build: folio numerals still swapped live although fixed 2026-07-10, plus the four Lookup/Competition majors fixed 2026-09-13.
+- [ ] **Epoch dates in Receipt, Spreadsheet, Polaroid and Manuscript mastheads** render "1970-01-01" on the live build; confirm against HEAD and fix the date source if it persists.
+- [ ] **Receipt edition Lookup right column spills past the paper edge** at 1280 wide.
+- [ ] **Only the Lookup view is in the URL hash**: Back leaves the site from Competition, Library and Play, reload always lands on Lookup, and non-Lookup views cannot be linked.
+- [ ] **Play race board has no move validation** and the clear bonus is out of scale (36 cells worth 5,328 scored 60,317); Easy and Standard bots knock zero cells in 60 seconds.
+- [ ] **Competition small fixes**: Escape does not close Manage Phases; Generate is a silent no-op on a phase with no boards and drops boards with 0 bouts without warning; "Remove" on board headers clips to "REMOV" at 390px; "1 cells knocked" plural.
 - [x] <!-- workspace:id=work:dfc577e3-7ad9-5cc6-9524-690ab4976cf6 --> **Folio numerals** (done 2026-07-10, burndown w2) — `nav.ts` is
       the source of truth (Lookup I · Competition II · Library III ·
       Play IV), but `PlayView` hardcoded folio `"III"` and `LibraryView`
