@@ -9,6 +9,24 @@ registry predicate migration. Not deployed.
 
 # N2K Platform: Changelog
 
+## 2026-09-24: Welcome card copy, hero capture, data notes, license
+
+- The first-run welcome card called the site a "mental-math dice race" while
+  the page under it is an almanac. It now says what the site does in three
+  sentences (Lookup first, then competitions, library and the bot race).
+  Buttons and test ids are unchanged; the three-step race list and the footer
+  hint are gone.
+- `docs/hero.gif` (2.4 MB) and `docs/hero.mp4`: a 12.5 second real-time
+  Playwright capture of the dev build, now at the top of the README.
+- `docs/data.md`: the four tracked `.n2k` blobs (74,120,741 bytes), how the
+  app loads them, and hosting options. Standard and arity-3 rebaked into a
+  scratch directory byte-identical in 1.30 s and 21.02 s; tracked blobs
+  untouched.
+- `web/.agent-handles/` is local tool state; now gitignored and untracked.
+- Added an MIT `LICENSE`.
+
+Not deployed.
+
 ## 2026-09-13: Lookup dead ends, depower note, phone Competition row
 
 Site sweep QA against the live build found four majors. Fixed in source:

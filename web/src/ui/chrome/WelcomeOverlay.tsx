@@ -69,31 +69,20 @@ export const WelcomeOverlay = observer(function WelcomeOverlay() {
           className="font-display text-[26px] sm:text-[30px] leading-tight text-ink-500 mb-3"
           style={{ fontVariationSettings: '"opsz" 144, "SOFT" 30' }}
         >
-          It&apos;s a{" "}
+          An{" "}
           <span
             className="italic text-oxblood-500"
             style={{ fontVariationSettings: '"opsz" 144, "SOFT" 80, "WONK" 1' }}
           >
-            mental-math
+            almanac
           </span>{" "}
-          dice race.
+          for the N2K dice game.
         </div>
-        <p className="text-[14px] leading-relaxed text-ink-300 mb-5">
-          Three dice, a 6×6 board, sixty seconds. Chain the dice with
-          <span className="font-mono text-ink-500"> + − × ÷</span> and
-          exponents to hit the numbers on your board, and knock them off
-          faster than the bot clears theirs.
+        <p className="text-[14px] leading-relaxed text-ink-300 mb-6">
+          Pick three dice and a target, and Lookup shows the easiest
+          equation that hits it. You can also build competition boards,
+          keep them in a library, or race a bot for sixty seconds.
         </p>
-
-        <ol className="mb-6 space-y-2.5">
-          <HowStep ord="1">Three shared dice are rolled at the buzzer.</HowStep>
-          <HowStep ord="2">
-            Click a cell you can reach with the dice to knock it off.
-          </HowStep>
-          <HowStep ord="3">
-            Beat the bot&apos;s score before the minute runs out.
-          </HowStep>
-        </ol>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <button
@@ -116,30 +105,7 @@ export const WelcomeOverlay = observer(function WelcomeOverlay() {
             Explore first
           </button>
         </div>
-
-        <p className="mt-5 text-[12px] italic text-ink-200">
-          Prefer to poke around? Start on{" "}
-          <strong className="not-italic text-ink-300">Lookup</strong> to find
-          the easiest equation for any three dice, or open{" "}
-          <strong className="not-italic text-ink-300">Play</strong> anytime for
-          the race.
-        </p>
       </div>
     </div>
   );
 });
-
-function HowStep({ ord, children }: { ord: string; children: React.ReactNode }) {
-  return (
-    <li className="flex gap-3 text-[14px] leading-snug text-ink-300">
-      <span
-        className="shrink-0 font-display text-[15px] text-oxblood-500 w-5 text-center"
-        style={{ fontVariationSettings: '"opsz" 144, "SOFT" 30' }}
-        aria-hidden="true"
-      >
-        {ord}
-      </span>
-      <span>{children}</span>
-    </li>
-  );
-}

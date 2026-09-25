@@ -1,6 +1,8 @@
 # N2K Platform
 
-![N2K screenshot](docs/screenshots/app.png)
+![Dismissing the welcome card, changing the dice and target in Lookup, stepping through neighboring targets, and opening the difficulty breakdown](docs/hero.gif)
+
+Real-time capture of the dev build, 12.5 seconds. [Full-resolution MP4](docs/hero.mp4).
 
 [![Live Almanac](https://img.shields.io/badge/live-N2K%20Almanac-2563eb?style=flat-square)](https://n2k-almanac-v3.web.app)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -8,21 +10,21 @@
 [![MobX](https://img.shields.io/badge/MobX-6-ff9955?style=flat-square&logo=mobx&logoColor=white)](https://mobx.js.org/)
 [![Vite](https://img.shields.io/badge/Vite-6-646cff?style=flat-square&logo=vite&logoColor=white)](https://vite.dev/)
 
-N2K is a mental-math dice game: you get a few dice and a target number, and you
-have to build an equation of the form `d1^p1 op1 d2^p2 op2 d3^p3 = total`,
-evaluated strictly left to right, that hits the target. The hard part while
-playing is knowing whether a cell is even solvable, and how hard it is compared
-to the one next to it.
-
-This repo answers that. A TypeScript solver precomputes the easiest equation for
-every roll in the standard game, packs the answers into a bit-packed binary
-format, and the web app loads that blob and answers lookups instantly. On top of
-the lookup sit a competition builder, a local library of saved competitions, and
-60-second knockout races against bot personas.
+N2K is an almanac for a mental-math dice game: pick three dice and a target
+number, and it shows the easiest equation that hits it, from a dataset I
+precomputed for every standard roll. Around that lookup sit a competition builder, a
+local library of saved competitions, and 60-second races against bot players.
 
 **Live:** [n2k-almanac-v3.web.app](https://n2k-almanac-v3.web.app)
 
 ## What you can do with it
+
+A legal answer has the form `d1^p1 op1 d2^p2 op2 d3^p3 = total`, evaluated
+strictly left to right. While playing, the hard part is knowing whether a
+target is even reachable, and how hard it is next to its neighbors. That is the
+question the almanac answers.
+
+![N2K screenshot](docs/screenshots/app.png)
 
 **Lookup** takes a dice combination and a target and gives you the easiest valid
 equation. **Competition** builds boards, generates balanced rolls, lets you pin
@@ -182,9 +184,8 @@ budget. Baselines are in [docs/perf-baseline.md](docs/perf-baseline.md).
   need the IndexedDB backend. The seam exists, the implementation doesn't.
 - Æther arity-5 coverage is partial. Only the first 50 canonical commons tuples
   are baked; the rest fall back to a live worker sweep that takes seconds.
-- `aether-arity3.n2k` (~31 MB) and `aether-arity4-commons.n2k` (~38 MB) are
-  tracked in git, so clones are heavy. Both are under GitHub's 100 MB per-file
-  limit, but future bakes should watch it.
+- About 71 MB of `.n2k` blobs are tracked in git, so clones are heavy. Sizes,
+  bake times, and the hosting options are in [docs/data.md](docs/data.md).
 - No ESLint and no CI. Verification is manual.
 - `web/index.html` pulls about 25 font families from Google Fonts at runtime
   rather than self-hosting them. The service worker runtime-caches them, so a
@@ -194,6 +195,28 @@ budget. Baselines are in [docs/perf-baseline.md](docs/perf-baseline.md).
 No Firestore, no auth, no real multiplayer transport, and no AI-generated
 themes. The seams are there; the implementations are not.
 
+## How it was built
+
+AI coding agents wrote most of this code while I directed the work. The first
+version came in as phase branches (`agent/phase-2-cli`, `agent/phase-3-web`,
+`agent/phase-4-lookup`) that I merged. As of 2026-09-24, 36 of the 89 commits
+carry a Claude or Cursor co-author line.
+
+What I decided:
+
+- The rules agents work under, in `CLAUDE.md`: never deploy with failing tests,
+  saved localStorage data must migrate from every older schema version, and
+  perf caps can be tightened but never loosened to pass a flaky run.
+- Folding the other N2K repos into this one (owner ruling `q-n2k=archive`,
+  recorded in `docs/changelog.md`).
+- Whether a full arity-5 bake and the larger Æther download are worth it. That
+  one is still open in `docs/roadmap.md`.
+
+What checked the output: root typecheck plus the Vitest suite, web typecheck
+plus its unit tests, the perf suite in `web/tests/perf/`, and Playwright flows
+for UI that changes across breakpoints. There is no CI, so these run by hand
+before every commit.
+
 ## Docs
 
 - [Architecture](docs/architecture.md) covers the layers, dataset format, exact
@@ -202,3 +225,8 @@ themes. The seams are there; the implementations are not.
 - [Changelog](docs/changelog.md) is the session log, newest first.
 - [Aether arity plan](docs/plan-aether-arity-mixes.md) covers the higher-arity
   coverage work.
+- [Data](docs/data.md) covers the `.n2k` blobs: sizes, bake times, hosting options.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

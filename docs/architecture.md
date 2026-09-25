@@ -357,7 +357,8 @@ history and `docs/plan-solver-perf-and-n2k-v2.md`.
   rest fall back to a live worker sweep (~seconds). Full bake ≈ 21 h.
 - **Large blobs in git**: `aether-arity3.n2k` (~31 MB) and
   `aether-arity4-commons.n2k` (~38 MB) are tracked in git; clones are
-  heavy. Under GitHub's 100 MB/file limit, but mind future bakes.
+  heavy. Under GitHub's 100 MB/file limit, but mind future bakes. Sizes, bake
+  times, and hosting options: `docs/data.md`.
 - **Deploy config untracked**: `firebase.json` / `.firebaserc` were
   untracked as of 2026-07-05 (see ROADMAP "Now").
 - **No ESLint / no CI**: verification is manual (see root CLAUDE.md).
