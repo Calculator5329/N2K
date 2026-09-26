@@ -1,15 +1,15 @@
 /**
  * `explain` — print the difficulty breakdown for a typed equation.
  *
- * Uses the CLI-local `parseEquation` (will be replaced by the canonical
- * services parser when it lands).
+ * Uses the shared typed-equation parser in `services/typedEquation.ts`
+ * (the same grammar the Play race accepts, with the total required).
  */
 import { difficultyBreakdown } from "../../services/difficulty.js";
 import { optionalString } from "../parseArgs.js";
 import type { CommandFn, CommandResult } from "../context.js";
 import { resolveMode, writeln } from "../context.js";
 import { ansi } from "../ansi.js";
-import { parseEquation } from "../parseEquation.js";
+import { parseEquation } from "../../services/typedEquation.js";
 import { renderDifficultyBreakdown, renderEquation } from "../render.js";
 
 export const explainCommand: CommandFn = async (args, ctx, out): Promise<CommandResult> => {

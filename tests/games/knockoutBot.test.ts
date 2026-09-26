@@ -8,6 +8,9 @@ import {
   type BotDifficulty,
 } from "../../src/games/knockoutBot.js";
 import type { NEquation, Operator } from "../../src/core/types.js";
+import { claimRefusal } from "../../src/games/n2kClassic.js";
+import { formatEquationAgainstPool } from "../../src/services/parsing.js";
+import { parseEquation } from "../../src/services/typedEquation.js";
 
 // ---------------------------------------------------------------------------
 //  Fixtures
@@ -124,12 +127,15 @@ describe("botDifficultyOfEquation", () => {
 // ---------------------------------------------------------------------------
 
 describe("KnockoutBot — speed tier constants", () => {
-  it("matches the original game's botSpeedList exactly", () => {
+  // Easy..Expert match the original game's botSpeedList. Master drops
+  // from the original 10 to 6: with easiest-first ordering 10 knocked up
+  // to 22 cells in 60 s, too strong against a human who types.
+  it("matches the original botSpeedList, with Master slowed to 6", () => {
     expect(BOT_SPEED.easy).toBe(1);
     expect(BOT_SPEED.standard).toBe(2);
     expect(BOT_SPEED.hard).toBe(3);
     expect(BOT_SPEED.expert).toBe(5);
-    expect(BOT_SPEED.master).toBe(10);
+    expect(BOT_SPEED.master).toBe(6);
   });
 });
 
@@ -168,24 +174,22 @@ describe("KnockoutBot — pacing matches original", () => {
   });
 
   it("each tier's clear count is in the expected band for a 60s race", () => {
-    // Bands derived from the original gate `diff * 11_765 / speed` ms
-    // per cell, with most reachable cells scoring 3.2-6 difficulty
-    // and the upper third of the 1×8 board falling above the hard cap.
+    // Each cell costs `diff * 11_765 / speed` ms and the floor diff is
+    // 1.6, so a tier can never beat 60_000 / (1.6 * 11_765 / speed)
+    // cells: Easy 3, Standard 6, Master 19. Easiest-first means the bot
+    // gets close to that ceiling on a friendly roll like (2, 3, 5).
     const easy = simulateRace("easy").length;
     const standard = simulateRace("standard").length;
     const master = simulateRace("master").length;
 
-    // Easy (speed 1) at diff 3.2 = 37.6 s/cell → 1 cell typical.
-    expect(easy).toBeGreaterThanOrEqual(0);
+    expect(easy).toBeGreaterThanOrEqual(1);
     expect(easy).toBeLessThanOrEqual(3);
 
-    // Standard (speed 2) at diff 3.2 = 18.8 s/cell → 1-3 cells.
-    expect(standard).toBeGreaterThanOrEqual(1);
+    expect(standard).toBeGreaterThanOrEqual(2);
     expect(standard).toBeLessThanOrEqual(6);
 
-    // Master (speed 10) at diff 3.2 = 3.8 s/cell → 8-16 cells.
-    expect(master).toBeGreaterThanOrEqual(5);
-    expect(master).toBeLessThanOrEqual(20);
+    expect(master).toBeGreaterThanOrEqual(10);
+    expect(master).toBeLessThanOrEqual(19);
   });
 
   it("readyAtMs is monotonically increasing across the queue", () => {
@@ -210,17 +214,70 @@ describe("KnockoutBot — pacing matches original", () => {
   });
 });
 
-describe("KnockoutBot — high-value-first ordering (matches original)", () => {
-  it("claims higher-value cells before lower-value ones in the same race", () => {
+describe("KnockoutBot — easiest-first ordering", () => {
+  it("claims cells in non-decreasing difficulty order", () => {
     const claims = simulateRace("master");
-    // The first claim should be from the upper half of the board
-    // (the original walked top-down by value).
     expect(claims.length).toBeGreaterThan(2);
-    const firstThreeValues = claims.slice(0, 3).map((c) => c.cellValue);
-    const medianValue = PATTERN_8[Math.floor(PATTERN_8.length / 2)]!;
-    // At least one of the first three should be at or above median.
-    expect(
-      firstThreeValues.some((v) => v >= medianValue),
-    ).toBe(true);
+    for (let i = 1; i < claims.length; i += 1) {
+      expect(claims[i]!.difficulty).toBeGreaterThanOrEqual(claims[i - 1]!.difficulty);
+    }
+  });
+});
+
+describe("KnockoutBot — Easy and Standard score on the default ×8 board", () => {
+  /** Cells knocked in a 60 s race on a fake clock (100 ms ticks). */
+  function knockedIn60s(dice: readonly number[], difficulty: BotDifficulty): number {
+    const bot = new KnockoutBot({ dice, mode: STANDARD_MODE, boardCells: PATTERN_8, difficulty });
+    bot.prepare();
+    let n = 0;
+    for (let t = 0; t <= RACE_MS; t += TICK_MS) n += bot.tick(t).length;
+    return n;
+  }
+
+  it("knocks at least one cell on every sampled roll, Standard ahead of Easy", () => {
+    // 40 seeded rolls in 2..20. Before the fix Easy knocked zero on 21 of
+    // them (it sat on a pricey high-value cell all race) and Standard on 3,
+    // including [20, 10, 16], where both scored nothing.
+    let seed = 12345;
+    const rnd = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed / 2147483648;
+    };
+    const rolls: number[][] = [[20, 10, 16]];
+    for (let r = 0; r < 40; r += 1) rolls.push([0, 0, 0].map(() => 2 + Math.floor(rnd() * 19)));
+
+    let easyTotal = 0;
+    let standardTotal = 0;
+    for (const dice of rolls) {
+      const easy = knockedIn60s(dice, "easy");
+      const standard = knockedIn60s(dice, "standard");
+      expect(easy, `easy on [${dice.join(", ")}]`).toBeGreaterThan(0);
+      expect(standard, `standard on [${dice.join(", ")}]`).toBeGreaterThan(easy);
+      easyTotal += easy;
+      standardTotal += standard;
+    }
+    // Clearly weaker, not just marginally: Standard averages well over Easy.
+    expect(standardTotal).toBeGreaterThanOrEqual(easyTotal * 1.5);
+  });
+});
+
+describe("KnockoutBot — the results log only shows equations a player could type", () => {
+  it("every logged line, typed back in, passes claimRefusal for the roll and cell", () => {
+    // Rolls with compound dice (4, 8, 9, 16) are the ones the log relabels.
+    // [19, 4, 3] is the roll behind the 2026-09-25 screenshot that showed
+    // `4^8 * 3^0 * 19^0 = 256` (4^8 is 65,536).
+    const rolls = [[19, 4, 3], [16, 8, 12], [9, 4, 5], [8, 3, 5], [16, 9, 2], [4, 4, 7]];
+    let lines = 0;
+    for (const dice of rolls) {
+      const bot = new KnockoutBot({ dice, mode: STANDARD_MODE, boardCells: PATTERN_8, difficulty: "master" });
+      bot.prepare();
+      for (const claim of bot.tick(Number.POSITIVE_INFINITY)) {
+        const line = formatEquationAgainstPool(claim.equation, dice, STANDARD_MODE);
+        const refusal = claimRefusal(parseEquation(line), dice, claim.cellValue, STANDARD_MODE);
+        expect(refusal, `[${dice.join(", ")}] ${line}`).toBeNull();
+        lines += 1;
+      }
+    }
+    expect(lines).toBeGreaterThan(20);
   });
 });

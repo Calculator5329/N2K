@@ -57,11 +57,10 @@ describe("PlayView render counts", () => {
       );
     });
 
-    // Enter racing state. Uses real `Math.random()` for the dice roll
-    // but that doesn't matter — `knockCell` is honor-system and does
-    // not require the index to be reachable.
+    // Enter racing state on a fixed roll so the knock below is legal
+    // (knocks are validated against the dice).
     await act(async () => {
-      store.play.start();
+      store.play.start({ playerDice: [2, 3, 5] });
     });
 
     counter.reset();
@@ -69,7 +68,8 @@ describe("PlayView render counts", () => {
     // Knock one cell. The profiler captures every React render that
     // observes this mutation; the specific cell index is arbitrary.
     await act(async () => {
-      store.play.knockCell(0);
+      // 5 + 3 * 2^0 = 8 knocks cell 0 of the ×8 board.
+      expect(store.play.submitEquation("5 + 3 * 2^0").ok).toBe(true);
     });
 
     const renders = counter.get("play-view");

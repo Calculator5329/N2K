@@ -9,6 +9,66 @@ registry predicate migration. Not deployed.
 
 # N2K Platform: Changelog
 
+## 2026-09-25: Play race checks every knock; clear bonus in scale; Easy and Standard bots score
+
+- **Any click used to score.** Knocks were honor-system clicks, so clicking all
+  36 cells of the ×8 board (worth 5,328) in 5.3 s scored 60,317. Now you type an
+  equation under your board (optionally after clicking a cell to aim at it) and
+  press Enter. It knocks only when `claimRefusal` (`src/games/n2kClassic.ts`, now
+  also the check behind `n2kClassicGame.applyMove`) finds it legal: your dice and
+  only your dice, exponents inside the mode cap, the arithmetic right, and the
+  value equal to a cell. The value picks the open cell it hits, even when you
+  aimed at a different one; the aim only decides the refusal when the value
+  hits no open cell. A refusal scores nothing and shows its reason under the input
+  ("Dice 1, 1, 1 are not a subset of the roll 12, 5, 7"). A typed compound die
+  counts as its depowered base, so with an 8 rolled `8^2` is `2^6`. Competition
+  bouts use the same input. The input takes focus when the race starts or
+  resumes and when you aim, and phones show a text keyboard with a Go key. Clicking a knocked cell no longer un-knocks it.
+  The typed-equation parser moved from `src/cli/parseEquation.ts` to
+  `src/services/typedEquation.ts` (the CLI `explain` command uses it from
+  there) and gained an optional `= total`, × ÷ − x as operators, a bare
+  leading minus as a negative first die (`-3 + 5 + 7` in Æther; `-3^2` is
+  refused with a pointer to `(-3)^2`), and − in the claimed total.
+- **Clear bonus rule:** clearing every cell adds
+  `round(board value × 0.5 × time left / race length)`, so a clear at the
+  buzzer earns exactly the board and no clear can beat 1.5× the board. The old
+  rule extrapolated to the full minute (`board × 60 s / time used`). The 36-cell
+  example: before 60,317, after 5,328 + 2,429 = 7,757. Saved daily bests and
+  competition `stats:{compId}` bouts that recorded a clear under the old rule
+  keep their inflated scores; no stored shape changed and nothing migrates.
+- **Easy and Standard bots knocked nothing.** The bot walked the board
+  high-value first, a habit from the original 1..36 board. On the ×8 board the
+  high cells are the expensive ones (a difficulty-5 cell costs Easy 58.8 s), so
+  across 40 seeded rolls Easy knocked zero on 21 and Standard on 3, both on
+  [20, 10, 16]. `KnockoutBot` now takes cells easiest first. On the same rolls Easy
+  knocks 2 to 3 cells in 60 s (mean 2.95) and Standard 4 to 6 (mean 5.45).
+  Easiest-first alone pushed Master to 4 to 22 (was 4 to 14), so Master's
+  speed drops from 10 to 6: it now knocks 4 to 15 (mean 11.6, was 9.47).
+- **"How the bot got there" printed false equations.** The results log
+  relabels a depowered die back to what was rolled, but kept the exponent, so
+  a bot knock of 256 with a 4 rolled read `4^8 * 3^0 * 19^0 = 256` (that is
+  65,536). `formatEquationAgainstPool` now divides the exponent when it can
+  (`4^4`) and prints the depowered base when it cannot (`2^3`), so every line
+  is an equation you could type for that cell. A `tests/parsing.test.ts`
+  fixture had pinned the false form (`16 - 8 + 12 = 20` from 2 - 2 + 12).
+- Tests, each watched failing first: `claimRefusal` cases and the band update
+  in `tests/games/`, `tests/typedEquation.test.ts`, the seeded-roll bot test in
+  `tests/games/knockoutBot.test.ts` (failed "easy on [20, 10, 16]: expected 0"),
+  and `web/tests/playStoreRace.test.ts` (validated knocks; clear bonus failed
+  "expected 60317 to be 7757"; a 60 s fake-clock race where Easy used to knock
+  0; a stale aim that refused a legal knock). A bot-log test feeds every
+  Master log line back through `claimRefusal` (failed "evaluates to 65536,
+  not the claimed total 256"). The `parseEquation` tests merged into
+  `tests/typedEquation.test.ts`, and the old "rejects naked negatives" case now
+  pins the new rule. The race ids (`play.race.*`, `match.race.*`) are in
+  `web/testid-registry.json` via `agent-handles scan regenerate`; that meant
+  literal ids per surface in `EquationEntry` and dropping a `data-targeted`
+  attribute that had changed two board-cell fingerprints.
+  New `web/e2e/race-validation.spec.ts` plays one race on Playwright's
+  fake clock: a refused equation, a legal knock, Easy knocking cells.
+
+Not deployed.
+
 ## 2026-09-25: Real masthead dates, receipt Lookup fits the paper, Competition fixes
 
 - **Every edition masthead said 1970-01-01.** Reproduced on HEAD, not just

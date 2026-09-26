@@ -78,15 +78,15 @@ export function formatExpression(eq: NEquation): string {
 }
 
 /**
- * Like {@link formatEquation} but relabels the equation's dice back to
- * the originals from `originalPool` for display. Standard mode depowers
- * compound dice (16/8/4 → 2; 9 → 3) before solving, so an equation
- * generated from a `[16, 8, 12]` pool comes back with `dice = [2, 2,
- * 12]` and renders as `2^2 + 2 / 12 = …` by default — confusing for
- * the player who's holding a 16 and an 8 in their hand. This helper
- * relabels each depowered value back to the largest matching original
- * die from the pool so the rendered form lines up with what the
- * player rolled: `16^0 + 8^1 / 12 = …`.
+ * Like {@link formatEquation} but shows the rolled compound dice where
+ * it can. Standard mode depowers compound dice (16/8/4 → 2; 9 → 3)
+ * before solving, so an equation from a `[16, 8, 12]` pool comes back
+ * with `dice = [2, 2, 12]`. A term is shown as the rolled die only when
+ * that is still the same number: `2^4` with a 16 rolled becomes `16^1`
+ * (exponent divided by 4, since 16 = 2^4), but `2^3` with a 4 rolled
+ * stays `2^3`, because `4^1.5` is not a term anyone can type. Every
+ * printed line therefore evaluates to its total and is a legal claim
+ * the player could type back in.
  *
  * Æther mode (`mode.depower === false`) is a pure passthrough — no
  * relabeling, no surprises.
@@ -101,7 +101,23 @@ export function formatEquationAgainstPool(
   mode: Mode,
 ): string {
   const labeledDice = relabelDepoweredDice(eq.dice, originalPool, mode);
-  return formatEquation({ ...eq, dice: labeledDice });
+  const dice: number[] = [];
+  const exps: number[] = [];
+  for (let i = 0; i < eq.dice.length; i += 1) {
+    const base = eq.dice[i]!;
+    const exp = eq.exps[i]!;
+    const rolled = labeledDice[i]!;
+    // rolled = base^k (4 = 2^2, 8 = 2^3, 16 = 2^4, 9 = 3^2).
+    const k = rolled === base ? 1 : Math.round(Math.log(rolled) / Math.log(base));
+    if (exp % k === 0) {
+      dice.push(rolled);
+      exps.push(exp / k);
+    } else {
+      dice.push(base);
+      exps.push(exp);
+    }
+  }
+  return formatEquation({ ...eq, dice, exps });
 }
 
 /** Expression-only counterpart of {@link formatEquationAgainstPool}. */

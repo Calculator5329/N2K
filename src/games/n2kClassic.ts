@@ -24,7 +24,7 @@
  * intermediate state from `(config, players, log)`.
  */
 import type { Board, Mode, NEquation } from "../core/types.js";
-import { FLOAT_EQ_EPSILON, effectivePool } from "../core/constants.js";
+import { FLOAT_EQ_EPSILON, depowerDice, effectivePool } from "../core/constants.js";
 import { applyOperator, unorderedSubsets } from "../services/arithmetic.js";
 import {
   buildAllBasesCache,
@@ -139,21 +139,67 @@ function diceMultisetSubset(
   return true;
 }
 
-/** Validate equation arity matches the mode's allowed arities and lengths align. */
-function validateEquationShape(eq: NEquation, mode: Mode): void {
+/**
+ * Why `eq` is not a legal claim on a cell worth `target` with the rolled
+ * `dicePool` under `mode`, or `null` when it is. The one legality check
+ * for N2K claims: `applyMove` throws with it and the Play race shows it
+ * to the player as the refusal reason.
+ *
+ * Checks, in order: shape and arity, dice drawn from the roll (standard
+ * mode reads a typed compound die as its depowered base, so with an 8
+ * rolled `8^2` is `2^6`), exponents inside the mode's cap, the equation
+ * actually evaluating to its stated total, and that total matching the
+ * cell.
+ */
+export function claimRefusal(
+  eq: NEquation,
+  dicePool: readonly number[],
+  target: number,
+  mode: Mode,
+): string | null {
   if (
     eq.dice.length !== eq.exps.length ||
     eq.ops.length !== eq.dice.length - 1
   ) {
-    throw new Error(
-      `n2kClassic: equation shape invalid (dice=${eq.dice.length}, exps=${eq.exps.length}, ops=${eq.ops.length})`,
-    );
+    return `Equation shape invalid (dice=${eq.dice.length}, exps=${eq.exps.length}, ops=${eq.ops.length})`;
   }
   if (!mode.arities.includes(eq.dice.length as 3 | 4 | 5)) {
-    throw new Error(
-      `n2kClassic: arity ${eq.dice.length} not allowed by mode "${mode.id}"`,
-    );
+    return `Uses ${eq.dice.length} dice; ${mode.id} rules use ${mode.arities.join(" or ")} (arity ${eq.dice.length} not allowed)`;
   }
+
+  const bases = eq.dice.map((d, i) => depowerTerm(d, eq.exps[i]!, mode));
+  const pool = effectivePool(dicePool, mode);
+  if (!diceMultisetSubset(bases.map((b) => b.die), pool)) {
+    return `Dice ${eq.dice.join(", ")} are not a subset of the roll ${dicePool.join(", ")}`;
+  }
+  for (let i = 0; i < bases.length; i += 1) {
+    const { die, exp } = bases[i]!;
+    const cap = mode.exponentCap(die);
+    if (!Number.isInteger(exp) || exp < 0 || exp > cap) {
+      return `${eq.dice[i]}^${eq.exps[i]} is outside the exponent range for ${die} (0 to ${cap})`;
+    }
+  }
+
+  const evaluated = evaluateEquation(eq);
+  if (!Number.isFinite(evaluated) || Math.abs(evaluated - eq.total) > FLOAT_EQ_EPSILON) {
+    return `Equation evaluates to ${Number.isFinite(evaluated) ? evaluated : "nothing (divides by zero)"}, not ${eq.total}`;
+  }
+  if (eq.total !== target) {
+    return `Equation total (${eq.total}) does not match cell target (${target})`;
+  }
+  return null;
+}
+
+/**
+ * Standard mode plays compound dice as their prime base (4, 8, 16 → 2;
+ * 9 → 3). A typed `8^p` is therefore `2^(3p)`. Other dice, and every die
+ * in non-depower modes, pass through unchanged.
+ */
+function depowerTerm(die: number, exp: number, mode: Mode): { die: number; exp: number } {
+  if (!mode.depower) return { die, exp };
+  const base = depowerDice(die);
+  if (base === die) return { die, exp };
+  return { die: base, exp: exp * Math.round(Math.log(die) / Math.log(base)) };
 }
 
 /**
@@ -353,24 +399,9 @@ export const n2kClassicGame: Game<
     const { board, mode } = state.config;
     const target = board.cells[move.cellIndex]!;
     const eq = move.equation;
-    validateEquationShape(eq, mode);
-
-    const pool = effectivePool(state.dicePool, mode);
-    if (!diceMultisetSubset(eq.dice, pool)) {
-      throw new Error(
-        `n2kClassic.applyMove: equation dice ${JSON.stringify(eq.dice)} not a subset of pool ${JSON.stringify(state.dicePool)} (effective: ${JSON.stringify(pool)})`,
-      );
-    }
-    if (eq.total !== target) {
-      throw new Error(
-        `n2kClassic.applyMove: equation total (${eq.total}) does not match cell target (${target})`,
-      );
-    }
-    const evaluated = evaluateEquation(eq);
-    if (Math.abs(evaluated - target) > FLOAT_EQ_EPSILON) {
-      throw new Error(
-        `n2kClassic.applyMove: equation evaluates to ${evaluated}, not ${target}`,
-      );
+    const refusal = claimRefusal(eq, state.dicePool, target, mode);
+    if (refusal !== null) {
+      throw new Error(`n2kClassic.applyMove: ${refusal}`);
     }
 
     const cache = buildAllBasesCache(eq.dice, mode);

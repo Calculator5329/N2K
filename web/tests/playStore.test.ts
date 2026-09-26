@@ -6,8 +6,9 @@
  * smoke-coverage too — the timer plumbing is the riskiest bit and
  * we want to know early if it stops scheduling.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PlayStore } from "../src/stores/PlayStore";
+import { easiestSolution } from "../../src/services/solver";
 import { STANDARD_MODE, AETHER_MODE } from "../../src/core/constants";
 import { DailyChallengeStore } from "../src/stores/DailyChallengeStore";
 
@@ -18,13 +19,20 @@ describe("PlayStore", () => {
       getItem: (key: string) => values.get(key) ?? null,
       setItem: (key: string, value: string) => { values.set(key, value); },
     };
+    vi.useFakeTimers();
     const daily = new DailyChallengeStore(storage, new Date(2026, 6, 10, 12));
     const p = new PlayStore();
 
     daily.launch(p);
     expect(p.boardCells).toEqual(daily.challenge.board.cells);
     expect(p.dice).toEqual(daily.challenge.dice);
-    for (let i = 0; i < p.boardCells.length; i += 1) p.knockCell(i);
+    // Knock every cell the roll can reach, then let the clock run out.
+    for (let i = 0; i < p.boardCells.length; i += 1) {
+      const eq = easiestSolution(p.dice, p.boardCells[i]!, p.mode);
+      if (eq !== null) p.knockCell(i, eq);
+    }
+    vi.advanceTimersByTime(p.raceDurationMs);
+    vi.useRealTimers();
 
     expect(daily.completion?.result.dateKey).toBe("2026-07-10");
     expect(daily.completion?.best.score).toBe(p.playerScore);

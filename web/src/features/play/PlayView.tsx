@@ -1,10 +1,11 @@
 /**
  * PlayView — the classic N2K knockout race.
  *
- * Inspired by the original printed boardgame: a 6×6 grid of numbers
- * 1..36, three shared dice, a 60-second timer, and a bot working its
- * way through the same dice on a parallel board on the right. Click a
- * cell on your board to "knock it off"; whoever has the higher score
+ * Inspired by the original printed boardgame: a 6×6 grid of numbers,
+ * three shared dice, a 60-second timer, and a bot working its way
+ * through the same dice on a parallel board on the right. Type an
+ * equation (optionally after clicking a cell to aim at it) to knock a
+ * cell off; illegal equations are refused. Whoever has the higher score
  * when the buzzer sounds wins.
  *
  * UI follows the v1 editorial vocabulary:
@@ -29,6 +30,7 @@ import {
 import { formatEquationAgainstPool } from "@platform/services/parsing.js";
 import type { NEquation } from "@platform/core/types.js";
 import { PageHeader } from "../../ui/primitives/PageHeader.js";
+import { EquationEntry } from "../../ui/primitives/EquationEntry.js";
 import { folioFor } from "../../ui/chrome/nav.js";
 import { plural } from "../../core/plural.js";
 
@@ -186,8 +188,8 @@ const SetupScreen = observer(function SetupScreen() {
           <div className="label-caps mb-4">House rules</div>
           <ul className="space-y-3 font-display text-[18px] leading-snug text-ink-300">
             <RuleRow ord="i.">
-              The board is 1 through 36. Both you and the bot work the same
-              numbers on separate boards.
+              The board is the table of eights, 8 through 288. Both you and
+              the bot work the same numbers on separate boards.
             </RuleRow>
             <RuleRow ord="ii.">
               Three dice, values 2 through 20, rolled once at the start of
@@ -199,9 +201,10 @@ const SetupScreen = observer(function SetupScreen() {
               evaluated left to right.
             </RuleRow>
             <RuleRow ord="iv.">
-              Click a cell to knock it off. Click again to put it back.
-              Score is the sum of knocked numbers — clear the whole board
-              and you get a time bonus.
+              Type an equation to knock off the cell it hits; click a cell
+              first to aim at it. Illegal equations are refused. Score is
+              the sum of knocked numbers, and clearing the whole board adds
+              a time bonus of up to half the board.
             </RuleRow>
           </ul>
         </aside>
@@ -408,7 +411,7 @@ const PlayerColumn = observer(function PlayerColumn() {
       <ColumnHeader
         title="You"
         accent="text-oxblood-500"
-        subtitle="Click to knock"
+        subtitle="Type to knock"
       />
       <BoardGrid
         cellTestId={(idx) => `play.board.player.cell-${idx}`}
@@ -417,6 +420,7 @@ const PlayerColumn = observer(function PlayerColumn() {
         interactive
       />
       <DiceStrip side="player" />
+      <EquationEntry play={play} surface="play" />
     </div>
   );
 });
@@ -558,6 +562,7 @@ const BoardGrid = observer(function BoardGrid(props: {
             idx={idx}
             value={value}
             knocked={props.knockedSet.has(idx)}
+            targeted={props.interactive && play.targetIndex === idx}
             accentClass={props.accentClass}
             interactive={props.interactive}
           />
@@ -572,13 +577,15 @@ const BoardCell = observer(function BoardCell(props: {
   idx: number;
   value: number;
   knocked: boolean;
+  /** The player's aimed-at cell, outlined until knocked or cleared. */
+  targeted: boolean;
   accentClass: string;
   interactive: boolean;
 }) {
   const { play } = useAppStore();
   const onClick = () => {
     if (!props.interactive) return;
-    play.knockCell(props.idx);
+    play.selectCell(props.idx);
   };
   const baseClass =
     "aspect-square flex items-center justify-center border font-display tabular leading-none transition-colors";
@@ -596,14 +603,17 @@ const BoardCell = observer(function BoardCell(props: {
       title={
         props.knocked
           ? `${props.value} — knocked`
-          : props.interactive
-            ? `Knock ${props.value}`
-            : `${props.value}`
+          : props.targeted
+            ? `Aiming at ${props.value}`
+            : props.interactive
+              ? `Aim at ${props.value}`
+              : `${props.value}`
       }
       className={[
         baseClass,
         props.knocked ? props.accentClass : restingClass,
         props.knocked ? "" : interactiveHover,
+        props.targeted ? "outline outline-2 outline-oxblood-500 text-oxblood-500" : "",
       ].join(" ")}
       style={{
         borderRadius: "2px",
@@ -625,7 +635,7 @@ const RaceFooter = observer(function RaceFooter() {
   return (
     <div className="mt-1 sm:mt-2 flex items-center justify-between gap-3 no-print">
       <span className="text-[11px] italic text-ink-200 hidden sm:inline">
-        Click cells you can hit with the dice. Click again to put one back.
+        Type an equation and press Enter. Click a cell first to aim at it.
       </span>
       <button
         type="button"

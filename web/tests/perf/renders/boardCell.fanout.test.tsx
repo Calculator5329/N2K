@@ -31,7 +31,7 @@ import { buildTestAppStore } from "../harness/storeFixture.js";
 describe("BoardCell fanout proxy — playerKnockedSet identity per knock", () => {
   it("one knockCell produces one set-identity change and one bit flip", () => {
     const store = buildTestAppStore();
-    store.play.start();
+    store.play.start({ playerDice: [2, 3, 5] });
 
     // Snapshot pre-knock membership across all 36 cells.
     const cellCount = store.play.boardCells.length;
@@ -49,7 +49,8 @@ describe("BoardCell fanout proxy — playerKnockedSet identity per knock", () =>
       },
     );
 
-    store.play.knockCell(0);
+    // 5 + 3 * 2^0 = 8 knocks cell 0 of the ×8 board (knocks are validated).
+    expect(store.play.submitEquation("5 + 3 * 2^0").ok).toBe(true);
 
     const setAfter = store.play.playerKnockedSet;
     let bitflips = 0;

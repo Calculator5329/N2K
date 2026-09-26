@@ -21,7 +21,8 @@
  *         }
  *     }
  *
- * Three things to notice:
+ * Three things to notice (v3 keeps 2 and 3; see "Schedule construction"
+ * for why it changes 1):
  *
  *   1. Cells are processed strictly **sequentially**, high-value first
  *      (the original walked `boardNums[37 - botTicker]`).
@@ -47,18 +48,25 @@
  * {@link botDifficultyOfEquation} and use it only for bot scoring.
  * The rest of the platform keeps the v3 heuristic.
  *
- * # Schedule construction
+ * # Schedule construction (where v3 departs from the original)
  *
- * `prepare()` walks the board high-to-low, scoring every reachable
- * cell with the bot's local heuristic. For each cell it accumulates a
- * `cumulativeMs` clock that mirrors what the original's frame counter
- * would have hit by the time the cell finished resolving:
+ * `prepare()` scores every reachable cell with the bot's local
+ * heuristic, drops the hard ones (diff ≥ 12, never claimed), and walks
+ * the rest **easiest first** (ties: higher value first), charging
+ * `diff * 11_765 / speed` ms per cell on a running `cumulativeMs` clock.
+ * Each claim is queued with `readyAtMs = cumulativeMs`.
  *
- *   - claimable cell (diff < 12): adds `diff * 11_765 / speed` ms and
- *     queues the claim with `readyAtMs = cumulativeMs`
- *   - hard cell (diff ≥ 12): adds the expected hard-skip wait
- *     (`FRAME_MS / (1/40)` ≈ 1333 ms) and queues nothing — the bot
- *     will never collect those points
+ * The original walked high-value first, which was harmless on its
+ * 1..36 board where every cell is cheap. v3's default race board is
+ * the ×8 pattern (8..288), where the high cells are the expensive ones:
+ * a diff-5 cell costs Easy (speed 1) 58.8 s, so walking top-down Easy
+ * sat on one cell all race and knocked nothing on 21 of 40 sampled
+ * rolls (Standard on 3). Easiest-first is also how a person plays a
+ * timed board. Per-cell pacing is unchanged. Across 40 seeded rolls on
+ * the ×8 board Easy knocks 2 to 3 cells in 60 s, Standard 4 to 6. Master
+ * is slowed from the original speed 10 to 6, because easiest-first let 10
+ * knock up to 22 cells; at 6 it knocks 4 to 15 (mean 11.6), close to the
+ * original's 4 to 14.
  *
  * `tick(elapsedMs)` then just drains whatever became ready.
  */
@@ -73,13 +81,16 @@ import { allSolutions, sweepOneTuple } from "../services/solver.js";
 /** Bot strength — keyed to the original game's `botSpeedList`. */
 export type BotDifficulty = "easy" | "standard" | "hard" | "expert" | "master";
 
-/** Numeric speed for each difficulty (matches `N2K-Game`'s `botSpeedList`). */
+/**
+ * Numeric speed for each difficulty. Easy..Expert match `N2K-Game`'s
+ * `botSpeedList`; Master is 6 instead of 10 (see the schedule note above).
+ */
 export const BOT_SPEED: Readonly<Record<BotDifficulty, number>> = {
   easy: 1,
   standard: 2,
   hard: 3,
   expert: 5,
-  master: 10,
+  master: 6,
 };
 
 /** Display label for the bot picker. */
@@ -114,9 +125,6 @@ export interface KnockoutBotOptions {
 //  Tuning constants (faithful to N2K-Game)
 // ---------------------------------------------------------------------------
 
-/** Original loop ran at 30 fps → 1000/30 ms per frame. */
-const FRAME_MS = 1000 / 30;
-
 /**
  * Milliseconds per unit of equation difficulty, divided by `botSpeed`.
  * Derived from the original gate `bot3Cycler * (botSpeed * 0.85 / 10) >
@@ -127,12 +135,6 @@ const BASE_MS_PER_DIFFICULTY = 11_765;
 
 /** Difficulty above which a cell is "hard" — bot never claims it. */
 const HARD_DIFFICULTY_CAP = 12;
-
-/** Per-frame chance the bot advances past a hard cell. */
-const HARD_SKIP_PROB_PER_FRAME = 1 / 40;
-
-/** Expected wait (ms) before the bot skips past a single hard cell. */
-const HARD_CELL_EXPECTED_WAIT_MS = FRAME_MS / HARD_SKIP_PROB_PER_FRAME;
 
 // ---------------------------------------------------------------------------
 //  botDifficultyOfEquation — port of `N2K-Game/index.js:1055-1173`
@@ -319,47 +321,37 @@ export class KnockoutBot {
       mode,
     );
 
-    // Walk the board high-value first (matches the original's
-    // `boardNums[37 - botTicker]` descending iteration).
-    const sorted = boardCells
-      .map((value, idx) => ({ value, idx }))
-      .sort((a, b) => b.value - a.value);
-
-    let cumulativeMs = 0;
-    for (const { value, idx } of sorted) {
+    // Score each reachable cell by its easiest equation under the bot's
+    // local heuristic (v3's `sweepOneTuple` ranks by v3's heuristic, not
+    // the original's), keeping only cells under the hard cap.
+    const claimable: { idx: number; value: number; equation: NEquation; diff: number }[] = [];
+    for (let idx = 0; idx < boardCells.length; idx += 1) {
+      const value = boardCells[idx]!;
       if (!reachable.has(value)) continue;
-
-      // Re-score every candidate equation with the bot's local
-      // heuristic, since v3's `sweepOneTuple` picks the easiest by
-      // v3's heuristic — not the original's.
-      const candidates = allSolutions(dice, value, mode);
       let bestEq: NEquation | null = null;
       let bestDiff = Infinity;
-      for (const eq of candidates) {
+      for (const eq of allSolutions(dice, value, mode)) {
         const d = botDifficultyOfEquation(eq);
         if (d < bestDiff) {
           bestDiff = d;
           bestEq = eq;
         }
       }
-      if (bestEq === null) continue;
+      if (bestEq === null || bestDiff >= HARD_DIFFICULTY_CAP) continue;
+      claimable.push({ idx, value, equation: bestEq, diff: bestDiff });
+    }
 
-      if (bestDiff >= HARD_DIFFICULTY_CAP) {
-        // Hard cell: the original stalled here for ~40 frames trying
-        // to skip past it, then moved on. We charge the expected
-        // wait against the running clock so subsequent (easier) cells
-        // arrive later, exactly mirroring the original's flow.
-        cumulativeMs += HARD_CELL_EXPECTED_WAIT_MS;
-        continue;
-      }
+    // Easiest first, higher value breaking ties (see the file header).
+    claimable.sort((a, b) => a.diff - b.diff || b.value - a.value);
 
-      const costMs = (bestDiff * BASE_MS_PER_DIFFICULTY) / this.speed;
-      cumulativeMs += costMs;
+    let cumulativeMs = 0;
+    for (const c of claimable) {
+      cumulativeMs += (c.diff * BASE_MS_PER_DIFFICULTY) / this.speed;
       this.queue.push({
-        cellIndex: idx,
-        cellValue: value,
-        equation: bestEq,
-        difficulty: bestDiff,
+        cellIndex: c.idx,
+        cellValue: c.value,
+        equation: c.equation,
+        difficulty: c.diff,
         readyAtMs: cumulativeMs,
       });
     }

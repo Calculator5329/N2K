@@ -8,6 +8,7 @@ import {
 import type { Board, NEquation } from "../../src/core/types.js";
 import type { PlayerSlot } from "../../src/services/gameKernel.js";
 import {
+  claimRefusal,
   enumerateClaimEquations,
   evaluateEquation,
   n2kClassicGame,
@@ -560,5 +561,49 @@ describe("enumerateClaimEquations", () => {
     expect(eqs.length).toBeGreaterThan(0);
     // Some result should be arity-3 (the smallest reachable arity).
     expect(eqs.some((e) => e.dice.length === 3)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+//  claimRefusal — the shared legality check (applyMove + the Play race)
+// ---------------------------------------------------------------------------
+
+describe("claimRefusal", () => {
+  const add = (dice: number[], exps: number[], total: number): NEquation => ({
+    dice,
+    exps,
+    ops: [OP.ADD, OP.ADD],
+    total,
+  });
+
+  it("accepts a legal equation for the roll and target", () => {
+    expect(claimRefusal(add([2, 3, 5], [1, 1, 1], 10), [2, 3, 5], 10, STANDARD_MODE)).toBeNull();
+  });
+
+  it("refuses dice that were not rolled, a wrong total, and a lying total", () => {
+    expect(claimRefusal(add([2, 3, 7], [1, 1, 1], 12), [2, 3, 5], 12, STANDARD_MODE)).toMatch(
+      /not a subset/,
+    );
+    expect(claimRefusal(add([2, 3, 5], [1, 1, 1], 10), [2, 3, 5], 11, STANDARD_MODE)).toMatch(
+      /match cell target/,
+    );
+    expect(claimRefusal(add([2, 3, 5], [1, 1, 1], 11), [2, 3, 5], 11, STANDARD_MODE)).toMatch(
+      /evaluates to 10/,
+    );
+  });
+
+  it("refuses exponents past the mode cap", () => {
+    // Standard caps base 3 at 10; 3^11 + 2 + 5 is out of bounds.
+    const eq = add([3, 2, 5], [11, 1, 1], 3 ** 11 + 7);
+    expect(claimRefusal(eq, [2, 3, 5], eq.total, STANDARD_MODE)).toMatch(/exponent/);
+  });
+
+  it("reads a typed compound die as its depowered base (8^2 is 2^6)", () => {
+    // Rolled 8 plays as a 2; 8^2 + 3 + 5 = 72 is the same move as 2^6 + 3 + 5.
+    expect(claimRefusal(add([8, 3, 5], [2, 1, 1], 72), [8, 3, 5], 72, STANDARD_MODE)).toBeNull();
+    // 8^5 would be 2^15, past base 2's cap of 13.
+    expect(
+      claimRefusal(add([8, 3, 5], [5, 1, 1], 8 ** 5 + 8), [8, 3, 5], 8 ** 5 + 8, STANDARD_MODE),
+    ).toMatch(/exponent/);
   });
 });

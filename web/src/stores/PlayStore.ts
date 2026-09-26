@@ -12,17 +12,18 @@
  *     `enable1s = false` in the original).
  *   - A 60-second timer counts down at 100 ms granularity.
  *   - On their own board, each side knocks off cells they can reach
- *     with the dice; the player knocks by clicking, the bot knocks
+ *     with the dice. The player types an equation (optionally after
+ *     clicking a cell to target it); `submitEquation` knocks the cell
+ *     only when the equation is legal for the roll and hits that
+ *     cell's value, and otherwise refuses with a reason. The bot knocks
  *     automatically on a difficulty-paced schedule.
- *   - Score = sum of cells knocked off. If a side clears the entire
- *     board before time runs out, their score is extrapolated to the
- *     full minute (`maxScore * 60 / timeUsed`) — exactly the original
- *     bonus formula. Whoever has the higher score when the buzzer
- *     sounds wins.
+ *   - Score = sum of cells knocked off, plus a time bonus for clearing
+ *     the whole board (see {@link clearBonus}). Whoever has the higher
+ *     score when the buzzer sounds wins.
  *
  * The view layer is pure presentation — it observes the store and
- * dispatches `knockCell` / `start` / `restart`. Everything timing-
- * related lives here.
+ * dispatches `selectCell` / `submitEquation` / `start` / `restart`.
+ * Everything timing-related lives here.
  */
 import {
   action,
@@ -38,6 +39,8 @@ import {
   type BotDifficulty,
 } from "@platform/games/knockoutBot.js";
 import { easiestSolution } from "@platform/services/solver.js";
+import { claimRefusal } from "@platform/games/n2kClassic.js";
+import { parseTypedExpression } from "@platform/services/typedEquation.js";
 import type { Mode, NEquation } from "@platform/core/types.js";
 import {
   decodeShareable,
@@ -98,7 +101,8 @@ export interface RaceOverrides {
    * this with the comp's `timeBudget * 1000` so a 30-second comp
    * actually plays in 30 seconds (the score formula
    * `scoreFor(knocked, maxScore, raceDurationMs)` also rebases on
-   * this value, so ratings stay comparable across budgets).
+   * this value: the clear bonus is a share of the race left, so ratings
+   * stay comparable across budgets).
    */
   raceDurationMs?: number;
 }
@@ -114,11 +118,20 @@ export interface BoutSummary {
   readonly winner: "player" | "bot" | "tie";
 }
 
+/** Outcome of a player's knock attempt; a refusal carries the reason to show. */
+export type KnockResult =
+  | { readonly ok: true; readonly cellIndex: number }
+  | { readonly ok: false; readonly reason: string };
+
 /** A single knocked cell with the equation that justified it. */
 export interface KnockedCell {
   readonly cellIndex: number;
   readonly cellValue: number;
-  /** `null` for the human side until they hover the equation hint. */
+  /**
+   * The equation that knocked the cell. Always set for live knocks;
+   * `null` only for player knocks restored from a share link (the wire
+   * shape does not carry the player's equations).
+   */
   readonly equation: NEquation | null;
   readonly atMs: number;
 }
@@ -260,6 +273,12 @@ export class PlayStore {
   /** Cell indices the bot has knocked. */
   botKnocked: readonly KnockedCell[] = [];
 
+  /** Player's targeted cell (clicked, not yet knocked), or `null`. */
+  targetIndex: number | null = null;
+
+  /** Reason the player's last submission was refused; cleared on a knock. */
+  lastRefusal: string | null = null;
+
   /** Milliseconds elapsed since `start()`. Drives the countdown. */
   elapsedMs = 0;
 
@@ -267,10 +286,8 @@ export class PlayStore {
    * Race length for the current bout (set at `start()`-time). Defaults
    * to {@link DEFAULT_RACE_DURATION_MS} for Quick Race; matches launched
    * with a comp's `timeBudget` override this. Score formulas read it
-   * via `this.raceDurationMs` so a 30s race rebases extrapolation
-   * against 30s instead of 60s — otherwise a user who knocks the
-   * whole board in 30s would be credited with `maxScore * 60 / 30`,
-   * doubling their score against the matrix's prediction.
+   * via `this.raceDurationMs` so a 30s race measures its clear bonus
+   * against 30s instead of 60s.
    */
   raceDurationMs: number = DEFAULT_RACE_DURATION_MS;
 
@@ -319,6 +336,8 @@ export class PlayStore {
       boardCells: observable.ref,
       playerKnocked: observable.ref,
       botKnocked: observable.ref,
+      targetIndex: observable,
+      lastRefusal: observable,
       elapsedMs: observable,
       botReachableCount: observable,
       playerHints: observable.ref,
@@ -342,6 +361,8 @@ export class PlayStore {
       replayTimeline: computed,
       setSetup: action,
       start: action,
+      selectCell: action,
+      submitEquation: action,
       knockCell: action,
       restart: action,
       pause: action,
@@ -377,11 +398,11 @@ export class PlayStore {
   }
 
   get playerScore(): number {
-    return scoreFor(this.playerKnocked, this.maxScore, this.raceDurationMs);
+    return scoreFor(this.playerKnocked, this.boardCells.length, this.maxScore, this.raceDurationMs);
   }
 
   get botScore(): number {
-    return scoreFor(this.botKnocked, this.maxScore, this.raceDurationMs);
+    return scoreFor(this.botKnocked, this.boardCells.length, this.maxScore, this.raceDurationMs);
   }
 
   get isRacing(): boolean {
@@ -477,6 +498,8 @@ export class PlayStore {
     this.boardCells = overrides.board ?? PATTERN_BOARD;
     this.playerKnocked = [];
     this.botKnocked = [];
+    this.targetIndex = null;
+    this.lastRefusal = null;
     this.playerHints = new Map();
     this.elapsedMs = 0;
     this.pausedAccumMs = 0;
@@ -485,9 +508,8 @@ export class PlayStore {
     this.silentFinish = overrides.silent === true;
     // Race length is per-bout: Quick Race always uses the default 60s;
     // matches launched from a saved comp pass the comp's `timeBudget`
-    // (30 / 60 / 120s) here so the countdown — and the score formula
-    // that extrapolates `maxScore * raceDurationMs / lastClickMs` —
-    // both rebase against the user's chosen budget.
+    // (30 / 60 / 120s) here so the countdown, and the clear bonus that
+    // is measured against the race length, both follow the chosen budget.
     this.raceDurationMs =
       overrides.raceDurationMs !== undefined && overrides.raceDurationMs > 0
         ? overrides.raceDurationMs
@@ -513,6 +535,8 @@ export class PlayStore {
     this.boardCells = PATTERN_BOARD;
     this.playerKnocked = [];
     this.botKnocked = [];
+    this.targetIndex = null;
+    this.lastRefusal = null;
     this.playerHints = new Map();
     this.elapsedMs = 0;
     this.raceDurationMs = DEFAULT_RACE_DURATION_MS;
@@ -555,33 +579,80 @@ export class PlayStore {
   }
 
   /**
-   * Player attempts to knock cell `cellIndex`. Honor system — we don't
-   * verify the player can actually solve it (matches the original
-   * click-mode rules). We *do* refuse if the cell is already knocked
-   * or out of range.
+   * Target cell `cellIndex` for the next submitted equation. Clicking the
+   * targeted cell again clears the target. Knocked cells cannot be
+   * targeted (a knock is final now that it is checked).
    */
-  knockCell(cellIndex: number): void {
+  selectCell(cellIndex: number): void {
     if (!this.isRacing) return;
     if (cellIndex < 0 || cellIndex >= this.boardCells.length) return;
-    if (this.playerKnockedSet.has(cellIndex)) {
-      // Toggle off (matches original `numbersCompleted *= -1`).
-      this.playerKnocked = this.playerKnocked.filter(
-        (c) => c.cellIndex !== cellIndex,
-      );
-      return;
+    if (this.playerKnockedSet.has(cellIndex)) return;
+    this.targetIndex = this.targetIndex === cellIndex ? null : cellIndex;
+  }
+
+  /**
+   * Parse the player's typed equation and knock with it. The cell is the
+   * targeted one when the total hits it, otherwise the first open cell
+   * the total hits, so a stale aim never blocks a legal knock. With no
+   * open cell hit, a targeted cell gets the refusal (the total does not
+   * match it). Refusals score nothing and set {@link lastRefusal}.
+   */
+  submitEquation(text: string): KnockResult {
+    let equation: NEquation;
+    try {
+      equation = parseTypedExpression(text);
+    } catch (err) {
+      return this.refuse(err instanceof Error ? capitalize(err.message) : "Could not read that equation");
     }
+    const aim = this.targetIndex;
+    if (aim !== null && this.boardCells[aim] === equation.total) {
+      return this.knockCell(aim, equation);
+    }
+    const knocked = this.playerKnockedSet;
+    const open = this.boardCells.findIndex((v, i) => v === equation.total && !knocked.has(i));
+    if (open !== -1) return this.knockCell(open, equation);
+    if (aim !== null) return this.knockCell(aim, equation);
+    const onBoard = this.boardCells.includes(equation.total);
+    return this.refuse(
+      onBoard
+        ? `${equation.total} is already knocked`
+        : `${equation.total} is not on your board`,
+    );
+  }
+
+  /**
+   * Knock `cellIndex` with `equation` if it is a legal N2K claim for the
+   * player's dice (the shared `claimRefusal` check). The single path
+   * every player knock goes through.
+   */
+  knockCell(cellIndex: number, equation: NEquation): KnockResult {
+    if (!this.isRacing) return this.refuse("The race is not running");
+    const value = this.boardCells[cellIndex];
+    if (value === undefined) return this.refuse("No such cell");
+    if (this.playerKnockedSet.has(cellIndex)) return this.refuse(`${value} is already knocked`);
+    const refusal = claimRefusal(equation, this.dice, value, this.mode);
+    if (refusal !== null) return this.refuse(refusal);
+
     const claim: KnockedCell = {
       cellIndex,
-      cellValue: this.boardCells[cellIndex]!,
-      equation: null,
+      cellValue: value,
+      equation,
       atMs: this.elapsedMs,
     };
     this.playerKnocked = [...this.playerKnocked, claim];
+    this.targetIndex = null;
+    this.lastRefusal = null;
 
     // Auto-end if the player cleared the whole board.
     if (this.playerKnocked.length === this.boardCells.length) {
       this.finishRace();
     }
+    return { ok: true, cellIndex };
+  }
+
+  private refuse(reason: string): KnockResult {
+    this.lastRefusal = reason;
+    return { ok: false, reason };
   }
 
   /**
@@ -747,6 +818,8 @@ export class PlayStore {
     this.pausedAccumMs = 0;
     this.pausedAt = 0;
     this.playerHints = new Map();
+    this.targetIndex = null;
+    this.lastRefusal = null;
 
     this.setup = {
       difficulty: race.difficulty,
@@ -1084,21 +1157,40 @@ function claimToKnocked(claim: BotClaim, atMs: number): KnockedCell {
 }
 
 /**
- * Score for one side of the race. Mirrors the original formula:
- *   - If they knocked the entire board, extrapolate: maxScore * 60s / timeUsed.
- *   - Otherwise, sum of knocked cell values.
+ * Share of the board's value paid as a bonus for clearing it with time
+ * left: `clearBonus = round(maxScore * CLEAR_BONUS_SHARE * timeLeft /
+ * raceDuration)`. Clearing at the buzzer adds nothing; an instant clear
+ * would add half the board, so a clear is worth at most 1.5x the board.
+ *
+ * The original extrapolated a clear to the full minute
+ * (`maxScore * 60 / timeUsed`). With unchecked clicks that turned the
+ * 5,328-point ×8 board cleared in 5.3 s into 60,317, eleven boards'
+ * worth. Under this rule the same clear scores 5,328 + 2,429 = 7,757.
+ */
+const CLEAR_BONUS_SHARE = 0.5;
+
+function clearBonus(maxScore: number, lastMs: number, raceDurationMs: number): number {
+  const timeLeft = Math.max(0, raceDurationMs - lastMs);
+  return Math.round((maxScore * CLEAR_BONUS_SHARE * timeLeft) / raceDurationMs);
+}
+
+/**
+ * Score for one side of the race: the sum of knocked cell values, plus
+ * {@link clearBonus} when every cell was knocked.
  */
 function scoreFor(
   knocked: readonly KnockedCell[],
+  totalCells: number,
   maxScore: number,
   raceDurationMs: number,
 ): number {
   if (knocked.length === 0) return 0;
   const raw = knocked.reduce((s, c) => s + c.cellValue, 0);
-  const totalCells = 36; // PATTERN_BOARD is a fixed 36 cells.
-  if (raw >= maxScore && knocked.length === totalCells) {
-    const lastMs = knocked[knocked.length - 1]!.atMs || raceDurationMs;
-    return Math.round(maxScore * (raceDurationMs / Math.max(1, lastMs)));
-  }
-  return raw;
+  if (knocked.length < totalCells) return raw;
+  const lastMs = Math.max(...knocked.map((c) => c.atMs));
+  return raw + clearBonus(maxScore, lastMs, raceDurationMs);
+}
+
+function capitalize(message: string): string {
+  return message.charAt(0).toUpperCase() + message.slice(1);
 }

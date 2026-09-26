@@ -125,15 +125,12 @@ describe("relabelDepoweredDice", () => {
 
 describe("formatEquationAgainstPool", () => {
   it("renders depowered equation back in original-pool form", () => {
-    // Equation: 2^2 + 2 / 12 = 4 + 0.166... no, use a real one:
-    // (16^0) + (8^1) / (12^1) = 1 + 8/12 — keep it integer:
-    // 16^1 - 8^1 + 12^1 = 20 expressed against pool [16, 8, 12].
-    // Solver would have produced dice=[2,2,12]:
+    // 2^4 - 2^3 + 12 = 20 against pool [16, 8, 12] is 16 - 8 + 12.
     expect(
       formatEquationAgainstPool(
         {
           dice: [2, 2, 12],
-          exps: [1, 1, 1],
+          exps: [4, 3, 1],
           ops: [OP.SUB, OP.ADD],
           total: 20,
         },
@@ -142,12 +139,30 @@ describe("formatEquationAgainstPool", () => {
       ),
     ).toBe("16 - 8 + 12 = 20");
   });
+  it("keeps the depowered base when the rolled die cannot say the same number", () => {
+    // 2^8 * 3^0 * 19^0 = 256 with a 4 rolled: 4^4 is 256, so relabel.
+    // 2^3 with a 4 rolled would be 4^1.5, so it stays 2^3.
+    expect(
+      formatEquationAgainstPool(
+        { dice: [2, 3, 19], exps: [8, 0, 0], ops: [OP.MUL, OP.MUL], total: 256 },
+        [19, 4, 3],
+        STANDARD_MODE,
+      ),
+    ).toBe("4^4 * 3^0 * 19^0 = 256");
+    expect(
+      formatEquationAgainstPool(
+        { dice: [2, 3, 19], exps: [3, 1, 1], ops: [OP.ADD, OP.ADD], total: 30 },
+        [19, 4, 3],
+        STANDARD_MODE,
+      ),
+    ).toBe("2^3 + 3 + 19 = 30");
+  });
   it("formatExpressionAgainstPool drops the = total tail", () => {
     expect(
       formatExpressionAgainstPool(
         {
           dice: [2, 2, 12],
-          exps: [1, 1, 1],
+          exps: [4, 3, 1],
           ops: [OP.SUB, OP.ADD],
           total: 20,
         },

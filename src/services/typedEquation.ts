@@ -1,16 +1,20 @@
 /**
- * CLI-local equation parser.
- *
- * Lives here, not in `src/services/parsing.ts`, because Phase 0
- * deliberately deferred user-typed input. When the canonical parser
- * ships in `services/parsing.ts`, this module is replaced.
+ * Parser for equations people type: the CLI `explain` command and the
+ * Play race's equation box. (`services/parsing.ts` stays the strict
+ * reader for the canonical printed form.)
  *
  * Grammar (whitespace-flexible, integer-only):
  *
- *   equation := term (op term)* "=" integer
+ *   equation := first (op term)* "=" total      (parseEquation)
+ *   expr     := first (op term)* ["=" total]    (parseTypedExpression)
+ *   first    := term | "-" integer              (a negative Æther die;
+ *                                                "-3^2" is refused, type "(-3)^2")
  *   term     := base | base "^" exponent
  *   base     := integer | "(" "-" integer ")"
- *   op       := "+" | "-" | "*" | "/"
+ *   total    := ["-"] integer
+ *   op       := "+" | "-" | "*" | "/"  (also × x ÷ as typed on phones)
+ *
+ * Every "-" above also accepts the Unicode minus "−" (U+2212).
  *
  * Operator semantics: strict left-to-right (no precedence), matching
  * the rest of the codebase.
@@ -22,7 +26,7 @@
  */
 import { OP, OPERATOR_TO_SYMBOL, FLOAT_EQ_EPSILON } from "../core/constants.js";
 import type { NEquation, Operator } from "../core/types.js";
-import { applyOperator } from "../services/arithmetic.js";
+import { applyOperator } from "./arithmetic.js";
 
 export class ParseError extends Error {
   readonly column: number;
@@ -67,13 +71,17 @@ function consumeInt(c: Cursor): number {
   return n;
 }
 
+function isMinus(ch: string): boolean {
+  return ch === "-" || ch === "\u2212";
+}
+
 function consumeBase(c: Cursor): number {
   skipWs(c);
   if (peek(c) === "(") {
     const start = c.pos;
     c.pos += 1;
     skipWs(c);
-    if (peek(c) !== "-") {
+    if (!isMinus(peek(c))) {
       throw new ParseError(
         `parens are only used for negative bases (e.g. "(-3)"); ` +
           `found "${peek(c) || "<eof>"}" at position ${c.pos}`,
@@ -100,29 +108,69 @@ function consumeOperator(c: Cursor): Operator | null {
   const ch = peek(c);
   switch (ch) {
     case "+": c.pos += 1; return OP.ADD;
-    case "-": c.pos += 1; return OP.SUB;
-    case "*": c.pos += 1; return OP.MUL;
-    case "/": c.pos += 1; return OP.DIV;
+    case "-":
+    case "\u2212": c.pos += 1; return OP.SUB;
+    case "*":
+    case "x":
+    case "X":
+    case "\u00d7": c.pos += 1; return OP.MUL; // ×
+    case "/":
+    case "\u00f7": c.pos += 1; return OP.DIV; // ÷
     default:  return null;
   }
 }
 
 /** Parse a printed equation back into an `NEquation`, validating the total. */
 export function parseEquation(input: string): NEquation {
+  return parse(input, true);
+}
+
+/**
+ * Parse a typed expression where `= total` is optional. Without it, the
+ * total is whatever the expression evaluates to (left to right). Throws
+ * `ParseError` with a readable message on bad syntax, a non-integer
+ * result, or a claimed total the expression does not reach. Legality
+ * against a roll is not checked here; see `claimRefusal` in
+ * `games/n2kClassic.ts`.
+ */
+export function parseTypedExpression(input: string): NEquation {
+  return parse(input, false);
+}
+
+function parse(input: string, requireTotal: boolean): NEquation {
   const c: Cursor = { src: input, pos: 0 };
 
   const dice: number[] = [];
   const exps: number[] = [];
   const ops: Operator[] = [];
 
-  // First term.
-  dice.push(consumeBase(c));
-  exps.push(consumeOptionalExponent(c));
+  // First term. A bare leading minus is a negative die ("-3 + 5 + 7").
+  skipWs(c);
+  if (isMinus(peek(c))) {
+    c.pos += 1;
+    const n = consumeInt(c);
+    skipWs(c);
+    if (peek(c) === "^") {
+      const at = c.pos;
+      c.pos += 1;
+      const e = consumeInt(c);
+      throw new ParseError(
+        `"-${n}^${e}" is ambiguous; type "(-${n})^${e}" for a negative die`,
+        at,
+      );
+    }
+    dice.push(-n);
+    exps.push(1);
+  } else {
+    dice.push(consumeBase(c));
+    exps.push(consumeOptionalExponent(c));
+  }
 
   // (op term)* until '=' or end.
   while (true) {
     skipWs(c);
     if (peek(c) === "=") break;
+    if (c.pos >= c.src.length && !requireTotal) break;
     if (c.pos >= c.src.length) {
       throw new ParseError(
         `expected "=" before end of input`,
@@ -142,19 +190,21 @@ export function parseEquation(input: string): NEquation {
     exps.push(consumeOptionalExponent(c));
   }
 
-  // '=' total
+  // '=' total (optional for typed expressions)
   skipWs(c);
-  if (peek(c) !== "=") {
+  let claimed: number | null = null;
+  if (peek(c) === "=") {
+    c.pos += 1;
+    skipWs(c);
+    let totalSign = 1;
+    if (isMinus(peek(c))) {
+      totalSign = -1;
+      c.pos += 1;
+    }
+    claimed = totalSign * consumeInt(c);
+  } else if (requireTotal) {
     throw new ParseError(`expected "=" at position ${c.pos}`, c.pos);
   }
-  c.pos += 1;
-  skipWs(c);
-  let totalSign = 1;
-  if (peek(c) === "-") {
-    totalSign = -1;
-    c.pos += 1;
-  }
-  const claimed = totalSign * consumeInt(c);
   skipWs(c);
   if (c.pos !== c.src.length) {
     throw new ParseError(
@@ -181,14 +231,14 @@ export function parseEquation(input: string): NEquation {
       0,
     );
   }
-  if (rounded !== claimed) {
+  if (claimed !== null && rounded !== claimed) {
     throw new ParseError(
       `equation evaluates to ${rounded}, not the claimed total ${claimed}`,
       0,
     );
   }
 
-  return { dice, exps, ops, total: claimed };
+  return { dice, exps, ops, total: claimed ?? rounded };
 }
 
 function consumeOptionalExponent(c: Cursor): number {

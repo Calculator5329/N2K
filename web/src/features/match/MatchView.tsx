@@ -20,6 +20,7 @@ import { observer } from "mobx-react-lite";
 import { useAppStore } from "../../stores/AppStoreContext.js";
 import { BOUT_SUMMARY_AUTO_ADVANCE_MS, type MatchStore } from "./MatchStore.js";
 import type { PlayStore, BoutSummary } from "../../stores/PlayStore.js";
+import { EquationEntry } from "../../ui/primitives/EquationEntry.js";
 
 export const MatchView = observer(function MatchView() {
   const root = useAppStore();
@@ -248,11 +249,13 @@ const SideColumn = observer(function SideColumn({
           : (idx) => `match.board.bot.cell-${idx}`}
         cells={play.boardCells}
         knockedSet={knockedSet}
+        targetIndex={isPlayer ? play.targetIndex : null}
         accentClass={accentClass}
         interactive={isPlayer && play.isRacing}
-        onKnock={(idx) => play.knockCell(idx)}
+        onSelect={(idx) => play.selectCell(idx)}
       />
       <DiceStrip dice={dice} labelColor={labelColor} />
+      {isPlayer && play.isRacing && <EquationEntry play={play} surface="match" />}
     </div>
   );
 });
@@ -261,9 +264,11 @@ function BoardGrid(props: {
   cellTestId: (idx: number) => string;
   cells: readonly number[];
   knockedSet: ReadonlySet<number>;
+  /** The player's aimed-at cell, outlined; `null` for none or the bot side. */
+  targetIndex: number | null;
   accentClass: string;
   interactive: boolean;
-  onKnock: (idx: number) => void;
+  onSelect: (idx: number) => void;
 }) {
   return (
     <div
@@ -276,12 +281,13 @@ function BoardGrid(props: {
       >
         {props.cells.map((value, idx) => {
           const knocked = props.knockedSet.has(idx);
+          const targeted = props.targetIndex === idx;
           return (
             <button
               key={idx}
               data-testid={props.cellTestId(idx)}
               type="button"
-              onClick={() => props.interactive && props.onKnock(idx)}
+              onClick={() => props.interactive && props.onSelect(idx)}
               disabled={!props.interactive}
               aria-pressed={knocked}
               className={[
@@ -290,6 +296,7 @@ function BoardGrid(props: {
                 props.interactive && !knocked
                   ? "hover:border-oxblood-500 hover:text-oxblood-500 cursor-pointer"
                   : "cursor-default",
+                targeted ? "outline outline-2 outline-oxblood-500 text-oxblood-500" : "",
               ].join(" ")}
               style={{
                 borderRadius: "2px",

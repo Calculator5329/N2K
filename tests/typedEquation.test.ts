@@ -1,7 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { OP } from "../../src/core/constants.js";
-import { ParseError, parseEquation } from "../../src/cli/parseEquation.js";
+import { OP } from "../src/core/constants.js";
+import { ParseError, parseEquation, parseTypedExpression } from "../src/services/typedEquation.js";
 
+// The Play race lets players type just the left side; the total is what it evaluates to.
+describe("parseTypedExpression", () => {
+  it("parses an expression without '=' and fills in its value, accepting × ÷ −", () => {
+    const eq = parseTypedExpression("2^3 × 5 − 3");
+    expect(eq.dice).toEqual([2, 5, 3]);
+    expect(eq.exps).toEqual([3, 1, 1]);
+    expect(eq.ops).toEqual([OP.MUL, OP.SUB]);
+    expect(eq.total).toBe(37);
+    expect(parseTypedExpression("12 ÷ 3 + 5 = 9").total).toBe(9);
+  });
+
+  // Æther rolls negative dice; players type them without parens.
+  it("reads a leading minus as a negative first die, and − in the claimed total", () => {
+    const eq = parseTypedExpression("-3 + 5 + 7");
+    expect(eq.dice).toEqual([-3, 5, 7]);
+    expect(eq.total).toBe(9);
+    expect(parseTypedExpression("−3 − 5 − 7 = −15").total).toBe(-15);
+    expect(parseTypedExpression("2 − 5 − 7 = \u221210").total).toBe(-10);
+  });
+
+  it("asks for parens when a leading minus meets an exponent", () => {
+    expect(() => parseTypedExpression("-3^2 + 5 + 7")).toThrow(/\(-3\)\^2/);
+  });
+
+  it("refuses an expression that does not land on a whole number", () => {
+    expect(() => parseTypedExpression("7 / 2 + 3")).toThrow(ParseError);
+  });
+});
+
+// The CLI `explain` command reads full printed equations; the total is required.
 describe("parseEquation", () => {
   it("parses a simple 3-arity equation (left-to-right semantics: 2+3=5, 5*5=25)", () => {
     const eq = parseEquation("2 + 3 * 5 = 25");
@@ -42,10 +72,10 @@ describe("parseEquation", () => {
     expect(() => parseEquation("2 + 3 + 5 = 999")).toThrow(/evaluates to 10/);
   });
 
-  it("rejects naked negatives without parens", () => {
-    // "- 3" is treated as a subtraction operator + a base, so this shouldn't
-    // parse as a starting negative die.
-    expect(() => parseEquation("-3 + 5 + 7 = 9")).toThrow(ParseError);
+  it("takes a naked minus only on the first die", () => {
+    expect(parseEquation("-3 + 5 + 7 = 9").dice).toEqual([-3, 5, 7]);
+    // After an operator, "-3" needs parens: "2 + (-3) + 5".
+    expect(() => parseEquation("2 + -3 + 5 = 4")).toThrow(ParseError);
   });
 
   it("rejects too few terms (needs 3..5 dice)", () => {
