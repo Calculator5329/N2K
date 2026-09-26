@@ -42,6 +42,8 @@ export const App = observer(function App() {
 
   useEffect(() => store.secret.attach(), [store.secret]);
 
+  useEffect(() => store.startHistorySync(), [store]);
+
   // Mirror Æther mode onto `<html data-aether="1">` so the cosmic
   // overlay block in `styles.css` (violet vignette, Æ watermark,
   // SecretBadge halo) layers on top of whichever theme is active.

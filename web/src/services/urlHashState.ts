@@ -28,23 +28,38 @@ export interface HashSchema<T> {
   decode(raw: string): T | null;
 }
 
-function readAllPairs(): Map<string, string> {
+/** `decodeURIComponent` that answers `null` instead of throwing on bad `%` escapes. */
+export function safeDecode(raw: string): string | null {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Parse a raw hash (with or without the leading `#`) into its `k=v`
+ * pairs. Parts with malformed percent-escapes are skipped rather than
+ * thrown, so a mangled pasted link can never crash boot.
+ */
+export function parseHashPairs(hash: string): Map<string, string> {
   const out = new Map<string, string>();
-  if (typeof window === "undefined") return out;
-  const raw = window.location.hash.replace(/^#/, "");
+  const raw = hash.replace(/^#/, "");
   if (raw.length === 0) return out;
   for (const part of raw.split("&")) {
     if (part.length === 0) continue;
     const eq = part.indexOf("=");
-    if (eq < 0) {
-      out.set(decodeURIComponent(part), "");
-      continue;
-    }
-    const k = decodeURIComponent(part.slice(0, eq));
-    const v = decodeURIComponent(part.slice(eq + 1));
+    const k = safeDecode(eq < 0 ? part : part.slice(0, eq));
+    const v = eq < 0 ? "" : safeDecode(part.slice(eq + 1));
+    if (k === null || v === null) continue;
     out.set(k, v);
   }
   return out;
+}
+
+function readAllPairs(): Map<string, string> {
+  if (typeof window === "undefined") return new Map();
+  return parseHashPairs(window.location.hash);
 }
 
 function writeAllPairs(pairs: Map<string, string>): void {

@@ -9,6 +9,32 @@ registry predicate migration. Not deployed.
 
 # N2K Platform: Changelog
 
+## 2026-09-25: Every view is in the URL hash
+
+- Only Lookup lived in the URL. Back from Competition, Library or Play left
+  the site, reload always dropped you on Lookup, and you could not link
+  anyone to a non-Lookup view. A pasted hash with a broken `%` escape also
+  crashed boot with a `URIError`.
+- Non-Lookup views now add `view=competition|library|play` to the hash
+  (`#view=library&lookup=1%3A2%2C3%2C5%2F10`). Tab clicks push a history
+  entry, so Back and Forward walk between views; reload and pasted links
+  open the linked view. Back to Lookup restores the dice and target of that
+  history entry. Lookup carries no `view` pair, so every existing Lookup link
+  keeps its exact format. Old `plan=` and `race=` share links still open
+  Competition and Play; an explicit `view` wins over them, and leaving
+  Competition or Play drops their payload so a stale link cannot pull a
+  later reload back or overwrite a draft. `#view=compose` is read as
+  Competition; unknown or malformed hashes fall back to Lookup. No
+  localStorage change.
+- Tests: `web/tests/viewHash.test.ts` and `web/e2e/view-hash.spec.ts`
+  (reload on `#view=competition`, Lookup to Library to Back). Each was seen
+  failing on behaviour first: the unit cases against the old AppStore parser
+  ported verbatim (no `view`, `plan` beat `view`, `URIError` on a bad escape)
+  and against the first cut that kept `plan=` on Lookup; the e2e cases on the
+  pre-change AppStore and App.
+
+Not deployed.
+
 ## 2026-09-24: Welcome card copy, hero capture, data notes, license
 
 - The first-run welcome card called the site a "mental-math dice race" while

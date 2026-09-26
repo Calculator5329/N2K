@@ -14,7 +14,8 @@
  *   - `library`     — index of locally-saved competitions (Library tab)
  *   - `match`       — orchestrator for the in-flight competition match
  *                     (null when no match is being played)
- *   - `view`        — currently routed top-level surface
+ *   - `view`        — currently routed top-level surface, mirrored
+ *                     into the URL hash (see `viewHash.ts`)
  *
  * Construction is side-effect free aside from the store-internal
  * initialisers (theme reads from localStorage, etc.). The window
@@ -35,30 +36,7 @@ import { CompositionStore } from "../features/compose/CompositionStore.js";
 import { LibraryStore } from "../features/library/LibraryStore.js";
 import type { MatchStore } from "../features/match/MatchStore.js";
 import type { View } from "./types.js";
-
-/**
- * Pasted share links carry a feature key in the URL hash: `plan=` for a
- * Competition plan (see `CompositionStore.buildShareUrl` / `loadFromUrl`)
- * or `race=` for a finished race result (see `PlayStore.buildRaceShareUrl`
- * / `loadRaceFromUrl`). When present we boot straight into the matching
- * tab rather than the default Lookup, so the recipient lands on the
- * surface that will actually rehydrate from their link. `race` wins over
- * `plan` on the (pathological) chance both are present.
- */
-function initialViewFromHash(): View {
-  if (typeof window === "undefined") return "lookup";
-  const raw = window.location.hash.replace(/^#/, "");
-  if (raw.length === 0) return "lookup";
-  const keys = new Set<string>();
-  for (const part of raw.split("&")) {
-    const eq = part.indexOf("=");
-    const key = eq < 0 ? part : part.slice(0, eq);
-    keys.add(decodeURIComponent(key));
-  }
-  if (keys.has("race")) return "play";
-  if (keys.has("plan")) return "compose";
-  return "lookup";
-}
+import { hashForView, viewFromHash } from "./viewHash.js";
 
 export type { View };
 
@@ -83,7 +61,7 @@ export class AppStore {
    * dynamic import in `loadMatchModule`); MobX still tracks it.
    */
   match: MatchStore | null = null;
-  view: View = initialViewFromHash();
+  view: View = typeof window === "undefined" ? "lookup" : viewFromHash(window.location.hash);
 
   constructor() {
     this.data = new DataStore();
@@ -110,7 +88,19 @@ export class AppStore {
     });
   }
 
+  /**
+   * User navigation between top-level views. A real change pushes a
+   * history entry so Back/Forward walk between views inside the site.
+   */
   setView(view: View): void {
+    const changed = view !== this.view;
+    this.showView(view);
+    if (changed && typeof window !== "undefined") {
+      window.history.pushState(window.history.state, "", urlWithHash(hashForView(window.location.hash, view)));
+    }
+  }
+
+  private showView(view: View): void {
     this.view = view;
     // Auto-pause any in-flight match when the user navigates away from
     // the Play tab. The match is preserved (and the Play tab still
@@ -121,6 +111,30 @@ export class AppStore {
     }
   }
 
+  /**
+   * Follow Back/Forward and hand-edited hashes, and stamp the current
+   * view into the hash (a `race=` link that opened Play keeps Play on
+   * reload after the payload is consumed). Called from a `useEffect` in
+   * `App`; returns the cleanup.
+   */
+  startHistorySync(): () => void {
+    if (typeof window === "undefined") return () => {};
+    const canonical = hashForView(window.location.hash, this.view);
+    if (canonical !== window.location.hash.replace(/^#/, "")) {
+      window.history.replaceState(window.history.state, "", urlWithHash(canonical));
+    }
+    const follow = (): void => {
+      const next = viewFromHash(window.location.hash);
+      if (next !== this.view) this.showView(next);
+    };
+    window.addEventListener("popstate", follow);
+    window.addEventListener("hashchange", follow);
+    return () => {
+      window.removeEventListener("popstate", follow);
+      window.removeEventListener("hashchange", follow);
+    };
+  }
+
   setMatch(match: MatchStore | null): void {
     this.match = match;
   }
@@ -129,4 +143,8 @@ export class AppStore {
     this.play.dispose();
     this.match?.dispose();
   }
+}
+
+function urlWithHash(hash: string): string {
+  return `${window.location.pathname}${window.location.search}${hash.length > 0 ? `#${hash}` : ""}`;
 }
