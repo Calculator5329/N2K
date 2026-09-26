@@ -1,3 +1,13 @@
+# 2026-09-26: The handles registry says how to use each control
+
+`web/testid-registry.json` named every control but did not say how to drive it.
+Regenerated on the current agent-handles (live link): each entry now lists its
+drive verbs (73 click, 5 type, 3 fill for the number fields, 3 display-only; 5
+sit on wrapper components the scanner cannot see into, such as `ModalShell`),
+and the dev server now rewrites the file on save. The journey spec is
+recompiled. 111 unit tests, `tsc -b` and 6 of 6 journeys pass. The scan also
+reports 28 interactive elements added since adoption that carry no identity yet.
+
 # 2026-09-06: Outcome exploration preserves drafts and match starts
 
 Draft phase edits now survive reload, and newly launched matches do not pause

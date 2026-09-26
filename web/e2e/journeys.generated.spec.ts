@@ -32,13 +32,15 @@ async function captureRuntimeObservation(page: import("@playwright/test").Page) 
           "button,input,select,textarea,a[href],summary,[contenteditable]:not([contenteditable='false']),[role='button'],[role='checkbox'],[role='combobox'],[role='link'],[role='menuitem'],[role='menuitemcheckbox'],[role='menuitemradio'],[role='option'],[role='radio'],[role='slider'],[role='spinbutton'],[role='switch'],[role='tab'],[role='textbox'],[role='treeitem'],[tabindex]:not([tabindex='-1'])";
         const RUNTIME_DEVTOOLS_ROOT_SELECTOR =
           "[data-agent-handles-devtools],[class*='TanStackRouterDevtools'],[id*='TanStackRouterDevtools'],[id*='tanstack-router-devtools'],[class*='tsqd-'],[class*='ReactQueryDevtools'],[id*='react-query-devtools'],vite-error-overlay,vite-plugin-checker-error-overlay";
+        const RUNTIME_CONTAINER_ROLE_SELECTOR =
+          ["tablist","tabpanel","toolbar","group","region","list","listitem","menubar","presentation","none"];
         function isRuntimeObservationCandidate(element: Element) {
           if (element.closest("[data-agent-handles-overlay]")) return false;
           if (element.closest(RUNTIME_DEVTOOLS_ROOT_SELECTOR)) return false;
           if (element.closest('[aria-hidden="true"]')) return false;
-          const role = element.getAttribute?.("role");
+          const role = element.getAttribute?.("role") ?? "";
           const nativeControl = element.matches?.('button,input,select,textarea,a[href],summary,[contenteditable]:not([contenteditable="false"])');
-          if ((role === "tablist" || role === "tabpanel") && !nativeControl) return false;
+          if (RUNTIME_CONTAINER_ROLE_SELECTOR.includes(role) && !nativeControl) return false;
           const style = window.getComputedStyle(element);
           const rect = element.getBoundingClientRect();
           return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
