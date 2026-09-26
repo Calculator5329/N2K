@@ -7,7 +7,7 @@
  * phase tabs.
  */
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CompositionStore } from "./CompositionStore.js";
 
 export const ManagePhasesPanel = observer(function ManagePhasesPanel({
@@ -17,6 +17,16 @@ export const ManagePhasesPanel = observer(function ManagePhasesPanel({
   store: CompositionStore;
   onClose: () => void;
 }) {
+  // Escape closes the panel. The rename input stops its own Escape
+  // (cancel edit) from reaching this listener.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
     <div
       role="dialog"
@@ -103,6 +113,7 @@ const PhaseRow = observer(function PhaseRow({
               store.renamePhase(phase.id, draftName);
               setEditing(false);
             } else if (e.key === "Escape") {
+              e.stopPropagation();
               setDraftName(phase.name);
               setEditing(false);
             }

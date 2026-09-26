@@ -250,6 +250,9 @@ function makePhaseConfig(opts: NewPhaseOptions = {}): PhaseConfig {
   };
 }
 
+/** Per-board explanation for a board `generateAll` skipped for having 0 bouts. */
+const ZERO_BOUTS_MESSAGE = "0 bouts: set at least 1 to generate this board.";
+
 /**
  * Top-level store for the Compose feature.
  *
@@ -304,6 +307,14 @@ export class CompositionStore {
   /** Loading progress for candidate dice chunks (0..1). */
   loadProgress = 1;
   globalError: string | null = null;
+  /**
+   * Why the last Generate press left something out (an empty phase, a
+   * board with 0 bouts), or `null` when every board ran. Set by
+   * `generateAll` from `generationPlan`; cleared by any edit that
+   * changes the plan (board or phase CRUD, reset, hydrate), because the
+   * sentence only describes the plan it was computed from.
+   */
+  generateNotice: string | null = null;
 
   /**
    * Autosave wiring — set up in `attachAutosave()`. Decoupled from the
@@ -502,6 +513,7 @@ export class CompositionStore {
     });
     this.phases.push(phase);
     this.currentPhaseId = phase.id;
+    this.generateNotice = null;
     return phase.id;
   }
 
@@ -510,6 +522,7 @@ export class CompositionStore {
     const wasCurrent = this.currentPhaseId === id;
     const removedIndex = this.phases.findIndex((p) => p.id === id);
     this.phases = this.phases.filter((p) => p.id !== id);
+    this.generateNotice = null;
     if (wasCurrent) {
       // Land the cursor on the neighbour to the left when possible,
       // else the (new) first phase. Mirrors how editor tabs feel
@@ -547,6 +560,7 @@ export class CompositionStore {
     const idx = this.phases.findIndex((p) => p.id === id);
     this.phases.splice(idx + 1, 0, copy);
     this.currentPhaseId = copy.id;
+    this.generateNotice = null;
     for (const board of copy.boards) this.previewBoard(board.id);
     return copy.id;
   }
@@ -558,6 +572,7 @@ export class CompositionStore {
   addBoard(opts: NewBoardOptions = {}): void {
     const board = makeBoardConfig(opts);
     this.currentPhase.boards.push(board);
+    this.generateNotice = null;
     // Cells are visible by default — no Preview button to click — so
     // generate the initial sample inline.
     this.previewBoard(board.id);
@@ -567,6 +582,7 @@ export class CompositionStore {
     for (const phase of this.phases) {
       phase.boards = phase.boards.filter((b) => b.id !== id);
     }
+    this.generateNotice = null;
   }
 
   updateBoard(id: string, patch: Partial<Omit<BoardConfig, "id" | "overrides">>): void {
@@ -575,6 +591,7 @@ export class CompositionStore {
     Object.assign(board, patch);
     // Editing parameters invalidates any prior result; refresh the
     // preview cells immediately so the grid stays in sync with inputs.
+    this.generateNotice = null;
     board.result = null;
     board.status = "idle";
     board.errorMessage = null;
@@ -589,6 +606,7 @@ export class CompositionStore {
     } else {
       board.overrides.set(slot, value);
     }
+    this.generateNotice = null;
     board.result = null;
     board.status = "idle";
     board.errorMessage = null;
@@ -713,8 +731,67 @@ export class CompositionStore {
   // Run the competition generator for every board in every phase
   // -------------------------------------------------------------------------
 
+  /**
+   * Which boards Generate will run, plus a user-facing note naming
+   * what it has to skip: phases with no boards and boards with 0 bouts
+   * (the solver rejects those outright).
+   */
+  get generationPlan(): {
+    boards: BoardConfig[];
+    zeroBoutBoards: BoardConfig[];
+    notice: string | null;
+  } {
+    const boards: BoardConfig[] = [];
+    const zeroBoutBoards: BoardConfig[] = [];
+    const skipped: string[] = [];
+    let emptyPhases = 0;
+    let zeroBouts = 0;
+    for (const phase of this.phases) {
+      if (phase.boards.length === 0) {
+        emptyPhases++;
+        skipped.push(`${phase.name} has no boards`);
+      }
+      phase.boards.forEach((board, i) => {
+        if (board.bouts >= 1) {
+          boards.push(board);
+        } else {
+          zeroBouts++;
+          zeroBoutBoards.push(board);
+          skipped.push(`${phase.name} · Board ${i + 1} has 0 bouts`);
+        }
+      });
+    }
+    if (skipped.length === 0) return { boards, zeroBoutBoards, notice: null };
+    const lead = boards.length === 0 ? "Nothing to generate" : "Skipped";
+    const fix =
+      emptyPhases > 0 && zeroBouts > 0
+        ? "Add a board or set at least 1 bout"
+        : emptyPhases > 0
+          ? "Add a board"
+          : "Set at least 1 bout";
+    const target = skipped.length === 1 ? "it" : "them";
+    // Save needs every board generated (`isFullyGenerated`); empty
+    // phases don't block it, skipped boards do.
+    const save = zeroBouts > 0 ? " The plan can't be saved until the skipped boards are fixed." : "";
+    return {
+      boards,
+      zeroBoutBoards,
+      notice: `${lead}: ${skipped.join("; ")}. ${fix} to include ${target}.${save}`,
+    };
+  }
+
   async generateAll(): Promise<void> {
     if (this.generating) return;
+    const plan = this.generationPlan;
+    runInAction(() => {
+      this.generateNotice = plan.notice;
+      for (const board of plan.zeroBoutBoards) {
+        board.status = "idle";
+        board.result = null;
+        board.errorMessage = ZERO_BOUTS_MESSAGE;
+      }
+    });
+    if (plan.boards.length === 0) return;
     runInAction(() => {
       this.generating = true;
       this.globalError = null;
@@ -725,7 +802,7 @@ export class CompositionStore {
       // to the user — share links embed the resolved board cells
       // and rolls verbatim, so reproducibility doesn't depend on it.
       this.seed = randomSeed();
-      for (const { board } of this.allBoards) {
+      for (const board of plan.boards) {
         board.status = "idle";
         board.errorMessage = null;
         board.result = null;
@@ -751,8 +828,9 @@ export class CompositionStore {
 
       // Phase 2 — generate per board across every phase. Boards are
       // independent (balance is per-board only) so order and isolation
-      // don't matter; we just walk the flat list.
-      for (const { board } of this.allBoards) {
+      // don't matter; we just walk the planned list (skips already
+      // reported in `generateNotice`).
+      for (const board of plan.boards) {
         runInAction(() => {
           board.status = "running";
         });
@@ -841,6 +919,7 @@ export class CompositionStore {
       this.spice = "spicy";
       this.variance = DEFAULT_VARIANCE;
       this.globalError = null;
+      this.generateNotice = null;
     });
     for (const board of seedBoards) this.previewBoard(board.id);
   }
@@ -906,6 +985,7 @@ export class CompositionStore {
     ) {
       return;
     }
+    this.generateNotice = null;
     this.candidatePool = plan.pool;
     this.timeBudget = plan.timeBudget;
     this.seed = plan.seed;

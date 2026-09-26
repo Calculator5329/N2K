@@ -30,6 +30,7 @@ import { formatEquationAgainstPool } from "@platform/services/parsing.js";
 import type { NEquation } from "@platform/core/types.js";
 import { PageHeader } from "../../ui/primitives/PageHeader.js";
 import { folioFor } from "../../ui/chrome/nav.js";
+import { plural } from "../../core/plural.js";
 
 // ---------------------------------------------------------------------------
 //  Top-level switcher
@@ -1071,7 +1072,7 @@ const ResultsBoard = observer(function ResultsBoard(props: {
         />
       </div>
       <p className="mt-3 text-[12px] italic text-ink-200">
-        {props.knocked.length} cells knocked.
+        {plural(props.knocked.length, "cell")} knocked.
       </p>
     </div>
   );

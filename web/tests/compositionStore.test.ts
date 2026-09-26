@@ -282,6 +282,54 @@ describe("CompositionStore — phase CRUD", () => {
   });
 });
 
+describe("CompositionStore — generate guard", () => {
+  it("explains a Generate press when the phase has no boards, without starting a run", async () => {
+    const s = makeStore();
+    for (const b of [...s.boards]) s.removeBoard(b.id);
+    await s.generateAll();
+    expect(s.generateNotice).toMatch(/Phase 1 has no boards/);
+    expect(s.globalError).toBeNull();
+    expect(s.generating).toBe(false);
+  });
+
+  it("skips boards with 0 bouts and names them instead of dropping them silently", () => {
+    const s = makeStore();
+    s.updateBoard(s.boards[0]!.id, { bouts: 0 });
+    const plan = s.generationPlan;
+    expect(plan.boards.map((b) => b.id)).toEqual([s.boards[1]!.id]);
+    expect(plan.notice).toMatch(/Phase 1 · Board 1 has 0 bouts/);
+  });
+
+  it("still generates the other phases when one phase is empty, and says so", () => {
+    const s = makeStore();
+    s.addPhase();
+    const plan = s.generationPlan;
+    expect(plan.boards).toHaveLength(2);
+    expect(plan.notice).toMatch(/Phase 2 has no boards/);
+  });
+
+  it("drops the notice once the plan it described is replaced", async () => {
+    const s = makeStore();
+    for (const b of [...s.boards]) s.removeBoard(b.id);
+    await s.generateAll();
+    expect(s.generateNotice).not.toBeNull();
+    s.resetToDefault();
+    expect(s.generateNotice).toBeNull();
+  });
+
+  it("tells each skipped 0-bout board why it has no rolls", async () => {
+    const s = makeStore();
+    for (const b of s.boards) s.updateBoard(b.id, { bouts: 0 });
+    await s.generateAll();
+    for (const b of s.boards) expect(b.errorMessage).toMatch(/0 bouts/);
+    expect(s.generateNotice).toMatch(/can't be saved/);
+  });
+
+  it("has nothing to say when every board can generate", () => {
+    expect(makeStore().generationPlan.notice).toBeNull();
+  });
+});
+
 describe("CompositionStore — autosave routing", () => {
   it("writes to compose:current by default", async () => {
     const storage = new MemoryStorage();

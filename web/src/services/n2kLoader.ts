@@ -63,8 +63,19 @@ export interface TupleDetail {
   readonly solutions: Readonly<Record<string, Solution>>;
 }
 
+/**
+ * The date `public/data/standard.n2k` was last committed to this repo,
+ * injected by `vite.config.ts` at build time (build time when git has
+ * no answer). It is not when the blob was baked: the header carries no
+ * timestamp. The masthead "compiled" labels show it. Vitest has no such
+ * define, so tests fall back to "now".
+ */
+const DATASET_COMPILED_AT: string | undefined = import.meta.env.VITE_N2K_DATASET_DATE;
+
 export class N2kLoader {
   readonly url: string;
+  /** ISO timestamp reported as `DatasetIndex.generatedAt` (masthead dates). */
+  readonly generatedAt: string;
   private fetchPromise: Promise<void> | null = null;
   private blobBytes: Uint8Array | null = null;
   private header: BlobHeader | null = null;
@@ -76,8 +87,9 @@ export class N2kLoader {
   private cachedTargetStats: Readonly<Record<string, TargetStatsEntry>> | null = null;
   private cachedDifficultyMatrix: DifficultyMatrix | null = null;
 
-  constructor(url: string) {
+  constructor(url: string, generatedAt: string = DATASET_COMPILED_AT ?? new Date().toISOString()) {
     this.url = url;
+    this.generatedAt = generatedAt;
   }
 
   /** Fetch + parse the header. Idempotent and concurrency-safe. */
@@ -116,7 +128,7 @@ export class N2kLoader {
           : roundDifficulty(t.sumDifficulty / t.solvableCount),
     }));
     return {
-      generatedAt: new Date(0).toISOString(),
+      generatedAt: this.generatedAt,
       diceMin: h.diceMin,
       diceMax: h.diceMax,
       totalMin: h.targetMin,

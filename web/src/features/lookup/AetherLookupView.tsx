@@ -545,7 +545,7 @@ export const AetherLookupView = observer(function AetherLookupView() {
         dek="Pick an arity, choose your dice (−10 to 32 — negatives are literal), and the Æther solver hunts the easiest equation across every permutation. One sweep per tuple covers every target instantly."
       />
 
-      <section className="grid grid-cols-12 gap-x-12 gap-y-10">
+      <section className="lookup-grid grid grid-cols-12 gap-x-12 gap-y-10">
         <div className="col-span-12 lg:col-span-5 space-y-6">
           <div>
             <div className="label-caps mb-2">Arity</div>

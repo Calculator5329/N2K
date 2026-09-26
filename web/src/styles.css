@@ -1689,6 +1689,18 @@
   outline: 1px solid rgb(var(--accent-500));
   outline-offset: 2px;
 }
+/* The slip is a 560px strip at every viewport, but the Lookup grid goes
+   two-column at the lg breakpoint, and its 12-track gutters alone
+   (11 × 56px) are wider than the paper. Print the Lookup as one column,
+   the way a till prints line after line. */
+[data-theme="receipt"] .lookup-grid {
+  column-gap: 0;
+}
+[data-theme="receipt"] .lookup-grid > * {
+  grid-column: span 12 / span 12;
+  padding-left: 0;
+  border-left-width: 0;
+}
 
 /* --- TABLETOP: chunky game-board, navy frame, butter surface ---------- */
 [data-theme="tabletop"] body {

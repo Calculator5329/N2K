@@ -9,6 +9,34 @@ registry predicate migration. Not deployed.
 
 # N2K Platform: Changelog
 
+## 2026-09-25: Real masthead dates, receipt Lookup fits the paper, Competition fixes
+
+- **Every edition masthead said 1970-01-01.** Reproduced on HEAD, not just
+  the stale live build: `N2kLoader.loadIndex` stamped `generatedAt` with
+  `new Date(0)` because the `.n2k` header has no timestamp. The masthead
+  now shows the date `public/data/standard.n2k` was last committed to this
+  repo, which is not the bake date: `vite.config.ts` reads it from git as
+  `VITE_N2K_DATASET_DATE`, and warns and falls back to the build time when
+  git has no answer. Receipt, Spreadsheet, Polaroid and Manuscript all read
+  2026-04-20. No rebake. `tests/n2kLoader.test.ts`, watched failing first.
+- **Receipt Lookup spilled off the slip at 1280 and 1440.** The two-column
+  Lookup grid's twelve 56px gutters were wider than the 560px paper. On the
+  receipt the Lookup (and Æther Lookup) now stacks as one column at every
+  width; measured no element past the paper edge at 1280, 1440 and 390.
+- **Competition small fixes.** Escape closes Manage Phases (Escape inside
+  a phase rename still only cancels the rename). Generate no longer goes
+  quiet: it skips empty phases and 0-bout boards and says which ones under
+  the toolbar ("Skipped: Phase 2 has no boards..."), still running the
+  rest, and stays clickable with zero boards so it can explain itself.
+  A skipped 0-bout board says so on its own card, the notice warns the
+  plan can't be saved until those boards are fixed, and the notice clears
+  as soon as the plan changes.
+  Board-header "Remove" wraps below the Random/Pattern toggle at 390px
+  instead of clipping. "1 cells knocked" reads "1 cell knocked" via a new
+  `plural()` helper. Store and helper tests watched failing first.
+
+Not deployed.
+
 ## 2026-09-25: Every view is in the URL hash
 
 - Only Lookup lived in the URL. Back from Competition, Library or Play left

@@ -424,7 +424,7 @@ const StandardLookupView = observer(function StandardLookupView() {
         dek={`Pick a dice triple and a target between ${TARGET_MIN} and ${TARGET_MAX}. The almanac returns the lowest-difficulty equation that uses each die exactly once; 4, 8, 16 and 9 are played as 2 and 3.`}
       />
 
-      <section className="grid grid-cols-12 gap-y-10 lg:gap-14">
+      <section className="lookup-grid grid grid-cols-12 gap-y-10 lg:gap-14">
         <div className="col-span-12 lg:col-span-5 min-w-0">
           <div className="label-caps mb-4 flex items-center justify-between">
             <span>The dice</span>

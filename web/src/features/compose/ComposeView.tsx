@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../../stores/AppStoreContext.js";
 import { PageHeader } from "../../ui/primitives/PageHeader";
@@ -47,6 +47,8 @@ export const ComposeView = observer(function ComposeView() {
   const compose = root.composition;
   const lib = root.library;
   const [showManagePhases, setShowManagePhases] = useState(false);
+  // Stable so ManagePhasesPanel's Escape listener subscribes once per open.
+  const closeManagePhases = useCallback(() => setShowManagePhases(false), []);
   // Save-as dialog state lives on `LibraryStore.dialog` (single source
   // of truth) so the dialog's Cancel + Save buttons — which call
   // `lib.closeDialog()` — actually dismiss it. A previous local
@@ -137,7 +139,7 @@ export const ComposeView = observer(function ComposeView() {
       </div>
 
       {showManagePhases && (
-        <ManagePhasesPanel store={compose} onClose={() => setShowManagePhases(false)} />
+        <ManagePhasesPanel store={compose} onClose={closeManagePhases} />
       )}
       {showSaveAs && lib.dialog.kind === "save-as" && (
         <SaveAsDialog
@@ -557,7 +559,9 @@ const Toolbar = observer(function Toolbar({
 }: {
   store: CompositionStore;
 }) {
-  const disabled = store.generating || store.allBoards.length === 0;
+  // Stays pressable with no boards: `generateAll` then explains why
+  // nothing ran (see `generateNotice`) instead of a dead button.
+  const disabled = store.generating;
 
   return (
     <section className="flex flex-wrap items-center gap-4 border-t border-ink-100/15 pt-5">
@@ -586,6 +590,15 @@ const Toolbar = observer(function Toolbar({
           {store.rules === "aether"
             ? "loading Æther matrix (~31 MB, one-time)…"
             : "loading difficulty matrix…"}
+        </span>
+      )}
+      {store.generateNotice && (
+        <span
+          data-testid="compose.toolbar.generate-notice"
+          role="status"
+          className="order-last basis-full text-[12px] font-mono text-oxblood-500"
+        >
+          {store.generateNotice}
         </span>
       )}
       {store.globalError && (

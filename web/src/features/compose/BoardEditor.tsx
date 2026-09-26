@@ -24,9 +24,9 @@ export const BoardEditor = observer(function BoardEditor({
 }) {
   return (
     <div className="border border-ink-100/20 bg-paper-50 px-6 py-5">
-      <div className="flex items-baseline justify-between gap-4 mb-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 mb-4">
         <div className="flex items-baseline gap-3">
-          <span className="font-mono text-[10px] tracking-wide-caps uppercase text-oxblood-500">
+          <span className="font-mono text-[10px] tracking-wide-caps uppercase text-oxblood-500 whitespace-nowrap">
             Board {index + 1}
           </span>
           <KindToggle store={store} board={board} />
@@ -35,7 +35,7 @@ export const BoardEditor = observer(function BoardEditor({
           type="button"
           data-testid={`compose.board.remove-${board.id}`}
           onClick={() => store.removeBoard(board.id)}
-          className="text-[11px] font-mono uppercase tracking-wide-caps text-ink-100 hover:text-oxblood-500 transition-colors"
+          className="shrink-0 whitespace-nowrap text-[11px] font-mono uppercase tracking-wide-caps text-ink-100 hover:text-oxblood-500 transition-colors"
         >
           Remove
         </button>

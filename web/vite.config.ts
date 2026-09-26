@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
@@ -9,8 +10,35 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const BASE = process.env.VITE_BASE ?? "/";
 
+/**
+ * Masthead date: when `public/data/standard.n2k` was last committed to
+ * this repo (not when it was baked; the `.n2k` header has no timestamp).
+ * Falls back to the build time, with a warning, when git has no answer.
+ * Read by `n2kLoader.ts` as `import.meta.env.VITE_N2K_DATASET_DATE`.
+ */
+function datasetCommittedAt(): string {
+  let iso = "";
+  try {
+    iso = execFileSync(
+      "git",
+      ["log", "-1", "--format=%cI", "--", "public/data/standard.n2k"],
+      { cwd: __dirname, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    ).trim();
+  } catch {
+    /* not a git checkout; handled below */
+  }
+  if (iso !== "") return new Date(iso).toISOString();
+  console.warn(
+    "[n2k] git returned no commit date for public/data/standard.n2k; mastheads will show the build time.",
+  );
+  return new Date().toISOString();
+}
+
 export default defineConfig({
   base: BASE,
+  define: {
+    "import.meta.env.VITE_N2K_DATASET_DATE": JSON.stringify(datasetCommittedAt()),
+  },
   plugins: [
     react(),
     // Registry verification at build time; dev-only drive executor for
