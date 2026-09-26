@@ -588,7 +588,7 @@ const MatchEndScreen = observer(function MatchEndScreen({ match }: { match: Matc
           className="px-4 py-2 font-mono uppercase tracking-wide-caps text-[11px] text-paper-50 bg-oxblood-500 hover:bg-oxblood-500/90"
           style={{ borderRadius: "2px" }}
         >
-          Open in Compose
+          Open in Competition
         </button>
         <button
           type="button"

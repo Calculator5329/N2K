@@ -8,6 +8,7 @@
  * no `view` pair, so every Lookup link ever shared (`#lookup=1:2,3,5/10`)
  * keeps its exact format and meaning.
  */
+import { decodeShareable } from "../services/compressedHashCodec.js";
 import { parseHashPairs, safeDecode } from "../services/urlHashState.js";
 import type { View } from "./types.js";
 
@@ -39,6 +40,22 @@ const PAYLOAD_OWNER: ReadonlyMap<string, View> = new Map<string, View>([
   ["plan", "compose"],
   ["race", "play"],
 ]);
+
+/**
+ * True when the hash carries a `race=` or `plan=` payload that decodes
+ * with the same codec the share loaders use. An empty or garbage payload
+ * is false, so it cannot suppress first-run onboarding for nothing.
+ */
+export async function sharePayloadDecodes(hash: string): Promise<boolean> {
+  const pairs = parseHashPairs(hash);
+  for (const key of PAYLOAD_OWNER.keys()) {
+    const raw = pairs.get(key);
+    if (raw !== undefined && raw.length > 0 && (await decodeShareable<unknown>(raw)) !== null) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
  * Which view a hash opens. An explicit `view=` wins; otherwise older

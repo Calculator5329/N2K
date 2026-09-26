@@ -6,7 +6,7 @@
  * card surfaces the comp name, generation status, phase/board/bout
  * counts, last-played timestamp, best avg score, and an action row:
  *
- *   - Open in Compose      (autosave routes to this entry)
+ *   - Open in Competition  (autosave routes to this entry)
  *   - Play                  (opens the format/persona picker)
  *   - Overflow → rename / duplicate / history / delete
  *
@@ -56,7 +56,7 @@ export const LibraryView = observer(function LibraryView() {
               </span>
             </>
           }
-          dek="Every comp you save in Compose lands here. Open one to keep editing, or hit Play to race the boards against a bot — vs-bot or pass-the-device hot-seat."
+          dek="Every comp you save in Competition lands here. Open one to keep editing, or hit Play to race the boards against a bot — vs-bot or pass-the-device hot-seat."
           right={<NewCompButton />}
         />
       </div>
@@ -147,8 +147,8 @@ const EntriesList = observer(function EntriesList({
           No saved competitions yet
         </div>
         <p className="text-[13px] italic text-ink-200 max-w-md mx-auto mb-6">
-          Build a competition in Compose, hit <em>Save as new</em>, and it'll appear
-          here for one-click play.
+          Build a competition in the Competition tab, hit <em>Save as new</em>, and
+          it'll appear here for one-click play.
         </p>
         <NewCompButton />
       </section>
@@ -201,7 +201,7 @@ const EntryCard = observer(function EntryCard({
           )}
           {isOpenedHere && (
             <span className="font-mono uppercase tracking-wide-caps text-[10px] text-support-500">
-              · open in Compose
+              · open in Competition
             </span>
           )}
         </div>
@@ -253,7 +253,7 @@ const EntryCard = observer(function EntryCard({
             lib.openPlayPicker(entry.id);
           }}
           disabled={!entry.isGenerated}
-          title={entry.isGenerated ? "Pick format + persona, then race" : "Generate the comp in Compose first"}
+          title={entry.isGenerated ? "Pick format + persona, then race" : "Generate the comp in Competition first"}
           className={[
             "px-4 py-1.5 font-mono uppercase tracking-wide-caps text-[11px] transition-colors",
             entry.isGenerated

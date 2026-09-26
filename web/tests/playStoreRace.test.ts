@@ -4,6 +4,8 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PlayStore, type SharedRace } from "../src/stores/PlayStore";
+import { AppStore } from "../src/stores/AppStore";
+import { MatchStore } from "../src/features/match/MatchStore";
 
 const PATTERN_8 = Array.from({ length: 36 }, (_, i) => (i + 1) * 8);
 
@@ -91,6 +93,91 @@ describe("PlayStore — Easy bot on a fake clock", () => {
     vi.advanceTimersByTime(60_000);
     expect(p.status).toBe("finished");
     expect(p.botKnocked.length).toBeGreaterThan(0);
+    p.dispose();
+  });
+});
+
+describe("PlayStore — leaving Play mid-race", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // Back, Forward and the nav all route through AppStore's view change.
+  it("pauses the race, refuses knocks while away, and resumes the clock where it stopped", () => {
+    vi.useFakeTimers();
+    const app = new AppStore();
+    app.setView("play");
+    const p = app.play;
+    p.start({ board: PATTERN_8, playerDice: [2, 3, 5], silent: true });
+    vi.advanceTimersByTime(5_000);
+    app.setView("lookup");
+    expect(p.status).toBe("paused");
+
+    vi.advanceTimersByTime(20_000);
+    expect(p.submitEquation("2^3 + 3 + 5").ok).toBe(false);
+    expect(p.playerKnocked).toHaveLength(0);
+    expect(p.elapsedMs).toBe(5_000);
+
+    app.setView("play");
+    p.resume();
+    vi.advanceTimersByTime(1_000);
+    expect(p.elapsedMs).toBe(6_000);
+    expect(p.submitEquation("2^3 + 3 + 5").ok).toBe(true);
+    app.dispose();
+  });
+});
+
+describe("PlayStore — leaving Play during a replay", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("stops the replay where it was, so you come back to the same frame", () => {
+    vi.useFakeTimers();
+    const app = new AppStore();
+    app.setView("play");
+    const p = app.play;
+    p.start({ board: PATTERN_8, playerDice: [2, 3, 5], silent: true });
+    vi.advanceTimersByTime(60_000);
+    expect(p.status).toBe("finished");
+    p.togglePlayReplay();
+    vi.advanceTimersByTime(2_000);
+    const frame = p.replayMs;
+    app.setView("lookup");
+    vi.advanceTimersByTime(5_000);
+    expect(p.replayMs).toBe(frame);
+    expect(p.replayPlaying).toBe(false);
+    app.dispose();
+  });
+});
+
+describe("PlayStore — a match taking over Play", () => {
+  it("pauses the Quick Race it replaces", () => {
+    const app = new AppStore();
+    app.setView("play");
+    app.play.start({ board: PATTERN_8, playerDice: [2, 3, 5], silent: true });
+    app.setMatch(new MatchStore());
+    expect(app.play.status).toBe("paused");
+    app.dispose();
+  });
+});
+
+describe("PlayStore — typed refusals name the real problem", () => {
+  it("checks the dice before the board, counts dice per mode, and clears on a new aim", () => {
+    const p = new PlayStore();
+    p.start({ board: PATTERN_8, playerDice: [2, 3, 5], silent: true });
+
+    const wrongDice = p.submitEquation("1+1+1");
+    expect(wrongDice.ok).toBe(false);
+    expect(p.lastRefusal).toMatch(/roll 2, 3, 5/);
+    expect(p.lastRefusal).not.toMatch(/board/);
+
+    p.submitEquation("2+3");
+    expect(p.lastRefusal).toMatch(/2 dice.*3/);
+    expect(p.lastRefusal).not.toMatch(/3\.\.5/);
+
+    p.selectCell(1);
+    expect(p.lastRefusal).toBeNull();
     p.dispose();
   });
 });

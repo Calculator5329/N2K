@@ -372,8 +372,10 @@ export class PlayStore {
       exitReplay: action,
       setReplayMs: action,
       togglePlayReplay: action,
+      pauseReplay: action,
       stepReplay: action,
       applyRaceSnapshot: action,
+      dispose: action,
     });
   }
 
@@ -554,7 +556,8 @@ export class PlayStore {
    * Freeze the race clock + bot ticks. The view treats `paused` as a
    * blurred overlay so the user can't strategize during the freeze.
    * MatchStore drives this both for the explicit Pause button and for
-   * the auto-pause-on-tab-switch policy.
+   * the auto-pause-on-tab-switch policy; AppStore pauses a Quick Race
+   * directly when the view leaves Play.
    */
   pause(): void {
     if (this.status !== "racing") return;
@@ -581,13 +584,15 @@ export class PlayStore {
   /**
    * Target cell `cellIndex` for the next submitted equation. Clicking the
    * targeted cell again clears the target. Knocked cells cannot be
-   * targeted (a knock is final now that it is checked).
+   * targeted (a knock is final now that it is checked). A new aim clears
+   * the previous refusal, which was about a different attempt.
    */
   selectCell(cellIndex: number): void {
     if (!this.isRacing) return;
     if (cellIndex < 0 || cellIndex >= this.boardCells.length) return;
     if (this.playerKnockedSet.has(cellIndex)) return;
     this.targetIndex = this.targetIndex === cellIndex ? null : cellIndex;
+    this.lastRefusal = null;
   }
 
   /**
@@ -595,15 +600,21 @@ export class PlayStore {
    * targeted one when the total hits it, otherwise the first open cell
    * the total hits, so a stale aim never blocks a legal knock. With no
    * open cell hit, a targeted cell gets the refusal (the total does not
-   * match it). Refusals score nothing and set {@link lastRefusal}.
+   * match it). The dice are checked before the board, so a wrong-dice
+   * entry is refused for its dice, not for missing the board. Refusals
+   * score nothing and set {@link lastRefusal}.
    */
   submitEquation(text: string): KnockResult {
+    if (!this.isRacing) return this.refuse("The race is not running");
     let equation: NEquation;
     try {
       equation = parseTypedExpression(text);
     } catch (err) {
       return this.refuse(err instanceof Error ? capitalize(err.message) : "Could not read that equation");
     }
+    // Against its own total, only the dice, arity and exponents can fail.
+    const illegal = claimRefusal(equation, this.dice, equation.total, this.mode);
+    if (illegal !== null) return this.refuse(illegal);
     const aim = this.targetIndex;
     if (aim !== null && this.boardCells[aim] === equation.total) {
       return this.knockCell(aim, equation);
@@ -751,8 +762,13 @@ export class PlayStore {
     }
   }
 
-  /** Stop background work; called by the React tear-down hook. */
+  /**
+   * Stop background work; called by `AppStore.dispose()` and
+   * `MatchStore.dispose()`. A live race is paused, never left "racing"
+   * with a dead clock that still accepts knocks.
+   */
   dispose(): void {
+    this.pause();
     this.stopTimer();
     this.stopReplayTimer();
   }
@@ -919,8 +935,7 @@ export class PlayStore {
       this.enterReplay();
     }
     if (this.replayPlaying) {
-      this.replayPlaying = false;
-      this.stopReplayTimer();
+      this.pauseReplay();
       return;
     }
     // Wrap around if we're sitting at the end.
@@ -929,6 +944,12 @@ export class PlayStore {
     }
     this.replayPlaying = true;
     this.startReplayTimer();
+  }
+
+  /** Stop replay playback, keeping the cursor on the current frame. */
+  pauseReplay(): void {
+    this.replayPlaying = false;
+    this.stopReplayTimer();
   }
 
   /**

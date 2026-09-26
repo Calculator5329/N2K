@@ -105,9 +105,9 @@ const SolutionPanel = observer(function SolutionPanel({
     return (
       <div>
         <div className="label-caps mb-2">Not in this almanac</div>
-        <p className="font-display text-[40px] text-ink-500 leading-tight max-w-md" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 30' }}>
+        <div className="font-display text-[40px] text-ink-500 leading-tight max-w-md" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 30' }}>
           The dice <DiceInline dice={dice} /> have no entry here.
-        </p>
+        </div>
         <p className="mt-4 italic text-ink-200 max-w-md">
           {threeOfAKind
             ? "Three of the same face is never a legal roll, so nothing was compiled for it. Nudge any one die and the equations return."
@@ -124,12 +124,12 @@ const SolutionPanel = observer(function SolutionPanel({
     return (
       <div>
         <div className="label-caps mb-2">No solution</div>
-        <p className="font-display text-[40px] text-ink-500 leading-tight max-w-md" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 30' }}>
+        <div className="font-display text-[40px] text-ink-500 leading-tight max-w-md" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 30' }}>
           The dice <DiceInline dice={dice} /> cannot reach
           <span className="text-oxblood-500"> {lookup.total}</span>.
-        </p>
+        </div>
         <p className="mt-4 italic text-ink-200">
-          Of {detail.summary.solvableCount + detail.summary.impossibleCount} targets in
+          Of {detail.summary.solvableCount + detail.summary.impossibleCount} targets in{" "}
           {TARGET_MIN}–{TARGET_MAX}, this triple solves {detail.summary.solvableCount.toLocaleString()} —
           {" "}
           {Math.round(

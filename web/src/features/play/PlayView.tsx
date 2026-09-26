@@ -41,8 +41,9 @@ import { plural } from "../../core/plural.js";
 export const PlayView = observer(function PlayView() {
   const { play } = useAppStore();
 
-  // Tear down the race timer if the user navigates away mid-race.
-  useEffect(() => () => play.dispose(), [play]);
+  // AppStore pauses the race when the view leaves Play. An unmount cleanup
+  // here also runs during StrictMode replay and would pause a race the
+  // Welcome modal just started.
 
   // Rehydrate a shared race from a `#race=…` permalink on first mount.
   // Decoding is async (DecompressionStream); the store lands on the
@@ -57,7 +58,7 @@ export const PlayView = observer(function PlayView() {
   }, [play]);
 
   if (play.status === "setup") return <SetupScreen />;
-  if (play.status === "racing") return <RaceScreen />;
+  if (play.status === "racing" || play.status === "paused") return <RaceScreen />;
   return <ResultsScreen />;
 });
 
@@ -92,7 +93,7 @@ const SetupScreen = observer(function SetupScreen() {
             </span>
           </>
         }
-        dek="Knock numbers off your 6×6 board faster than the bot does theirs. Same dice, same numbers, separate boards. Click a cell when you can hit it with the dice; whoever has the higher score when the buzzer sounds takes the round."
+        dek="Knock numbers off your 6×6 board faster than the bot does theirs. Same dice, same numbers, separate boards. Type an equation that hits a cell to knock it off; whoever has the higher score when the buzzer sounds takes the round."
       />
 
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
@@ -316,6 +317,7 @@ function RuleRow(props: { ord: string; children: React.ReactNode }) {
 // ---------------------------------------------------------------------------
 
 const RaceScreen = observer(function RaceScreen() {
+  const { play } = useAppStore();
   return (
     // Single tight column that fits the typical viewport without
     // scrolling: timer + scoreline at the top, two boards in the
@@ -328,12 +330,47 @@ const RaceScreen = observer(function RaceScreen() {
     // side-by-side race only on tablet and up.
     <article className="flex flex-col items-stretch gap-3 sm:gap-4">
       <RaceTopBar />
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8 items-start">
+      <section className="relative grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8 items-start">
         <PlayerColumn />
         <BotColumn />
+        {play.isPaused && <PausedOverlay />}
       </section>
       <RaceFooter />
     </article>
+  );
+});
+
+/**
+ * Covers both boards while a Quick Race is paused. A Quick Race pauses
+ * only when the view leaves Play (a hidden browser tab does not pause
+ * it), so the copy says exactly that.
+ */
+const PausedOverlay = observer(function PausedOverlay() {
+  const { play } = useAppStore();
+  return (
+    <div
+      className="absolute inset-0 bg-paper-50/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-10"
+      style={{ borderRadius: "3px" }}
+    >
+      <div
+        className="font-display text-[36px] text-ink-500 leading-none"
+        style={{ fontVariationSettings: '"opsz" 144, "SOFT" 30, "WONK" 1' }}
+      >
+        Paused
+      </div>
+      <p className="text-[12px] italic text-ink-200">
+        Paused when you left Play. Resume when you're ready.
+      </p>
+      <button
+        type="button"
+        data-testid="play.pause.resume"
+        onClick={() => play.resume()}
+        className="px-5 py-2 font-mono uppercase tracking-wide-caps text-[12px] text-paper-50 bg-oxblood-500 hover:bg-oxblood-500/90"
+        style={{ borderRadius: "2px" }}
+      >
+        ▶ Resume
+      </button>
+    </div>
   );
 });
 
@@ -342,7 +379,7 @@ const RaceTopBar = observer(function RaceTopBar() {
   return (
     <header className="text-center pt-2 pb-3 sm:pb-4 border-b border-ink-100/20">
       <div className="font-mono uppercase tracking-wide-caps text-[10px] text-oxblood-500 mb-1">
-        §&nbsp;III · Play · race in progress
+        §&nbsp;{folioFor("play")} · Play · race in progress
       </div>
       <CountdownClock />
       <ScoreLine />

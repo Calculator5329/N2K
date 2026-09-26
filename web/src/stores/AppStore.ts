@@ -102,12 +102,15 @@ export class AppStore {
 
   private showView(view: View): void {
     this.view = view;
-    // Auto-pause any in-flight match when the user navigates away from
-    // the Play tab. The match is preserved (and the Play tab still
-    // shows a paused-takeover when the user returns) — only the
-    // race timer is frozen.
-    if (view !== "play" && this.match !== null) {
-      this.match.autoPause();
+    // Auto-pause the in-flight race when the user navigates away from
+    // the Play tab: the match bout if one is loaded, and the Quick Race
+    // (or Daily) otherwise. The race is preserved and Play shows it
+    // paused with Resume on return; a paused race refuses knocks. A
+    // playing replay stops on its current frame.
+    if (view !== "play") {
+      this.play.pause();
+      this.play.pauseReplay();
+      this.match?.autoPause();
     }
   }
 
@@ -135,7 +138,9 @@ export class AppStore {
     };
   }
 
+  /** A loaded match takes over the Play tab, so the Quick Race under it pauses. */
   setMatch(match: MatchStore | null): void {
+    if (match !== null) this.play.pause();
     this.match = match;
   }
 

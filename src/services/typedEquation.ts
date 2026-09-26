@@ -28,6 +28,10 @@ import { OP, OPERATOR_TO_SYMBOL, FLOAT_EQ_EPSILON } from "../core/constants.js";
 import type { NEquation, Operator } from "../core/types.js";
 import { applyOperator } from "./arithmetic.js";
 
+/**
+ * A typed equation that could not be read. `column` is the 0-based index
+ * into the input; messages count positions from 1, as people do.
+ */
 export class ParseError extends Error {
   readonly column: number;
   constructor(message: string, column: number) {
@@ -60,7 +64,7 @@ function consumeInt(c: Cursor): number {
   }
   if (s.length === 0) {
     throw new ParseError(
-      `expected an integer at position ${start}`,
+      `expected an integer at position ${start + 1}`,
       start,
     );
   }
@@ -84,7 +88,7 @@ function consumeBase(c: Cursor): number {
     if (!isMinus(peek(c))) {
       throw new ParseError(
         `parens are only used for negative bases (e.g. "(-3)"); ` +
-          `found "${peek(c) || "<eof>"}" at position ${c.pos}`,
+          `found "${peek(c) || "<eof>"}" at position ${c.pos + 1}`,
         c.pos,
       );
     }
@@ -93,7 +97,7 @@ function consumeBase(c: Cursor): number {
     skipWs(c);
     if (peek(c) !== ")") {
       throw new ParseError(
-        `expected ")" at position ${c.pos} (paren opened at ${start})`,
+        `expected ")" at position ${c.pos + 1} (paren opened at ${start + 1})`,
         c.pos,
       );
     }
@@ -128,9 +132,10 @@ export function parseEquation(input: string): NEquation {
 /**
  * Parse a typed expression where `= total` is optional. Without it, the
  * total is whatever the expression evaluates to (left to right). Throws
- * `ParseError` with a readable message on bad syntax, a non-integer
- * result, or a claimed total the expression does not reach. Legality
- * against a roll is not checked here; see `claimRefusal` in
+ * `ParseError` with a readable message on bad syntax, division by zero,
+ * a non-integer result, or a claimed total the expression does not
+ * reach. The dice count and legality against a roll are not checked
+ * here, since they depend on the mode; see `claimRefusal` in
  * `games/n2kClassic.ts`.
  */
 export function parseTypedExpression(input: string): NEquation {
@@ -180,7 +185,7 @@ function parse(input: string, requireTotal: boolean): NEquation {
     const op = consumeOperator(c);
     if (op === null) {
       throw new ParseError(
-        `expected operator (+ - * /) or "=" at position ${c.pos}, ` +
+        `expected operator (+ - * /) or "=" at position ${c.pos + 1}, ` +
           `found "${peek(c)}"`,
         c.pos,
       );
@@ -203,7 +208,7 @@ function parse(input: string, requireTotal: boolean): NEquation {
     }
     claimed = totalSign * consumeInt(c);
   } else if (requireTotal) {
-    throw new ParseError(`expected "=" at position ${c.pos}`, c.pos);
+    throw new ParseError(`expected "=" at position ${c.pos + 1}`, c.pos);
   }
   skipWs(c);
   if (c.pos !== c.src.length) {
@@ -213,8 +218,9 @@ function parse(input: string, requireTotal: boolean): NEquation {
     );
   }
 
-  // Validate arity & evaluation.
-  if (dice.length < 3 || dice.length > 5) {
+  // Printed equations are always 3..5 dice; typed ones leave the count to
+  // the mode's rules so the refusal can name them.
+  if (requireTotal && (dice.length < 3 || dice.length > 5)) {
     throw new ParseError(
       `equation has ${dice.length} dice (must be 3..5)`,
       0,
@@ -222,10 +228,10 @@ function parse(input: string, requireTotal: boolean): NEquation {
   }
   const evaluated = evaluateLeftToRight(dice, exps, ops);
   const rounded = Math.round(evaluated);
-  if (
-    !Number.isFinite(evaluated) ||
-    Math.abs(evaluated - rounded) > FLOAT_EQ_EPSILON
-  ) {
+  if (!Number.isFinite(evaluated)) {
+    throw new ParseError(`equation is too large to evaluate`, 0);
+  }
+  if (Math.abs(evaluated - rounded) > FLOAT_EQ_EPSILON) {
     throw new ParseError(
       `equation does not evaluate to an integer (got ${evaluated})`,
       0,
@@ -256,6 +262,9 @@ function evaluateLeftToRight(
   let acc = Math.pow(dice[0]!, exps[0]!);
   for (let i = 0; i < ops.length; i += 1) {
     const next = Math.pow(dice[i + 1]!, exps[i + 1]!);
+    if (ops[i] === OP.DIV && next === 0) {
+      throw new ParseError(`equation has a division by zero`, 0);
+    }
     acc = applyOperator(acc, next, ops[i]!);
   }
   return acc;

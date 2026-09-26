@@ -9,6 +9,54 @@ registry predicate migration. Not deployed.
 
 # N2K Platform: Changelog
 
+## 2026-09-26: Leaving Play mid-race pauses it; dogfood fixes across Play, Lookup, Library and Welcome
+
+- **Leaving a Quick Race froze it but kept scoring.** Pressing Back or another
+  tab mid-race stopped the clock and the bot but left the race "racing", so typed
+  knocks still scored on return (the dogfood pass reached 4,656 to 0).
+  `PlayView`'s unmount cleanup called `PlayStore.dispose()`, which only stopped
+  the timers. Now `AppStore` pauses the race whenever the view leaves Play, as it
+  already did for Competition bouts, and a paused race refuses knocks. The
+  unmount cleanup is gone because dev StrictMode replays it on mount, which
+  paused a race the Welcome modal had just started; `dispose()` also pauses now,
+  so teardown can never leave a clockless race that still scores. Coming back
+  shows the boards blurred under "Paused · Paused when you left Play" with
+  Resume, and the clock continues from where you left (5 s in, 20 s away,
+  resume at 0:55). A hidden browser tab still does not pause. Loading a
+  Competition match onto the Play tab pauses the Quick Race under it too, and
+  leaving Play during a results replay stops the replay on its frame instead of
+  letting it run on unseen.
+- **Typed refusals named the wrong problem.** `1+1+1` with other dice said "3 is
+  not on your board"; the dice are now checked before the board ("Dice 1, 1, 1
+  are not a subset of the roll 2, 3, 5"). `6/0 + 2` said "got Infinity"; it now
+  says division by zero. A two-dice entry said "must be 3..5" in standard mode;
+  the typed parser now leaves the count to the rules ("Uses 2 dice; standard
+  rules use 3 (arity 2 not allowed)"). Parse error positions count from 1.
+  Aiming at a cell clears the last refusal.
+- **Copy and markup.** The race header said "§ III · Play" and now reads its
+  folio from `folioFor("play")` (IV). The Play intro said to click a cell; it
+  now says to type an equation. Lookup's no-solution line read "targets in1–999"
+  and put the dice glyph (a `div`) inside a `p`, a React `validateDOMNesting`
+  error; both fixed. Library's empty state, header and badges and the match-end
+  button said "Compose"; they now say Competition.
+- **Welcome modal.** Tab reached the nav behind the modal; Tab and Shift+Tab now
+  cycle its buttons. A first visit through a shared race or plan link whose
+  payload decodes skips the modal so the shared result is what shows, and that
+  visit does not mark onboarding done. An empty or garbage payload still gets
+  the welcome.
+- Tests, each watched failing first: `web/tests/playStoreRace.test.ts` (leaving
+  mid-race failed "expected 'racing' to be 'paused'"; refusal order failed
+  "expected '3 is not on your board' to match /roll 2, 3, 5/"; replay after
+  leaving failed "expected 7000 to be 2000"; a match takeover left the Quick
+  Race "racing"), `web/tests/viewHash.test.ts` (a garbage `race=` counted as a
+  share link),
+  `tests/typedEquation.test.ts` (division by zero, 1-based positions, two-dice
+  parse), and Playwright `web/e2e/race-pause.spec.ts` (no Resume after Back and
+  Forward; a Welcome-started race paused at once under the first fix),
+  `web/e2e/welcome-overlay.spec.ts` (focus left the dialog; the modal
+  covered a shared race), `web/e2e/lookup-no-solution.spec.ts` (missing space,
+  then a `validateDOMNesting` error). Not deployed.
+
 ## 2026-09-25: Play race checks every knock; clear bonus in scale; Easy and Standard bots score
 
 - **Any click used to score.** Knocks were honor-system clicks, so clicking all

@@ -29,6 +29,20 @@ describe("parseTypedExpression", () => {
   it("refuses an expression that does not land on a whole number", () => {
     expect(() => parseTypedExpression("7 / 2 + 3")).toThrow(ParseError);
   });
+
+  it("names division by zero instead of printing Infinity", () => {
+    expect(() => parseTypedExpression("6 / 0 + 2")).toThrow(/division by zero/);
+    expect(() => parseTypedExpression("6 / 0 + 2")).not.toThrow(/Infinity/);
+  });
+
+  it("counts positions from 1 in parse errors", () => {
+    // The stray "?" is the 3rd character.
+    expect(() => parseTypedExpression("2 ? 3 + 5")).toThrow(/position 3\b/);
+  });
+
+  it("leaves the dice count to the rules, so a two-dice entry parses", () => {
+    expect(parseTypedExpression("2 + 3").dice).toEqual([2, 3]);
+  });
 });
 
 // The CLI `explain` command reads full printed equations; the total is required.

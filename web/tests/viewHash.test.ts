@@ -4,7 +4,8 @@
  * race links working and must never throw on junk.
  */
 import { describe, expect, it } from "vitest";
-import { hashForView, viewFromHash } from "../src/stores/viewHash";
+import { hashForView, sharePayloadDecodes, viewFromHash } from "../src/stores/viewHash";
+import { encodeShareable } from "../src/services/compressedHashCodec";
 
 describe("viewFromHash / hashForView", () => {
   it("round-trips every view and leaves Lookup links byte-identical", () => {
@@ -47,5 +48,17 @@ describe("viewFromHash / hashForView", () => {
     expect(viewFromHash("#view=bogus")).toBe("lookup");
     expect(viewFromHash("#%E0%A4%A")).toBe("lookup");
     expect(viewFromHash("#view=%E0%A4%A&x")).toBe("lookup");
+  });
+});
+
+describe("sharePayloadDecodes", () => {
+  it("is true only for a race or plan payload that actually decodes", async () => {
+    const valid = await encodeShareable({ v: 1 });
+    expect(await sharePayloadDecodes("#lookup=1:2,3,5/10")).toBe(false);
+    expect(await sharePayloadDecodes("#view=play&race=")).toBe(false);
+    expect(await sharePayloadDecodes("#view=play&race=garbage")).toBe(false);
+    expect(await sharePayloadDecodes("#view=play&race=v1.@@@")).toBe(false);
+    expect(await sharePayloadDecodes(`#view=play&race=${valid}`)).toBe(true);
+    expect(await sharePayloadDecodes(`#view=competition&plan=${valid}`)).toBe(true);
   });
 });

@@ -10,39 +10,61 @@
  * reachable from a cold landing.
  *
  * Returning players never see it again. It also stands down when a
- * match-resume prompt is pending so the two modals don't stack.
+ * match-resume prompt is pending so the two modals don't stack, and for
+ * a visit that opened a share link (`race=` / `plan=`) whose payload
+ * decodes, so the shared race or plan is what the visitor sees. That visit does not count as
+ * onboarding; the welcome waits for their next plain visit.
+ *
+ * While open, Tab and Shift+Tab cycle through the modal's own buttons.
  *
  * Styling mirrors the `MatchResumeGate` modal in `App.tsx` — the same
  * paper card / oxblood accents / editorial type — so it reads as part
  * of the existing chrome rather than a bolt-on.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useAppStore } from "../../stores/AppStoreContext.js";
+import { sharePayloadDecodes } from "../../stores/viewHash.js";
 
 export const WelcomeOverlay = observer(function WelcomeOverlay() {
   const store = useAppStore();
   const { onboarding, play } = store;
   const primaryRef = useRef<HTMLButtonElement>(null);
-
-  // Escape dismisses (treated as "explore first" — no race launched).
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Hidden until the landing hash is known not to hold a decodable share
+  // payload. The hash is captured on first render, before PlayView
+  // consumes and clears `race=`.
+  const [landingHash] = useState(() => (typeof window === "undefined" ? "" : window.location.hash));
+  const [share, setShare] = useState<"checking" | "shared" | "none">("checking");
   useEffect(() => {
-    if (!onboarding.open) return;
+    let cancelled = false;
+    void sharePayloadDecodes(landingHash).then((decodes) => {
+      if (!cancelled) setShare(decodes ? "shared" : "none");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [landingHash]);
+  const visible = onboarding.open && store.match === null && share === "none";
+
+  // Escape dismisses (treated as "explore first" — no race launched);
+  // Tab wraps between the first and last buttons.
+  useEffect(() => {
+    if (!visible) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onboarding.dismiss();
+      if (e.key === "Tab") trapTab(e, dialogRef.current);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onboarding, onboarding.open]);
+  }, [onboarding, visible]);
 
   // Land focus on the primary CTA so Enter starts a race immediately.
   useEffect(() => {
-    if (onboarding.open) primaryRef.current?.focus();
-  }, [onboarding.open]);
+    if (visible) primaryRef.current?.focus();
+  }, [visible]);
 
-  // Don't cover a share-link match-resume prompt (they can't both be
-  // first-run, but guard defensively so modals never stack).
-  if (!onboarding.open || store.match !== null) return null;
+  if (!visible) return null;
 
   const startQuickRace = () => {
     onboarding.dismiss();
@@ -52,6 +74,7 @@ export const WelcomeOverlay = observer(function WelcomeOverlay() {
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="welcome-title"
@@ -109,3 +132,21 @@ export const WelcomeOverlay = observer(function WelcomeOverlay() {
     </div>
   );
 });
+
+/** Keep Tab focus inside `dialog`: wrap past the last button, and back past the first. */
+function trapTab(e: KeyboardEvent, dialog: HTMLElement | null): void {
+  if (dialog === null) return;
+  const buttons = dialog.querySelectorAll<HTMLElement>("button:not([disabled])");
+  const first = buttons[0];
+  const last = buttons[buttons.length - 1];
+  if (first === undefined || last === undefined) return;
+  const active = document.activeElement;
+  const inside = active instanceof Node && dialog.contains(active);
+  if (e.shiftKey && (active === first || !inside)) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && (active === last || !inside)) {
+    e.preventDefault();
+    first.focus();
+  }
+}

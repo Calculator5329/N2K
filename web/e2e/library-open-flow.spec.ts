@@ -51,6 +51,6 @@ test.describe("Library — Open button", () => {
     // And the Library card itself should now show the "open in
     // Compose" badge for that same entry.
     await page.getByRole("button", { name: /^III Library$/ }).click();
-    await expect(card).toContainText(/open in Compose/i);
+    await expect(card).toContainText(/open in Competition/i);
   });
 });
